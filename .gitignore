@@ -1,5 +1,3 @@
 .DS_Store
-dataset/*.csv
-dataset/*.zip
 __pycache__/
 *.pyc
