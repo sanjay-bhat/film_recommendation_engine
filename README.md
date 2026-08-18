@@ -15,17 +15,31 @@ A content-based movie recommendation system built on the **TMDb 5000 dataset**. 
 ## Preview
 
 <p align="center">
-  <img src="assets/preview_website.png" alt="Website — GitHub Pages" width="100%">
+  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/demo">
+    <img src="assets/demo_website.gif" alt="Website Demo" width="100%">
+  </a>
 </p>
 
 <p align="center">
-  <img src="assets/preview_android.png" alt="Android App" width="320">
+  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/demo">
+    <img src="https://img.shields.io/badge/Try_it_live-Website-00e5ff?style=for-the-badge&logo=githubpages&logoColor=white" alt="Try it live — Website">
+  </a>
+</p>
+
+<p align="center">
+  <img src="assets/demo_android.gif" alt="Android App Demo" width="320">
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/preview_ios.png" alt="iOS App" width="320">
+  <img src="assets/demo_ios.gif" alt="iOS App Demo" width="320">
 </p>
 
 <p align="center">
-  <sub><b>Left:</b> Android (Kotlin + Jetpack Compose) &nbsp;·&nbsp; <b>Right:</b> iOS (Swift + SwiftUI)</sub>
+  <a href="android/">
+    <img src="https://img.shields.io/badge/View_source-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android source">
+  </a>
+  &nbsp;
+  <a href="ios/">
+    <img src="https://img.shields.io/badge/View_source-iOS-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="iOS source">
+  </a>
 </p>
 
 ## How It Works
