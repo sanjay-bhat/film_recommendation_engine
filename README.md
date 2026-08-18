@@ -94,14 +94,17 @@ Uses the [TMDb 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-mov
 
 ## Implementations
 
-The core recommendation algorithm is available in four languages:
+The core recommendation algorithm is available in six languages across CLI, web, and mobile:
 
-| Language | File | Notes |
-|:---|:---|:---|
-| Python | `src/recommend.py` | Reference implementation, uses scikit-learn |
-| Rust | `src/recommend.rs` | Zero-dependency, compiles to a fast CLI binary |
-| C# | `src/Recommend.cs` | .NET 8, clean OOP structure |
-| Go | `src/recommend.go` | Single-file, standard library only |
+| Platform | Language | Directory | Notes |
+|:---|:---|:---|:---|
+| CLI | Python | `src/recommend.py` | Reference implementation, uses scikit-learn |
+| CLI | Rust | `src/recommend.rs` | Zero-dependency, compiles to a fast CLI binary |
+| CLI | C# | `src/Recommend.cs` | .NET 8, clean OOP structure |
+| CLI | Go | `src/recommend.go` | Single-file, standard library only |
+| Android | Kotlin | `android/` | Jetpack Compose, Material 3, fully offline |
+| iOS | Swift | `ios/` | SwiftUI, async/await, fully offline |
+| Web | HTML/CSS/JS | `docs/` | GitHub Pages, synthwave theme |
 
 ## License
 
