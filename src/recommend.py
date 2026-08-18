@@ -17,7 +17,6 @@ import sys
 from collections import defaultdict
 
 import nltk
-from nltk.corpus import wordnet
 
 try:
     from thefuzz import fuzz
