@@ -182,6 +182,57 @@ Created a single-page static site in `docs/` for GitHub Pages deployment:
 
 ---
 
+## Stage 9: Security Policy & Scanning [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- Created `SECURITY.md` — vulnerability reporting process, input validation notes, dependency surface audit, network security guidance
+- Added `.github/dependabot.yml` — weekly scans for pip dependencies and GitHub Actions version updates
+- Added `.github/workflows/codeql.yml` — static analysis for Python, Go, and C# on every push/PR + weekly Monday schedule
+
+**Approval:** Done.
+
+---
+
+## Stage 10: License, Release & Badges [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- Added `LICENSE` (MIT) — renders as a tab next to README on GitHub
+- Created GitHub release `v0.4.8` with full changelog
+- Added README badges: CI, CodeQL, license (MIT), release (v0.4.8), go report (retired)
+- Enabled GitHub Pages with Actions as build source
+- Added `workflow_dispatch` trigger to CI workflow for manual runs
+
+**Approval:** Done.
+
+---
+
+## Stage 11: Project Scaffolding [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- `requirements.txt` — pinned Python dependencies (numpy, pandas, scikit-learn, nltk, thefuzz, etc.)
+- `Makefile` — targets: `setup`, `build`, `run`, `run-all`, `docker-build`, `docker-run`, `lint`, `clean`
+- `Dockerfile` — containerized Python engine with dataset baked in (~150MB image)
+- `CONTRIBUTING.md` — setup guide, code style conventions per language, PR workflow
+- `.github/ISSUE_TEMPLATE/bug_report.yml` — structured bug report form with language dropdown, repro steps, error output
+- `.github/ISSUE_TEMPLATE/feature_request.yml` — feature request form with area dropdown
+- `terraform/` — local Docker deployment using kreuzwerker/docker provider (no cloud account needed):
+  - `main.tf` — docker image build, network, container with health check
+  - `variables.tf` — configurable ports, image name, restart policy
+  - `outputs.tf` — container name/ID, host port, network
+  - `terraform.tfvars.example` — sample config
+- Updated README with Make/Docker/Terraform quick start and expanded project structure
+- Added `bin/` to `.gitignore`
+
+**Approval:** Done.
+
+---
+
 ## Final File Tree
 
 ```
@@ -189,23 +240,39 @@ film_recommendation_engine/
 ├── .claude/
 │   └── REVAMP_PROGRESS.md          # This file — tracks all revamp stages
 ├── .github/
-│   └── workflows/
-│       └── ci.yml                  # GitHub Actions CI/CD pipeline (Stage 7)
-├── .gitattributes
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.yml          # Bug report form (Stage 11)
+│   │   └── feature_request.yml     # Feature request form (Stage 11)
+│   ├── workflows/
+│   │   ├── ci.yml                  # CI/CD pipeline (Stage 7)
+│   │   └── codeql.yml              # CodeQL static analysis (Stage 9)
+│   └── dependabot.yml              # Automated dependency updates (Stage 9)
 ├── assets/
 │   ├── banner.svg                  # Neon synthwave SVG banner (Stage 1)
 │   └── genre_distribution.svg      # Genre bar chart SVG (Stage 2)
+├── dataset/
+│   ├── tmdb_5000_credits.csv.zip   # TMDb credits data (zipped)
+│   └── tmdb_5000_movies.csv.zip    # TMDb movies data (zipped)
 ├── docs/
 │   ├── genre_distribution.svg      # Chart copy for GitHub Pages
 │   └── index.html                  # 80s-themed GitHub Pages site (Stage 5)
-├── dataset/
-│   ├── tmdb_5000_credits.csv       # TMDb credits data
-│   └── tmdb_5000_movies.csv        # TMDb movies data
 ├── src/
 │   ├── recommend.py                # Python implementation (Stage 4)
 │   ├── recommend.rs                # Rust implementation (Stage 4)
 │   ├── Recommend.cs                # C# implementation (Stage 4)
 │   └── recommend.go                # Go implementation (Stage 4)
+├── terraform/
+│   ├── main.tf                     # Local Docker deployment (Stage 11)
+│   ├── variables.tf                # Configurable variables
+│   ├── outputs.tf                  # Deployment outputs
+│   └── terraform.tfvars.example    # Sample config
+├── .gitignore                      # Excludes CSVs, bin/, __pycache__, Terraform state
+├── CONTRIBUTING.md                 # Contributor guide (Stage 11)
+├── Dockerfile                      # Containerized Python engine (Stage 11)
+├── LICENSE                         # MIT license (Stage 10)
+├── Makefile                        # Build, run, lint, clean (Stage 11)
+├── SECURITY.md                     # Security policy (Stage 9)
 ├── FinalFilmRecommendationEngineCode-BigData.ipynb  # Modernized notebook (Stage 3)
-└── README.md                       # Rewritten README with banner (Stage 1)
+├── README.md                       # Rewritten README with banner (Stage 1)
+└── requirements.txt                # Pinned Python dependencies (Stage 11)
 ```
