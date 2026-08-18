@@ -60,7 +60,7 @@
 - Removed verbose `#endfor`, `#endif`, `#endmethod` comments
 - Consolidated redundant imports into a single cell
 - Switched to f-strings from `.format()`
-- Updated data loading path from `../input/` to `data/` directory
+- Updated data loading path from `../input/` to `dataset/` directory
 - Added docstrings to key functions
 - Trimmed the verbose package description cell to a clean setup section
 - Cleared stale outputs from all cells
@@ -147,7 +147,7 @@ Created a single-page static site in `docs/` for GitHub Pages deployment:
   - `rust-build` — compiles `src/recommend.rs` (stable Rust, edition 2021)
   - `csharp-build` — creates .NET 8 console project and builds `src/Recommend.cs`
   - `deploy-pages` — deploys `docs/` to GitHub Pages (only on merge to master, after all builds pass)
-- All four language builds run in parallel on every push/PR to master
+- All four language builds run in parallel on every push/PR to main
 - Pages deployment is gated behind successful builds
 - Committed and pushed to `feature/revamp_repo_2227` branch (same PR #1)
 
@@ -157,6 +157,26 @@ Created a single-page static site in `docs/` for GitHub Pages deployment:
 - Zero infrastructure maintenance
 - Direct integration with GitHub Pages deployment
 - Matrix builds for multiple languages out of the box
+
+**Approval:** Done.
+
+---
+
+## Stage 8: Dataset Path Update [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- User saved the TMDb dataset in `dataset/` folder (not `data/`)
+- Updated all default data directory references from `data/` to `dataset/` in:
+  - `src/recommend.py` — `--data-dir` default argument
+  - `src/recommend.go` — `--data-dir` flag default
+  - `src/recommend.rs` — `data_dir` variable initialization
+  - `src/Recommend.cs` — `dataDir` variable initialization
+  - `FinalFilmRecommendationEngineCode-BigData.ipynb` — cell 1 markdown + cell 2 `DATA_DIR`
+  - `README.md` — quick start comment
+- Updated `.github/workflows/ci.yml` branch triggers from `master` to `main`
+- Updated deploy-pages condition from `refs/heads/master` to `refs/heads/main`
 
 **Approval:** Done.
 
@@ -178,6 +198,9 @@ film_recommendation_engine/
 ├── docs/
 │   ├── genre_distribution.svg      # Chart copy for GitHub Pages
 │   └── index.html                  # 80s-themed GitHub Pages site (Stage 5)
+├── dataset/
+│   ├── tmdb_5000_credits.csv       # TMDb credits data
+│   └── tmdb_5000_movies.csv        # TMDb movies data
 ├── src/
 │   ├── recommend.py                # Python implementation (Stage 4)
 │   ├── recommend.rs                # Rust implementation (Stage 4)

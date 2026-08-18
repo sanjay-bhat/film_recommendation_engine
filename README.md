@@ -25,7 +25,7 @@ cd film_recommendation_engine
 pip install numpy pandas scikit-learn nltk fuzzywuzzy python-Levenshtein matplotlib seaborn wordcloud
 
 # Download the TMDb 5000 dataset from Kaggle
-# Place tmdb_5000_movies.csv and tmdb_5000_credits.csv in a data/ directory
+# Place tmdb_5000_movies.csv and tmdb_5000_credits.csv in the dataset/ directory
 
 # Run the notebook or the standalone Python script
 python src/recommend.py --movie "The Dark Knight Rises"

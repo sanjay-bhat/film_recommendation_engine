@@ -453,7 +453,7 @@ func main() {
 	movie := flag.String("movie", "", "Movie title to get recommendations for")
 	id := flag.Int("id", -1, "Movie index in the dataset")
 	noDedup := flag.Bool("no-dedup", false, "Disable sequel deduplication")
-	dataDir := flag.String("data-dir", "data", "Path to CSV data directory")
+	dataDir := flag.String("data-dir", "dataset", "Path to CSV data directory")
 	flag.Parse()
 
 	if *movie == "" && *id < 0 {
