@@ -17,7 +17,7 @@ fn main() {
     let mut movie = String::new();
     let mut id: i32 = -1;
     let mut no_dedup = false;
-    let mut data_dir = "data".to_string();
+    let mut data_dir = "dataset".to_string();
 
     let mut i = 1;
     while i < args.len() {

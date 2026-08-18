@@ -300,7 +300,7 @@ def main():
     parser.add_argument("--movie", type=str, help="Movie title to get recommendations for")
     parser.add_argument("--id", type=int, help="Movie index in the dataset")
     parser.add_argument("--no-dedup", action="store_true", help="Disable sequel deduplication")
-    parser.add_argument("--data-dir", type=str, default="data", help="Path to CSV data directory")
+    parser.add_argument("--data-dir", type=str, default="dataset", help="Path to CSV data directory")
     args = parser.parse_args()
 
     if not args.movie and args.id is None:

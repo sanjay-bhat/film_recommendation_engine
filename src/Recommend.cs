@@ -9,7 +9,7 @@ using System.Text.Json;
 var movie = "";
 var id = -1;
 var noDedup = false;
-var dataDir = "data";
+var dataDir = "dataset";
 
 for (int i = 0; i < args.Length; i++)
 {

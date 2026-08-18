@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   python-lint:
@@ -71,7 +71,7 @@ jobs:
     name: Deploy GitHub Pages
     runs-on: ubuntu-latest
     needs: [python-lint, go-build, rust-build, csharp-build]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       pages: write
       id-token: write
