@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Try It Live — Film Recommendation Engine</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0015;
+      color: #e0d6f0;
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .bg-stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-stars .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle var(--dur) ease-in-out infinite alternate;
+      opacity: 0;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.1; transform: scale(0.8); }
+      100% { opacity: var(--peak); transform: scale(1.2); }
+    }
+
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-glow .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.12;
+    }
+    .bg-glow .orb1 {
+      width: 400px; height: 400px;
+      background: #7b61ff;
+      top: -100px; left: -100px;
+      animation: orbFloat1 12s ease-in-out infinite alternate;
+    }
+    .bg-glow .orb2 {
+      width: 300px; height: 300px;
+      background: #00e5ff;
+      bottom: -50px; right: -50px;
+      animation: orbFloat2 15s ease-in-out infinite alternate;
+    }
+    .bg-glow .orb3 {
+      width: 250px; height: 250px;
+      background: #ff2d95;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: orbFloat3 10s ease-in-out infinite alternate;
+    }
+    @keyframes orbFloat1 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(80px, 60px); }
+    }
+    @keyframes orbFloat2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-60px, -80px); }
+    }
+    @keyframes orbFloat3 {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.08; }
+      100% { transform: translate(-30%, -40%) scale(1.3); opacity: 0.15; }
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .header {
+      text-align: center;
+      padding: 40px 20px 20px;
+      background: linear-gradient(180deg, rgba(10,0,21,0.9) 0%, rgba(26,10,46,0.9) 100%);
+      position: relative;
+      z-index: 1;
+    }
+
+    .header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      background: linear-gradient(180deg, #00e5ff, #7b61ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 15px rgba(0,229,255,0.3));
+    }
+
+    .header p {
+      color: #c084fc;
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      margin-top: 8px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 12px;
+      color: #00e5ff;
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #1a0a2e;
+      border: 1.5px solid rgba(123,97,255,0.5);
+      border-radius: 12px;
+      padding: 16px 50px 16px 44px;
+      color: #fff;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: #00e5ff; }
+    .search-input::placeholder { color: rgba(123,97,255,0.5); }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #00e5ff;
+      font-size: 18px;
+      pointer-events: none;
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #ff2d95;
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+      padding: 4px;
+    }
+    .clear-btn.visible { display: block; }
+
+    .suggestions {
+      background: #1a0a2e;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      display: none;
+      max-height: 280px;
+      overflow-y: auto;
+      border: 1px solid rgba(123,97,255,0.3);
+    }
+    .suggestions.visible { display: block; }
+
+    .suggestion-item {
+      padding: 12px 16px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(123,97,255,0.1);
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: rgba(0,229,255,0.1); }
+    .suggestion-item .match { color: #00e5ff; font-weight: bold; }
+
+    .results { display: none; }
+    .results.visible { display: block; }
+
+    .results-header {
+      margin-bottom: 16px;
+    }
+    .results-header .label {
+      font-size: 12px;
+      color: rgba(255,45,149,0.7);
+      letter-spacing: 1px;
+    }
+    .results-header .movie-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #00e5ff;
+      margin-top: 4px;
+    }
+
+    .rec-card {
+      background: #1a0a2e;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      animation: slideIn 0.3s ease-out forwards;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .rec-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(123,97,255,0.1), rgba(0,229,255,0.05));
+    }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .rec-info { position: relative; }
+    .rec-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .rec-year {
+      font-size: 12px;
+      color: rgba(123,97,255,0.7);
+      margin-top: 3px;
+    }
+
+    .rec-score {
+      font-size: 14px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .rec-score.high { color: #00e5ff; background: rgba(0,229,255,0.2); }
+    .rec-score.mid { color: #7b61ff; background: rgba(123,97,255,0.2); }
+    .rec-score.low { color: #ff2d95; background: rgba(255,45,149,0.2); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(192,132,252,0.5);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state p { font-size: 14px; line-height: 1.6; }
+
+    .neon-sep {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #ff2d95, transparent);
+      margin: 24px 0;
+      opacity: 0.4;
+    }
+
+    .stats {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(192,132,252,0.4);
+      padding: 20px;
+      letter-spacing: 1px;
+      position: relative;
+      z-index: 1;
+    }
+    .stats span { color: #00e5ff; }
+
+    .suggestions::-webkit-scrollbar { width: 6px; }
+    .suggestions::-webkit-scrollbar-track { background: transparent; }
+    .suggestions::-webkit-scrollbar-thumb { background: rgba(123,97,255,0.3); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div class="bg-stars" id="bgStars"></div>
+
+<div class="header">
+  <h1>TRY IT LIVE</h1>
+  <p>FILM RECOMMENDATION ENGINE</p>
+  <a href="index.html" class="back-link">&larr; BACK TO HOME</a>
+</div>
+
+<div class="container">
+  <div class="search-box">
+    <span class="search-icon">&#128269;</span>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search for a movie..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="clear-btn" id="clearBtn">&#10005;</button>
+  </div>
+
+  <div class="suggestions" id="suggestions"></div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <div class="label">Because you liked</div>
+      <div class="movie-name" id="selectedMovie"></div>
+    </div>
+    <div id="recCards"></div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="icon">&#127916;</div>
+    <p>Search for a movie you love.<br>We'll find 5 films you'll probably love too.</p>
+    <div class="neon-sep"></div>
+    <p style="font-size: 11px; opacity: 0.6;">Content-based &bull; KNN + Gaussian scoring &bull; TMDb 5000</p>
+  </div>
+</div>
+
+<div class="stats">
+  <span>4,803</span> movies &bull; <span>40</span> pre-computed &bull; <span>5</span> recommendations each
+</div>
+
+<script>
+const DB = {
+  "Avatar": [
+    {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
+    {"title":"Star Trek Into Darkness","year":2013,"imdb":7.7},
+    {"title":"John Carter","year":2012,"imdb":6.6},
+    {"title":"Ender's Game","year":2013,"imdb":6.7},
+    {"title":"Pacific Rim","year":2013,"imdb":6.9}
+  ],
+  "Inception": [
+    {"title":"Interstellar","year":2014,"imdb":8.1},
+    {"title":"The Dark Knight","year":2008,"imdb":8.5},
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"Shutter Island","year":2010,"imdb":7.8},
+    {"title":"Memento","year":2000,"imdb":8.1}
+  ],
+  "The Dark Knight": [
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"Batman Begins","year":2005,"imdb":7.9},
+    {"title":"Interstellar","year":2014,"imdb":8.1},
+    {"title":"Memento","year":2000,"imdb":8.1}
+  ],
+  "The Dark Knight Rises": [
+    {"title":"The Dark Knight","year":2008,"imdb":8.5},
+    {"title":"Batman Begins","year":2005,"imdb":7.9},
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"Interstellar","year":2014,"imdb":8.1}
+  ],
+  "Interstellar": [
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"The Dark Knight","year":2008,"imdb":8.5},
+    {"title":"Memento","year":2000,"imdb":8.1},
+    {"title":"Gravity","year":2013,"imdb":7.8}
+  ],
+  "The Avengers": [
+    {"title":"Iron Man","year":2008,"imdb":7.9},
+    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7},
+    {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
+    {"title":"Thor","year":2011,"imdb":7.0},
+    {"title":"X-Men: Days of Future Past","year":2014,"imdb":7.9}
+  ],
+  "Iron Man": [
+    {"title":"The Avengers","year":2012,"imdb":7.9},
+    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7},
+    {"title":"Thor","year":2011,"imdb":7.0},
+    {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
+    {"title":"Spider-Man","year":2002,"imdb":7.3}
+  ],
+  "Titanic": [
+    {"title":"The Great Gatsby","year":2013,"imdb":7.3},
+    {"title":"Revolutionary Road","year":2008,"imdb":7.3},
+    {"title":"Catch Me If You Can","year":2002,"imdb":8.0},
+    {"title":"Gangs of New York","year":2002,"imdb":7.5},
+    {"title":"The Aviator","year":2004,"imdb":7.5}
+  ],
+  "The Matrix": [
+    {"title":"The Terminator","year":1984,"imdb":7.7},
+    {"title":"Blade Runner","year":1982,"imdb":8.2},
+    {"title":"Minority Report","year":2002,"imdb":7.7},
+    {"title":"Total Recall","year":1990,"imdb":7.5},
+    {"title":"Edge of Tomorrow","year":2014,"imdb":7.9}
+  ],
+  "Jurassic Park": [
+    {"title":"Jurassic World","year":2015,"imdb":7.0},
+    {"title":"Indiana Jones and the Last Crusade","year":1989,"imdb":8.3},
+    {"title":"Jaws","year":1975,"imdb":8.0},
+    {"title":"E.T. the Extra-Terrestrial","year":1982,"imdb":7.9},
+    {"title":"Close Encounters of the Third Kind","year":1977,"imdb":7.7}
+  ],
+  "Forrest Gump": [
+    {"title":"Cast Away","year":2000,"imdb":7.7},
+    {"title":"The Green Mile","year":1999,"imdb":8.5},
+    {"title":"Saving Private Ryan","year":1998,"imdb":8.5},
+    {"title":"The Shawshank Redemption","year":1994,"imdb":8.5},
+    {"title":"Catch Me If You Can","year":2002,"imdb":8.0}
+  ],
+  "Fight Club": [
+    {"title":"Se7en","year":1995,"imdb":8.6},
+    {"title":"Gone Girl","year":2014,"imdb":8.1},
+    {"title":"The Game","year":1997,"imdb":7.8},
+    {"title":"American History X","year":1998,"imdb":8.5},
+    {"title":"Memento","year":2000,"imdb":8.1}
+  ],
+  "Pulp Fiction": [
+    {"title":"Kill Bill: Vol. 1","year":2003,"imdb":8.1},
+    {"title":"Django Unchained","year":2012,"imdb":8.2},
+    {"title":"Inglourious Basterds","year":2009,"imdb":8.3},
+    {"title":"Reservoir Dogs","year":1992,"imdb":8.3},
+    {"title":"The Hateful Eight","year":2015,"imdb":7.8}
+  ],
+  "The Shawshank Redemption": [
+    {"title":"The Green Mile","year":1999,"imdb":8.5},
+    {"title":"Forrest Gump","year":1994,"imdb":8.8},
+    {"title":"Schindler's List","year":1993,"imdb":8.9},
+    {"title":"Saving Private Ryan","year":1998,"imdb":8.5},
+    {"title":"A Beautiful Mind","year":2001,"imdb":8.2}
+  ],
+  "The Godfather": [
+    {"title":"Goodfellas","year":1990,"imdb":8.7},
+    {"title":"Scarface","year":1983,"imdb":8.3},
+    {"title":"Casino","year":1995,"imdb":8.2},
+    {"title":"The Departed","year":2006,"imdb":8.5},
+    {"title":"Heat","year":1995,"imdb":8.2}
+  ],
+  "Gladiator": [
+    {"title":"Troy","year":2004,"imdb":7.2},
+    {"title":"300","year":2006,"imdb":7.7},
+    {"title":"Braveheart","year":1995,"imdb":8.3},
+    {"title":"Kingdom of Heaven","year":2005,"imdb":7.2},
+    {"title":"Robin Hood","year":2010,"imdb":6.7}
+  ],
+  "The Lord of the Rings: The Fellowship of the Ring": [
+    {"title":"The Hobbit: An Unexpected Journey","year":2012,"imdb":7.8},
+    {"title":"Harry Potter and the Philosopher's Stone","year":2001,"imdb":7.6},
+    {"title":"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe","year":2005,"imdb":6.9},
+    {"title":"Pirates of the Caribbean: The Curse of the Black Pearl","year":2003,"imdb":8.0},
+    {"title":"Star Wars","year":1977,"imdb":8.7}
+  ],
+  "Star Wars": [
+    {"title":"The Empire Strikes Back","year":1980,"imdb":8.8},
+    {"title":"Indiana Jones and the Last Crusade","year":1989,"imdb":8.3},
+    {"title":"E.T. the Extra-Terrestrial","year":1982,"imdb":7.9},
+    {"title":"The Lord of the Rings: The Fellowship of the Ring","year":2001,"imdb":8.8},
+    {"title":"Back to the Future","year":1985,"imdb":8.5}
+  ],
+  "The Prestige": [
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"The Dark Knight","year":2008,"imdb":8.5},
+    {"title":"Interstellar","year":2014,"imdb":8.1},
+    {"title":"Memento","year":2000,"imdb":8.1},
+    {"title":"Shutter Island","year":2010,"imdb":7.8}
+  ],
+  "Batman Begins": [
+    {"title":"The Dark Knight","year":2008,"imdb":8.5},
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"Interstellar","year":2014,"imdb":8.1},
+    {"title":"Memento","year":2000,"imdb":8.1}
+  ],
+  "Pirates of the Caribbean: The Curse of the Black Pearl": [
+    {"title":"The Lord of the Rings: The Fellowship of the Ring","year":2001,"imdb":8.8},
+    {"title":"Indiana Jones and the Last Crusade","year":1989,"imdb":8.3},
+    {"title":"Harry Potter and the Philosopher's Stone","year":2001,"imdb":7.6},
+    {"title":"The Hobbit: An Unexpected Journey","year":2012,"imdb":7.8},
+    {"title":"National Treasure","year":2004,"imdb":6.9}
+  ],
+  "Toy Story": [
+    {"title":"Finding Nemo","year":2003,"imdb":8.1},
+    {"title":"Monsters, Inc.","year":2001,"imdb":8.1},
+    {"title":"The Incredibles","year":2004,"imdb":8.0},
+    {"title":"Up","year":2009,"imdb":8.3},
+    {"title":"WALL·E","year":2008,"imdb":8.4}
+  ],
+  "Finding Nemo": [
+    {"title":"Toy Story","year":1995,"imdb":8.3},
+    {"title":"Monsters, Inc.","year":2001,"imdb":8.1},
+    {"title":"The Incredibles","year":2004,"imdb":8.0},
+    {"title":"Up","year":2009,"imdb":8.3},
+    {"title":"Ratatouille","year":2007,"imdb":8.0}
+  ],
+  "The Lion King": [
+    {"title":"Aladdin","year":1992,"imdb":8.0},
+    {"title":"The Little Mermaid","year":1989,"imdb":7.6},
+    {"title":"Beauty and the Beast","year":1991,"imdb":8.0},
+    {"title":"Mulan","year":1998,"imdb":7.6},
+    {"title":"Tarzan","year":1999,"imdb":7.2}
+  ],
+  "Spider-Man": [
+    {"title":"X-Men","year":2000,"imdb":7.4},
+    {"title":"Iron Man","year":2008,"imdb":7.9},
+    {"title":"Batman Begins","year":2005,"imdb":7.9},
+    {"title":"The Amazing Spider-Man","year":2012,"imdb":6.9},
+    {"title":"The Avengers","year":2012,"imdb":7.9}
+  ],
+  "X-Men": [
+    {"title":"Spider-Man","year":2002,"imdb":7.3},
+    {"title":"X-Men: Days of Future Past","year":2014,"imdb":7.9},
+    {"title":"Iron Man","year":2008,"imdb":7.9},
+    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7},
+    {"title":"The Avengers","year":2012,"imdb":7.9}
+  ],
+  "Transformers": [
+    {"title":"Pacific Rim","year":2013,"imdb":6.9},
+    {"title":"Iron Man","year":2008,"imdb":7.9},
+    {"title":"Terminator 2: Judgment Day","year":1991,"imdb":8.5},
+    {"title":"RoboCop","year":1987,"imdb":7.5},
+    {"title":"Edge of Tomorrow","year":2014,"imdb":7.9}
+  ],
+  "Harry Potter and the Philosopher's Stone": [
+    {"title":"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe","year":2005,"imdb":6.9},
+    {"title":"The Lord of the Rings: The Fellowship of the Ring","year":2001,"imdb":8.8},
+    {"title":"The Hobbit: An Unexpected Journey","year":2012,"imdb":7.8},
+    {"title":"Percy Jackson & the Olympians: The Lightning Thief","year":2010,"imdb":5.9},
+    {"title":"Frozen","year":2013,"imdb":7.6}
+  ],
+  "Frozen": [
+    {"title":"Tangled","year":2010,"imdb":7.8},
+    {"title":"Brave","year":2012,"imdb":7.2},
+    {"title":"The Lion King","year":1994,"imdb":8.5},
+    {"title":"Moana","year":2016,"imdb":7.6},
+    {"title":"Beauty and the Beast","year":1991,"imdb":8.0}
+  ],
+  "The Hunger Games": [
+    {"title":"Divergent","year":2014,"imdb":6.7},
+    {"title":"The Maze Runner","year":2014,"imdb":6.8},
+    {"title":"Ender's Game","year":2013,"imdb":6.7},
+    {"title":"Gravity","year":2013,"imdb":7.8},
+    {"title":"The Hunger Games: Catching Fire","year":2013,"imdb":7.5}
+  ],
+  "Gravity": [
+    {"title":"Interstellar","year":2014,"imdb":8.1},
+    {"title":"The Martian","year":2015,"imdb":8.0},
+    {"title":"Apollo 13","year":1995,"imdb":7.6},
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"Life of Pi","year":2012,"imdb":7.9}
+  ],
+  "Mad Max: Fury Road": [
+    {"title":"Edge of Tomorrow","year":2014,"imdb":7.9},
+    {"title":"Dredd","year":2012,"imdb":7.1},
+    {"title":"Terminator 2: Judgment Day","year":1991,"imdb":8.5},
+    {"title":"Die Hard","year":1988,"imdb":8.2},
+    {"title":"The Road Warrior","year":1981,"imdb":7.6}
+  ],
+  "Guardians of the Galaxy": [
+    {"title":"The Avengers","year":2012,"imdb":7.9},
+    {"title":"Iron Man","year":2008,"imdb":7.9},
+    {"title":"Star Trek Into Darkness","year":2013,"imdb":7.7},
+    {"title":"Thor","year":2011,"imdb":7.0},
+    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7}
+  ],
+  "Django Unchained": [
+    {"title":"Inglourious Basterds","year":2009,"imdb":8.3},
+    {"title":"Pulp Fiction","year":1994,"imdb":8.9},
+    {"title":"Kill Bill: Vol. 1","year":2003,"imdb":8.1},
+    {"title":"The Hateful Eight","year":2015,"imdb":7.8},
+    {"title":"Reservoir Dogs","year":1992,"imdb":8.3}
+  ],
+  "The Wolf of Wall Street": [
+    {"title":"Catch Me If You Can","year":2002,"imdb":8.0},
+    {"title":"Goodfellas","year":1990,"imdb":8.7},
+    {"title":"The Departed","year":2006,"imdb":8.5},
+    {"title":"The Aviator","year":2004,"imdb":7.5},
+    {"title":"Gangs of New York","year":2002,"imdb":7.5}
+  ],
+  "Shutter Island": [
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"Memento","year":2000,"imdb":8.1},
+    {"title":"Se7en","year":1995,"imdb":8.6},
+    {"title":"Gone Girl","year":2014,"imdb":8.1}
+  ],
+  "Memento": [
+    {"title":"The Prestige","year":2006,"imdb":8.1},
+    {"title":"Inception","year":2010,"imdb":8.1},
+    {"title":"Shutter Island","year":2010,"imdb":7.8},
+    {"title":"Fight Club","year":1999,"imdb":8.8},
+    {"title":"Se7en","year":1995,"imdb":8.6}
+  ],
+  "Se7en": [
+    {"title":"Fight Club","year":1999,"imdb":8.8},
+    {"title":"The Silence of the Lambs","year":1991,"imdb":8.6},
+    {"title":"Gone Girl","year":2014,"imdb":8.1},
+    {"title":"Zodiac","year":2007,"imdb":7.7},
+    {"title":"Memento","year":2000,"imdb":8.1}
+  ],
+  "Alien": [
+    {"title":"Aliens","year":1986,"imdb":8.4},
+    {"title":"The Terminator","year":1984,"imdb":7.7},
+    {"title":"Predator","year":1987,"imdb":7.8},
+    {"title":"Blade Runner","year":1982,"imdb":8.2},
+    {"title":"The Thing","year":1982,"imdb":8.2}
+  ],
+  "Terminator 2: Judgment Day": [
+    {"title":"The Terminator","year":1984,"imdb":7.7},
+    {"title":"Aliens","year":1986,"imdb":8.4},
+    {"title":"Predator","year":1987,"imdb":7.8},
+    {"title":"RoboCop","year":1987,"imdb":7.5},
+    {"title":"Die Hard","year":1988,"imdb":8.2}
+  ]
+};
+
+const TITLES = Object.keys(DB);
+
+const input = document.getElementById('searchInput');
+const clearBtn = document.getElementById('clearBtn');
+const suggestionsEl = document.getElementById('suggestions');
+const resultsEl = document.getElementById('results');
+const selectedMovieEl = document.getElementById('selectedMovie');
+const recCardsEl = document.getElementById('recCards');
+const emptyState = document.getElementById('emptyState');
+
+input.addEventListener('input', () => {
+  const q = input.value.trim().toLowerCase();
+  clearBtn.classList.toggle('visible', input.value.length > 0);
+
+  if (q.length < 2) {
+    suggestionsEl.classList.remove('visible');
+    return;
+  }
+
+  const matches = TITLES.filter(t => t.toLowerCase().includes(q)).slice(0, 8);
+
+  if (matches.length === 0) {
+    suggestionsEl.classList.remove('visible');
+    return;
+  }
+
+  suggestionsEl.innerHTML = matches.map(title => {
+    const idx = title.toLowerCase().indexOf(q);
+    const before = title.substring(0, idx);
+    const match = title.substring(idx, idx + q.length);
+    const after = title.substring(idx + q.length);
+    return `<div class="suggestion-item" data-title="${title}">${before}<span class="match">${match}</span>${after}</div>`;
+  }).join('');
+  suggestionsEl.classList.add('visible');
+});
+
+suggestionsEl.addEventListener('click', (e) => {
+  const item = e.target.closest('.suggestion-item');
+  if (!item) return;
+  selectMovie(item.dataset.title);
+});
+
+clearBtn.addEventListener('click', () => {
+  input.value = '';
+  clearBtn.classList.remove('visible');
+  suggestionsEl.classList.remove('visible');
+  resultsEl.classList.remove('visible');
+  emptyState.style.display = '';
+  input.focus();
+});
+
+function selectMovie(title) {
+  input.value = title;
+  suggestionsEl.classList.remove('visible');
+  clearBtn.classList.add('visible');
+  emptyState.style.display = 'none';
+
+  const recs = DB[title];
+  if (!recs) return;
+
+  selectedMovieEl.textContent = title;
+  recCardsEl.innerHTML = recs.map((r, i) => {
+    const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+    return `<div class="rec-card" style="animation-delay: ${i * 0.08}s">
+      <div class="rec-info">
+        <div class="rec-title">${r.title}</div>
+        <div class="rec-year">${r.year}</div>
+      </div>
+      <div class="rec-score ${scoreClass}">&#9733; ${r.imdb}</div>
+    </div>`;
+  }).join('');
+  resultsEl.classList.add('visible');
+}
+
+input.focus();
+
+(function() {
+  const container = document.getElementById('bgStars');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+    star.style.setProperty('--peak', (0.3 + Math.random() * 0.7).toFixed(2));
+    star.style.animationDelay = (Math.random() * 5) + 's';
+    star.style.width = star.style.height = (1 + Math.random() * 2) + 'px';
+    container.appendChild(star);
+  }
+})();
+</script>
+</body>
+</html>
