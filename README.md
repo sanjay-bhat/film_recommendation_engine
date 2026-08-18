@@ -77,10 +77,11 @@ film_recommendation_engine/
 │   ├── recommend.rs         # Rust implementation
 │   ├── Recommend.cs         # C# implementation
 │   └── recommend.go         # Go implementation
+├── notebooks/
+│   └── FinalFilmRecommendationEngineCode-BigData.ipynb
 ├── terraform/               # Local Docker deployment via Terraform
 ├── Dockerfile               # Containerized Python engine
 ├── Makefile                 # Build, run, lint, clean
-├── FinalFilmRecommendationEngineCode-BigData.ipynb
 └── README.md
 ```
 
