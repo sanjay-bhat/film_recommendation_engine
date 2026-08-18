@@ -1,16 +1,77 @@
-# film_recommendation_engine
+<p align="center">
+  <img src="assets/banner.svg" alt="Film Recommendation Engine — Synthwave Banner" width="100%">
+</p>
 
+# Film Recommendation Engine
 
-## Big Data Project: Film recommendation engine using the IMDb 5000 dataset
+A content-based movie recommendation system built on the **TMDb 5000 dataset**. Give it a movie you love, and it returns 5 films you'll probably love too — by matching directors, actors, plot keywords, and genres through nearest-neighbor search, then ranking candidates by popularity and release proximity.
 
-[iPython notebook](https://github.com/SanyTiger/film_recommendation_engine/blob/master/FinalFilmRecommendationEngineCode-BigData.ipynb)
+## How It Works
 
-This project aims at recommending movies, TV shows based on user's preference of the previous movies and TV shows. We use the IMDb 5000 dataset having movies.csv and credits.csv dataset files. Basically the user would select a movie and based on that movie alone the recommendation engine would suggest 5 movies that the user may prefer. The selection, of course, is based on three categories
+The engine combines three recommendation strategies:
 
-> popularity-based engine - The most impersonal recommendation engine as it doesn't consider the user's preference.
+| Strategy | What It Does |
+|:---|:---|
+| **Content-Based** | Builds a binary feature matrix from director, cast, keywords, and genres. Finds the 31 nearest neighbors using Euclidean distance. |
+| **Popularity-Weighted** | Scores neighbors using `IMDB² × φ(votes) × φ(year)` — a Gaussian weighting that favors well-rated, well-known films from the same era. |
+| **Sequel Detection** | Uses fuzzy string matching to deduplicate franchise entries, so you don't get three Pirates of the Caribbean films back. |
 
+## Quick Start
 
-> content-based engine - Recommends other movies based on the description of the current movie.
+```bash
+# Clone and install dependencies
+git clone https://github.com/sanjay-bhat/film_recommendation_engine.git
+cd film_recommendation_engine
+pip install numpy pandas scikit-learn nltk fuzzywuzzy python-Levenshtein matplotlib seaborn wordcloud
 
+# Download the TMDb 5000 dataset from Kaggle
+# Place tmdb_5000_movies.csv and tmdb_5000_credits.csv in a data/ directory
 
->collaborative-based engine - Recommends movies based on other users' choice whose previous list of movies included the user's current movie.
+# Run the notebook or the standalone Python script
+python src/recommend.py --movie "The Dark Knight Rises"
+```
+
+## Genre Distribution
+
+The dataset spans 20 genres across 4,803 films. Drama and Comedy dominate, while Western and TV Movie sit at the long tail.
+
+<p align="center">
+  <img src="assets/genre_distribution.svg" alt="Genre Distribution Bar Chart" width="100%">
+</p>
+
+## Project Structure
+
+```
+film_recommendation_engine/
+├── assets/                  # Banner, charts, visual assets
+├── src/
+│   ├── recommend.py         # Python implementation
+│   ├── recommend.rs         # Rust implementation
+│   ├── Recommend.cs         # C# implementation
+│   └── recommend.go         # Go implementation
+├── FinalFilmRecommendationEngineCode-BigData.ipynb
+├── docs/                    # GitHub Pages site
+└── README.md
+```
+
+## Dataset
+
+Uses the [TMDb 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) containing:
+- **4,803 movies** with budget, revenue, genres, keywords, and ratings
+- **4,803 credit entries** with full cast and crew data
+- Keywords cleaned via NLTK stemming and WordNet synonym merging (9,474 → 2,121 unique keywords)
+
+## Implementations
+
+The core recommendation algorithm is available in four languages:
+
+| Language | File | Notes |
+|:---|:---|:---|
+| Python | `src/recommend.py` | Reference implementation, uses scikit-learn |
+| Rust | `src/recommend.rs` | Zero-dependency, compiles to a fast CLI binary |
+| C# | `src/Recommend.cs` | .NET 8, clean OOP structure |
+| Go | `src/recommend.go` | Single-file, standard library only |
+
+## License
+
+MIT

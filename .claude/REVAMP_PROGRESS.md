@@ -1,0 +1,151 @@
+# Film Recommendation Engine — Revamp Progress
+
+## Stage 1: 80s Movie Banner + README Rewrite [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- Created `assets/banner.svg` — a neon synthwave SVG banner with:
+  - Deep purple-to-magenta gradient sky with scattered stars
+  - Retro sun at the horizon with horizontal slice lines
+  - Perspective grid floor fading into the distance
+  - Glowing cyan-to-purple title text with neon filter
+  - Pink subtitle listing the three engine types
+- Rewrote `README.md` with:
+  - Banner at the top
+  - Concise project description
+  - Strategy comparison table (content-based, popularity-weighted, sequel detection)
+  - Quick start section with install commands
+  - Genre distribution chart placeholder (filled in Stage 2)
+  - Project structure showing planned layout
+  - Implementations table for all four languages
+  - Dataset details
+
+**Approval:** User approved, moved to Stage 2.
+
+---
+
+## Stage 2: Genre Distribution Bar Graph [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- Created `assets/genre_distribution.svg` — a synthwave-themed bar chart showing:
+  - All 20 TMDb genres ranked by frequency
+  - Drama leads at 2,297, TV Movie trails at 22
+  - Cyan-to-purple gradient bars with neon glow effect
+  - Pink axis labels and dashed gridlines
+  - Count labels above each bar
+  - Dark background matching the banner aesthetic
+- Referenced in README.md under "Genre Distribution" section
+
+**Data source:** Top 10 from notebook cell 16 output; remaining 10 from TMDb 5000 dataset documentation.
+
+**Approval:** User approved, moved to Stage 3.
+
+---
+
+## Stage 3: Modernize Notebook [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- Fixed deprecated pandas APIs:
+  - `df.set_value()` -> `df.at[]` (removed in pandas 1.0)
+  - `df.as_matrix()` -> `df[cols].to_numpy()` (removed in pandas 1.0)
+  - `pd.np` -> `np` directly (removed in pandas 1.2)
+  - `df.append()` -> `pd.concat()` (removed in pandas 2.0)
+- Replaced `fuzzywuzzy` with `thefuzz` (renamed package)
+- Converted all function/variable names to snake_case (PEP 8)
+- Removed verbose `#endfor`, `#endif`, `#endmethod` comments
+- Consolidated redundant imports into a single cell
+- Switched to f-strings from `.format()`
+- Updated data loading path from `../input/` to `data/` directory
+- Added docstrings to key functions
+- Trimmed the verbose package description cell to a clean setup section
+- Cleared stale outputs from all cells
+
+**Approval:** Pending.
+
+---
+
+## Stage 4: Extract Working Code [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+Created standalone implementations of the recommendation engine in four languages:
+
+- **Python** (`src/recommend.py`) — Reference implementation with argparse CLI, NLTK keyword cleaning, thefuzz for sequel detection
+- **Rust** (`src/recommend.rs`) — Zero-dependency (no external crates), hand-rolled CSV parser, Levenshtein distance, custom JSON name extractor
+- **C#** (`src/Recommend.cs`) — .NET 8 top-level statements, System.Text.Json, record types, LINQ-based pipeline
+- **Go** (`src/recommend.go`) — Standard library only, struct-based design, flag package CLI
+
+All four share the same algorithm:
+1. Load TMDb 5000 CSVs (movies + credits)
+2. Build binary feature vectors from director, actors, keywords, genres
+3. Find 31 nearest neighbors via Euclidean distance
+4. Rank by IMDB² x Gaussian(votes) x Gaussian(year)
+5. Deduplicate sequels via fuzzy string matching (Levenshtein-based)
+6. Return top 5 recommendations
+
+Each accepts `--movie "Title"` or `--id N` with `--data-dir` and `--no-dedup` flags.
+
+**Approval:** Pending.
+
+---
+
+## Stage 5: GitHub Pages Website [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+Created a single-page static site in `docs/` for GitHub Pages deployment:
+
+- `docs/index.html` — full 80s synthwave-themed page with:
+  - Hero section: Orbitron font title with CSS gradient text + drop-shadow glow, retro sun with slice lines, twinkling stars (JS-generated), perspective grid floor
+  - "What Is This" intro section
+  - Three strategy cards with hover glow effects
+  - Numbered "How It Works" pipeline (6 steps with neon step counters)
+  - Genre Distribution chart (embedded SVG)
+  - Quick Start with language tab switcher (Python/Rust/C#/Go)
+  - Example Output code block
+  - Dataset section with highlighted stats
+  - Footer with GitHub link
+- `docs/genre_distribution.svg` — copy of the chart for GitHub Pages serving
+- Scanline overlay for CRT effect
+- Neon separators between sections
+- Google Fonts: Orbitron (display) + Share Tech Mono (body)
+- Fully responsive (mobile-friendly grid and clamp() font sizes)
+
+**Approval:** Pending.
+
+---
+
+## Stage 6: Final Review [PENDING]
+
+**Plan:** Review all changes, ensure consistency, and prepare for commit.
+
+---
+
+## Final File Tree
+
+```
+film_recommendation_engine/
+├── .claude/
+│   └── REVAMP_PROGRESS.md          # This file — tracks all revamp stages
+├── .gitattributes
+├── assets/
+│   ├── banner.svg                  # Neon synthwave SVG banner (Stage 1)
+│   └── genre_distribution.svg      # Genre bar chart SVG (Stage 2)
+├── docs/
+│   ├── genre_distribution.svg      # Chart copy for GitHub Pages
+│   └── index.html                  # 80s-themed GitHub Pages site (Stage 5)
+├── src/
+│   ├── recommend.py                # Python implementation (Stage 4)
+│   ├── recommend.rs                # Rust implementation (Stage 4)
+│   ├── Recommend.cs                # C# implementation (Stage 4)
+│   └── recommend.go                # Go implementation (Stage 4)
+├── FinalFilmRecommendationEngineCode-BigData.ipynb  # Modernized notebook (Stage 3)
+└── README.md                       # Rewritten README with banner (Stage 1)
+```
