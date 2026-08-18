@@ -233,6 +233,61 @@ Created a single-page static site in `docs/` for GitHub Pages deployment:
 
 ---
 
+## Stage 12: CI & CodeQL Fixes [DONE]
+
+**Date:** 2026-08-18
+
+**What was done:**
+- Fixed CI lint failure: removed unused `from nltk.corpus import wordnet` import (flake8 F401)
+- Fixed CodeQL C# autobuild error: split into two jobs — Python/Go use autobuild, C# uses explicit `dotnet build` (autobuild can't detect standalone `.cs` files without a `.csproj`)
+- Merged all Dependabot PRs: pip dependency bumps (matplotlib, pandas, wordcloud, numpy, python-Levenshtein) and GitHub Actions version bumps (setup-dotnet, configure-pages, setup-go, upload-pages-artifact, deploy-pages)
+- Pages deployment race condition resolved after rapid-fire merges
+
+**Approval:** Done.
+
+---
+
+## Stage 13: CODEOWNERS & Branch Protection [DONE]
+
+**Date:** 2026-08-18
+
+**What was done:**
+- Added `CODEOWNERS` file mapping all files (`*`) to `@sanjay-bhat`
+- Configured branch protection on `main`:
+  - Requires 1 approving review from a collaborator with write access
+  - Requires code owner review — every PR needs owner approval
+- No one can merge code into `main` without owner sign-off
+
+**Approval:** Done.
+
+---
+
+## Stage 14: Android & iOS Mobile Apps [DONE]
+
+**Date:** 2026-08-18
+
+**What was done:**
+- **Android** (`android/`) — Kotlin + Jetpack Compose + Material 3:
+  - `RecommendationEngine.kt` — full algorithm port: CSV parsing, KNN search, Gaussian scoring, Levenshtein-based sequel dedup
+  - `MainViewModel.kt` — coroutines for background dataset loading
+  - `MovieSearchScreen.kt` — synthwave-themed search UI with real-time suggestions and recommendation cards
+  - Complete Gradle project (minSdk 26 / Android 8.0+), ready to open in Android Studio
+  - Dataset CSVs bundled in `app/src/main/assets/`
+
+- **iOS** (`ios/`) — Swift + SwiftUI:
+  - `RecommendationEngine.swift` — same algorithm ported to Swift with Foundation JSON parsing
+  - `MovieViewModel.swift` — ObservableObject with async/await for background loading
+  - `SearchView.swift` — matching synthwave visual theme with neon cyan/pink/purple on dark
+  - Source files ready to import into an Xcode project (iOS 16+)
+  - Dataset CSVs bundled as app resources
+
+- Both apps are fully offline, zero external dependencies, dataset bundled in-app
+- Updated README implementations table to include Kotlin, Swift, and the web app (7 platforms total)
+
+**Approval:** Done.
+
+---
+
 ## Final File Tree
 
 ```
@@ -247,6 +302,16 @@ film_recommendation_engine/
 │   │   ├── ci.yml                  # CI/CD pipeline (Stage 7)
 │   │   └── codeql.yml              # CodeQL static analysis (Stage 9)
 │   └── dependabot.yml              # Automated dependency updates (Stage 9)
+├── android/                         # Android app (Stage 14)
+│   ├── app/src/main/java/com/sanjaybhat/filmrecommend/
+│   │   ├── MainActivity.kt
+│   │   ├── RecommendationEngine.kt
+│   │   ├── model/Movie.kt
+│   │   └── ui/{MainViewModel,MovieSearchScreen}.kt
+│   ├── app/build.gradle.kts
+│   ├── build.gradle.kts
+│   ├── settings.gradle.kts
+│   └── README.md
 ├── assets/
 │   ├── banner.svg                  # Neon synthwave SVG banner (Stage 1)
 │   └── genre_distribution.svg      # Genre bar chart SVG (Stage 2)
@@ -256,6 +321,16 @@ film_recommendation_engine/
 ├── docs/
 │   ├── genre_distribution.svg      # Chart copy for GitHub Pages
 │   └── index.html                  # 80s-themed GitHub Pages site (Stage 5)
+├── ios/                             # iOS app (Stage 14)
+│   ├── FilmRecommend/
+│   │   ├── FilmRecommendApp.swift
+│   │   ├── ContentView.swift
+│   │   ├── Engine/RecommendationEngine.swift
+│   │   ├── Models/Movie.swift
+│   │   └── Views/{MovieViewModel,SearchView}.swift
+│   └── README.md
+├── notebooks/
+│   └── FinalFilmRecommendationEngineCode-BigData.ipynb  # Modernized notebook (Stage 3)
 ├── src/
 │   ├── recommend.py                # Python implementation (Stage 4)
 │   ├── recommend.rs                # Rust implementation (Stage 4)
@@ -267,13 +342,12 @@ film_recommendation_engine/
 │   ├── outputs.tf                  # Deployment outputs
 │   └── terraform.tfvars.example    # Sample config
 ├── .gitignore                      # Excludes CSVs, bin/, __pycache__, Terraform state
+├── CODEOWNERS                      # Owner approval required (Stage 13)
 ├── CONTRIBUTING.md                 # Contributor guide (Stage 11)
 ├── Dockerfile                      # Containerized Python engine (Stage 11)
 ├── LICENSE                         # MIT license (Stage 10)
 ├── Makefile                        # Build, run, lint, clean (Stage 11)
-├── SECURITY.md                     # Security policy (Stage 9)
-├── notebooks/
-│   └── FinalFilmRecommendationEngineCode-BigData.ipynb  # Modernized notebook (Stage 3)
 ├── README.md                       # Rewritten README with banner (Stage 1)
+├── SECURITY.md                     # Security policy (Stage 9)
 └── requirements.txt                # Pinned Python dependencies (Stage 11)
 ```
