@@ -12,6 +12,22 @@
 
 A content-based movie recommendation system built on the **TMDb 5000 dataset**. Give it a movie you love, and it returns 5 films you'll probably love too — by matching directors, actors, plot keywords, and genres through nearest-neighbor search, then ranking candidates by popularity and release proximity.
 
+## Preview
+
+<p align="center">
+  <img src="assets/preview_website.png" alt="Website — GitHub Pages" width="100%">
+</p>
+
+<p align="center">
+  <img src="assets/preview_android.png" alt="Android App" width="280">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/preview_ios.png" alt="iOS App" width="280">
+</p>
+
+<p align="center">
+  <sub><b>Left:</b> Android (Kotlin + Jetpack Compose) &nbsp;·&nbsp; <b>Right:</b> iOS (Swift + SwiftUI)</sub>
+</p>
+
 ## How It Works
 
 The engine combines three recommendation strategies:
