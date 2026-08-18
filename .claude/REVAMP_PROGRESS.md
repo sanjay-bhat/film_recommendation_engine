@@ -136,12 +136,41 @@ Created a single-page static site in `docs/` for GitHub Pages deployment:
 
 ---
 
+## Stage 7: CI/CD Pipeline [DONE]
+
+**Date:** 2026-08-17
+
+**What was done:**
+- Created `.github/workflows/ci.yml` — GitHub Actions CI/CD pipeline with 5 jobs:
+  - `python-lint` — flake8 linter + `py_compile` syntax check on `src/recommend.py` (Python 3.12)
+  - `go-build` — compiles `src/recommend.go` (Go 1.22)
+  - `rust-build` — compiles `src/recommend.rs` (stable Rust, edition 2021)
+  - `csharp-build` — creates .NET 8 console project and builds `src/Recommend.cs`
+  - `deploy-pages` — deploys `docs/` to GitHub Pages (only on merge to master, after all builds pass)
+- All four language builds run in parallel on every push/PR to master
+- Pages deployment is gated behind successful builds
+- Committed and pushed to `feature/revamp_repo_2227` branch (same PR #1)
+
+**Why GitHub Actions over Jenkins:**
+- Native to GitHub — no external server required
+- Free for public repos
+- Zero infrastructure maintenance
+- Direct integration with GitHub Pages deployment
+- Matrix builds for multiple languages out of the box
+
+**Approval:** Done.
+
+---
+
 ## Final File Tree
 
 ```
 film_recommendation_engine/
 ├── .claude/
 │   └── REVAMP_PROGRESS.md          # This file — tracks all revamp stages
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # GitHub Actions CI/CD pipeline (Stage 7)
 ├── .gitattributes
 ├── assets/
 │   ├── banner.svg                  # Neon synthwave SVG banner (Stage 1)
