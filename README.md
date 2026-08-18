@@ -25,16 +25,32 @@ The engine combines three recommendation strategies:
 ## Quick Start
 
 ```bash
-# Clone and install dependencies
+# Clone and set up
 git clone https://github.com/sanjay-bhat/film_recommendation_engine.git
 cd film_recommendation_engine
-pip install numpy pandas scikit-learn nltk fuzzywuzzy python-Levenshtein matplotlib seaborn wordcloud
+make setup          # installs Python deps + NLTK data, extracts CSVs
 
-# Download the TMDb 5000 dataset from Kaggle
-# Place tmdb_5000_movies.csv and tmdb_5000_credits.csv in the dataset/ directory
+# Run
+make run MOVIE="The Dark Knight Rises"
 
-# Run the notebook or the standalone Python script
-python src/recommend.py --movie "The Dark Knight Rises"
+# Or run all language implementations side by side
+make run-all MOVIE="Inception"
+```
+
+### Docker
+
+```bash
+make docker-build
+make docker-run MOVIE="Inception"
+```
+
+### Terraform (local Docker)
+
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform apply
 ```
 
 ## Genre Distribution
@@ -49,14 +65,22 @@ The dataset spans 20 genres across 4,803 films. Drama and Comedy dominate, while
 
 ```
 film_recommendation_engine/
+├── .github/
+│   ├── ISSUE_TEMPLATE/      # Bug report & feature request forms
+│   ├── workflows/           # CI + CodeQL pipelines
+│   └── dependabot.yml       # Automated dependency updates
 ├── assets/                  # Banner, charts, visual assets
+├── dataset/                 # TMDb 5000 CSVs (zipped)
+├── docs/                    # GitHub Pages site
 ├── src/
 │   ├── recommend.py         # Python implementation
 │   ├── recommend.rs         # Rust implementation
 │   ├── Recommend.cs         # C# implementation
 │   └── recommend.go         # Go implementation
+├── terraform/               # Local Docker deployment via Terraform
+├── Dockerfile               # Containerized Python engine
+├── Makefile                 # Build, run, lint, clean
 ├── FinalFilmRecommendationEngineCode-BigData.ipynb
-├── docs/                    # GitHub Pages site
 └── README.md
 ```
 
