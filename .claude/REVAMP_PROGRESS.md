@@ -272,7 +272,8 @@ film_recommendation_engine/
 ├── LICENSE                         # MIT license (Stage 10)
 ├── Makefile                        # Build, run, lint, clean (Stage 11)
 ├── SECURITY.md                     # Security policy (Stage 9)
-├── FinalFilmRecommendationEngineCode-BigData.ipynb  # Modernized notebook (Stage 3)
+├── notebooks/
+│   └── FinalFilmRecommendationEngineCode-BigData.ipynb  # Modernized notebook (Stage 3)
 ├── README.md                       # Rewritten README with banner (Stage 1)
 └── requirements.txt                # Pinned Python dependencies (Stage 11)
 ```
