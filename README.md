@@ -19,9 +19,9 @@ A content-based movie recommendation system built on the **TMDb 5000 dataset**. 
 </p>
 
 <p align="center">
-  <img src="assets/preview_android.png" alt="Android App" width="280">
+  <img src="assets/preview_android.png" alt="Android App" width="320">
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/preview_ios.png" alt="iOS App" width="280">
+  <img src="assets/preview_ios.png" alt="iOS App" width="320">
 </p>
 
 <p align="center">
