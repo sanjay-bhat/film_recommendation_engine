@@ -26,6 +26,7 @@ setup-collab: unzip
 	fi
 	python scripts/build_collab_model.py --ml-dir $(DATA_DIR)/ml-25m --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/item_factors.csv
 	python scripts/build_genome_factors.py --ml-dir $(DATA_DIR)/ml-25m --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/genome_factors.csv
+	python scripts/build_plot_embeddings.py --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/plot_factors.csv
 
 # --- Build ---
 

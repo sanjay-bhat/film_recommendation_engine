@@ -10,7 +10,7 @@
 [![release](https://img.shields.io/badge/release-v0.5.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
 [![go report](https://img.shields.io/badge/go%20report-retired-lightgrey.svg)](https://goreportcard.com/report/github.com/sanjay-bhat/film_recommendation_engine)
 
-A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M**. Give it a movie you love, and it returns 5 films you'll probably love too — by combining TF-IDF weighted content features, MovieLens genome tag vectors, and collaborative filtering learned from 25 million real user ratings.
+A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M**. Give it a movie you love, and it returns 5 films you'll probably love too — by combining TF-IDF weighted content features, sentence embeddings on plot summaries, MovieLens genome tag vectors, and collaborative filtering learned from 25 million real user ratings.
 
 ## Preview
 
@@ -44,14 +44,15 @@ A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M*
 
 ## How It Works
 
-The engine combines three recommendation strategies:
+The engine combines four recommendation strategies:
 
 | Strategy | What It Does |
 |:---|:---|
 | **Content-Based (TF-IDF)** | Builds a TF-IDF weighted feature matrix from director, cast, keywords, and genres. Rare keywords (e.g., "time_travel") score higher than common ones (e.g., "love"). Finds 31 nearest neighbors via Euclidean distance. |
+| **Plot Embeddings** | Encodes plot summaries with `all-MiniLM-L6-v2` sentence transformer (384-dim), reduced to 50 dimensions via PCA. Captures narrative similarity that structured features miss. |
 | **Genome Tags** | Uses 1,128 MovieLens genome tag relevance scores per movie, reduced to 50 dimensions via SVD. Captures thematic similarity (mood, setting, era) that keywords miss. |
 | **Collaborative Filtering** | Truncated SVD (k=50) on 25M real user ratings learns latent taste factors. Item-item cosine similarity finds movies real audiences rated similarly. |
-| **Three-Way Retrieval** | Retrieves 31 candidates from each source independently, merges into a ~90-candidate pool, then ranks — so the best signal from each approach surfaces. |
+| **Four-Way Retrieval** | Retrieves 31 candidates from each source independently, merges into a ~120-candidate pool, then ranks — so the best signal from each approach surfaces. |
 | **Hybrid Scoring** | Blends content and collaborative signals: `(1−α) × content + α × collab`, where α=0.4. Content score uses `IMDB² × φ(votes) × φ(year)` Gaussian weighting. |
 | **Sequel Detection** | Fuzzy string matching deduplicates franchise entries, so you don't get three Pirates of the Caribbean films back. |
 
@@ -133,6 +134,7 @@ Uses two datasets:
 - **1,128 genome tags** per movie — relevance scores for tags like "dark hero", "plot twist", "atmospheric"
 - Pre-computed SVD item factors in `dataset/item_factors.csv` (~2 MB)
 - Pre-computed genome factors in `dataset/genome_factors.csv` (~2 MB)
+- Pre-computed plot embedding factors in `dataset/plot_factors.csv` (~2 MB)
 
 ## Implementations
 
