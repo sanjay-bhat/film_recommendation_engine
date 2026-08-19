@@ -1,7 +1,7 @@
 MOVIE ?= The Dark Knight Rises
 DATA_DIR ?= dataset
 
-.PHONY: all build run clean setup unzip
+.PHONY: all build run clean setup unzip setup-collab
 
 all: build
 
@@ -13,10 +13,18 @@ setup: unzip
 
 unzip:
 	@cd $(DATA_DIR) && \
-	for z in *.zip; do \
+	for z in tmdb_*.zip; do \
 		csv=$$(basename "$$z" .zip); \
 		[ -f "$$csv" ] || unzip -o "$$z"; \
 	done
+
+setup-collab: unzip
+	@if [ ! -d "$(DATA_DIR)/ml-25m" ]; then \
+		echo "Downloading MovieLens 25M..."; \
+		curl -L -o "$(DATA_DIR)/ml-25m.zip" "https://files.grouplens.org/datasets/movielens/ml-25m.zip"; \
+		cd $(DATA_DIR) && unzip -o ml-25m.zip; \
+	fi
+	python scripts/build_collab_model.py --ml-dir $(DATA_DIR)/ml-25m --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/item_factors.csv
 
 # --- Build ---
 

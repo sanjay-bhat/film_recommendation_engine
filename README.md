@@ -7,10 +7,10 @@
 [![CI](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![release](https://img.shields.io/badge/release-v0.4.8-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
+[![release](https://img.shields.io/badge/release-v0.5.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
 [![go report](https://img.shields.io/badge/go%20report-retired-lightgrey.svg)](https://goreportcard.com/report/github.com/sanjay-bhat/film_recommendation_engine)
 
-A content-based movie recommendation system built on the **TMDb 5000 dataset**. Give it a movie you love, and it returns 5 films you'll probably love too — by matching directors, actors, plot keywords, and genres through nearest-neighbor search, then ranking candidates by popularity and release proximity.
+A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M**. Give it a movie you love, and it returns 5 films you'll probably love too — by combining content-based feature matching (directors, actors, keywords, genres) with collaborative filtering learned from 25 million real user ratings.
 
 ## Preview
 
@@ -49,7 +49,8 @@ The engine combines three recommendation strategies:
 | Strategy | What It Does |
 |:---|:---|
 | **Content-Based** | Builds a binary feature matrix from director, cast, keywords, and genres. Finds the 31 nearest neighbors using Euclidean distance. |
-| **Popularity-Weighted** | Scores neighbors using `IMDB² × φ(votes) × φ(year)` — a Gaussian weighting that favors well-rated, well-known films from the same era. |
+| **Collaborative Filtering** | Uses truncated SVD (k=50) on 25M real user ratings from MovieLens to learn latent taste factors. Computes item-item cosine similarity to boost movies that real audiences rated similarly. |
+| **Hybrid Scoring** | Blends content and collaborative signals: `(1−α) × content + α × collab`, where α=0.4. Content score uses `IMDB² × φ(votes) × φ(year)` Gaussian weighting. |
 | **Sequel Detection** | Uses fuzzy string matching to deduplicate franchise entries, so you don't get three Pirates of the Caribbean films back. |
 
 ## Quick Start
@@ -100,7 +101,7 @@ film_recommendation_engine/
 │   ├── workflows/           # CI + CodeQL pipelines
 │   └── dependabot.yml       # Automated dependency updates
 ├── assets/                  # Banner, charts, visual assets
-├── dataset/                 # TMDb 5000 CSVs (zipped)
+├── dataset/                 # TMDb 5000 CSVs + MovieLens 25M + pre-computed factors
 ├── docs/                    # GitHub Pages site
 ├── src/
 │   ├── recommend.py         # Python implementation
@@ -117,10 +118,17 @@ film_recommendation_engine/
 
 ## Dataset
 
-Uses the [TMDb 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) containing:
+Uses two datasets:
+
+**[TMDb 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata)** — content features:
 - **4,803 movies** with budget, revenue, genres, keywords, and ratings
 - **4,803 credit entries** with full cast and crew data
 - Keywords cleaned via NLTK stemming and WordNet synonym merging (9,474 → 2,121 unique keywords)
+
+**[MovieLens 25M](https://grouplens.org/datasets/movielens/25m/)** — collaborative signals:
+- **25 million ratings** from 162,000 users across 62,000 movies
+- **4,595 movies** overlap with TMDb 5000 (96% coverage)
+- Pre-computed SVD item factors stored in `dataset/item_factors.csv` (~2 KB per movie)
 
 ## Implementations
 

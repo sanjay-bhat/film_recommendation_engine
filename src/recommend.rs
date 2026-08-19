@@ -12,6 +12,8 @@ use std::env;
 use std::fs;
 use std::process;
 
+const COLLAB_WEIGHT: f64 = 0.4;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut movie = String::new();
@@ -52,6 +54,14 @@ fn main() {
     println!("Building film records...");
     let films = build_films(&movie_rows, &credit_rows);
 
+    let factors_path = format!("{}/item_factors.csv", data_dir);
+    let item_factors = load_item_factors(&factors_path);
+    if !item_factors.is_empty() {
+        println!("Loaded collaborative factors for {} movies", item_factors.len());
+    } else {
+        println!("No collaborative factors found — using content-based only");
+    }
+
     let target_idx = if !movie.is_empty() {
         let idx = find_by_title(&films, &movie);
         if idx < 0 {
@@ -67,7 +77,7 @@ fn main() {
     println!("\nRecommendations for: {} ({})", target.title, target.year);
     println!("{}", "=".repeat(60));
 
-    let results = recommend(&films, target_idx, !no_dedup);
+    let results = recommend(&films, target_idx, !no_dedup, &item_factors);
     for (i, r) in results.iter().enumerate() {
         let year_str = if r.year > 0 { r.year.to_string() } else { "?".to_string() };
         println!("  {}. {} ({}) — IMDB: {:.1}", i + 1, r.title, year_str, r.score);
@@ -75,6 +85,7 @@ fn main() {
 }
 
 struct Film {
+    tmdb_id: i32,
     title: String,
     genres: String,
     plot_keywords: String,
@@ -278,6 +289,7 @@ fn build_films(movies: &[HashMap<String, String>], credits: &[HashMap<String, St
         let c = credits.get(i).unwrap_or(&empty);
 
         films.push(Film {
+            tmdb_id: m.get("id").and_then(|v| v.parse().ok()).unwrap_or(0),
             title: m.get("title").cloned().unwrap_or_default(),
             genres: pipe_names(m.get("genres").unwrap_or(&"[]".to_string())),
             plot_keywords: pipe_names(m.get("keywords").unwrap_or(&"[]".to_string())),
@@ -347,6 +359,33 @@ fn find_neighbors(films: &[Film], target_idx: usize, n: usize) -> Vec<usize> {
     dists.iter().take(n).map(|(idx, _)| *idx).collect()
 }
 
+fn load_item_factors(path: &str) -> HashMap<i32, Vec<f64>> {
+    let mut factors = HashMap::new();
+    let content = match fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return factors,
+    };
+    let mut lines = content.lines();
+    lines.next(); // skip header
+    for line in lines {
+        let fields: Vec<&str> = line.split(',').collect();
+        if fields.len() < 2 { continue; }
+        let tmdb_id: i32 = match fields[0].parse() { Ok(v) => v, Err(_) => continue };
+        let vec: Vec<f64> = fields[1..].iter()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        factors.insert(tmdb_id, vec);
+    }
+    factors
+}
+
+fn collab_similarity(factors: &HashMap<i32, Vec<f64>>, id_a: i32, id_b: i32) -> f64 {
+    let va = match factors.get(&id_a) { Some(v) => v, None => return 0.0 };
+    let vb = match factors.get(&id_b) { Some(v) => v, None => return 0.0 };
+    let dot: f64 = va.iter().zip(vb.iter()).map(|(a, b)| a * b).sum();
+    dot.max(0.0)
+}
+
 fn gaussian(x: f64, y: f64, sigma: f64) -> f64 {
     if sigma == 0.0 { return 0.0; }
     (-(x - y).powi(2) / (2.0 * sigma * sigma)).exp()
@@ -382,8 +421,10 @@ fn is_sequel(t1: &str, t2: &str) -> bool {
     fuzzy_ratio(t1, t2) > 50
 }
 
-fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool) -> Vec<Candidate> {
+fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool,
+             item_factors: &HashMap<i32, Vec<f64>>) -> Vec<Candidate> {
     let neighbor_idxs = find_neighbors(films, target_idx, 31);
+    let target_tmdb = films[target_idx].tmdb_id;
 
     let mut max_votes = 0;
     let mut candidates: Vec<Candidate> = Vec::new();
@@ -403,7 +444,7 @@ fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool) -> Vec<Cand
     let main_title = candidates[0].title.clone();
     let main_year = candidates[0].year as f64;
 
-    for c in candidates.iter_mut() {
+    for (ci, c) in candidates.iter_mut().enumerate() {
         if is_sequel(&main_title, &c.title) {
             c.rank_score = 0.0;
             continue;
@@ -414,7 +455,15 @@ fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool) -> Vec<Cand
         let fact2 = if max_votes > 0 {
             gaussian(c.votes as f64, max_votes as f64, max_votes as f64)
         } else { 0.0 };
-        c.rank_score = c.score * c.score * fact1 * fact2;
+        let content_score = c.score * c.score * fact1 * fact2;
+        let cand_tmdb = films[neighbor_idxs[ci]].tmdb_id;
+        let csim = collab_similarity(item_factors, target_tmdb, cand_tmdb);
+        if csim > 0.0 {
+            c.rank_score = (1.0 - COLLAB_WEIGHT) * content_score
+                + COLLAB_WEIGHT * csim * c.score * c.score;
+        } else {
+            c.rank_score = content_score;
+        }
     }
 
     candidates.sort_by(|a, b| b.rank_score.partial_cmp(&a.rank_score).unwrap());

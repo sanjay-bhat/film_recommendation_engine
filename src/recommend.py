@@ -26,6 +26,8 @@ except ImportError:
 nltk.download("wordnet", quiet=True)
 PS = nltk.stem.PorterStemmer()
 
+COLLAB_WEIGHT = 0.4
+
 
 def load_movies(path):
     rows = []
@@ -89,6 +91,7 @@ def build_dataframe(movies, credits):
             except (ValueError, IndexError):
                 pass
         film = {
+            "tmdb_id": m["id"],
             "movie_title": m["title"],
             "genres": pipe_names(m["genres"]),
             "plot_keywords": pipe_names(m["keywords"]),
@@ -198,6 +201,29 @@ def find_neighbors(films, target_idx, n=31):
     return [idx for idx, _ in distances[:n]]
 
 
+def load_item_factors(path):
+    """Load pre-computed SVD item factors → {tmdb_id: [f0..f49]}."""
+    factors = {}
+    if not os.path.exists(path):
+        return factors
+    with open(path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            tmdb_id = int(row["tmdb_id"])
+            vec = [float(row[k]) for k in row if k.startswith("f")]
+            factors[tmdb_id] = vec
+    return factors
+
+
+def collab_similarity(factors, tmdb_id_a, tmdb_id_b):
+    """Cosine similarity between two movies' latent factor vectors."""
+    va = factors.get(tmdb_id_a)
+    vb = factors.get(tmdb_id_b)
+    if va is None or vb is None:
+        return 0.0
+    dot = sum(a * b for a, b in zip(va, vb))
+    return max(0.0, dot)
+
+
 def gaussian(x, y, sigma):
     if sigma == 0:
         return 0.0
@@ -208,17 +234,22 @@ def is_sequel(title1, title2):
     return fuzz.ratio(title1, title2) > 50 or fuzz.token_set_ratio(title1, title2) > 50
 
 
-def score_candidate(main_title, max_votes, year_ref, title, year, imdb_score, votes):
+def score_candidate(main_title, max_votes, year_ref, title, year, imdb_score,
+                    votes, collab_sim=0.0):
     if is_sequel(main_title, title):
         return 0.0
     fact1 = gaussian(year_ref, year, 20) if year_ref and year else 1.0
     fact2 = gaussian(votes, max_votes, max_votes) if votes and max_votes > 0 else 0.0
-    return imdb_score ** 2 * fact1 * fact2
+    content_score = imdb_score ** 2 * fact1 * fact2
+    if collab_sim > 0:
+        return (1 - COLLAB_WEIGHT) * content_score + COLLAB_WEIGHT * collab_sim * imdb_score ** 2
+    return content_score
 
 
-def recommend(films, target_idx, dedup_sequels=True):
+def recommend(films, target_idx, dedup_sequels=True, item_factors=None):
     """Return up to 5 recommended films."""
     neighbor_indices = find_neighbors(films, target_idx)
+    target_tmdb = films[target_idx].get("tmdb_id", 0)
 
     candidates = []
     max_votes = 0
@@ -232,13 +263,17 @@ def recommend(films, target_idx, dedup_sequels=True):
             "score": film.get("vote_average", 0),
             "votes": votes,
             "index": idx,
+            "tmdb_id": film.get("tmdb_id", 0),
         })
 
     main = candidates[0]
+    factors = item_factors or {}
     for c in candidates:
+        csim = collab_similarity(factors, target_tmdb, c["tmdb_id"])
         c["rank_score"] = score_candidate(
             main["title"], max_votes, main["year"],
             c["title"], c["year"], c["score"], c["votes"],
+            collab_sim=csim,
         )
     candidates.sort(key=lambda x: x["rank_score"], reverse=True)
 
@@ -323,6 +358,13 @@ def main():
     print("Cleaning keywords...")
     films = clean_keywords(films)
 
+    factors_path = os.path.join(args.data_dir, "item_factors.csv")
+    item_factors = load_item_factors(factors_path)
+    if item_factors:
+        print(f"Loaded collaborative factors for {len(item_factors)} movies")
+    else:
+        print("No collaborative factors found — using content-based only")
+
     if args.id is not None:
         target_idx = args.id
     else:
@@ -335,7 +377,8 @@ def main():
     print(f"\nRecommendations for: {target['movie_title']} ({target.get('title_year', '?')})")
     print("=" * 60)
 
-    results = recommend(films, target_idx, dedup_sequels=not args.no_dedup)
+    results = recommend(films, target_idx, dedup_sequels=not args.no_dedup,
+                        item_factors=item_factors)
     for i, r in enumerate(results, 1):
         print(f"  {i}. {r['title']} ({r['year'] or '?'}) — IMDB: {r['score']}")
 
