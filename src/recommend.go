@@ -294,6 +294,52 @@ func findNeighbors(films []Film, targetIdx, n int, idf map[string]float64) []int
 	return result
 }
 
+func findPlotNeighbors(films []Film, targetIdx int, plotFactors map[int][]float64, n int) []int {
+	targetTmdb := films[targetIdx].TmdbID
+	targetVec, ok := plotFactors[targetTmdb]
+	if !ok {
+		return nil
+	}
+
+	type simPair struct {
+		idx int
+		sim float64
+	}
+	var sims []simPair
+	for i, film := range films {
+		if i == targetIdx {
+			continue
+		}
+		vec, ok := plotFactors[film.TmdbID]
+		if !ok {
+			continue
+		}
+		dot := 0.0
+		for j := range targetVec {
+			if j < len(vec) {
+				dot += targetVec[j] * vec[j]
+			}
+		}
+		if dot > 0 {
+			sims = append(sims, simPair{i, dot})
+		}
+	}
+
+	for i := 0; i < len(sims); i++ {
+		for j := i + 1; j < len(sims); j++ {
+			if sims[j].sim > sims[i].sim {
+				sims[i], sims[j] = sims[j], sims[i]
+			}
+		}
+	}
+
+	result := make([]int, 0, n)
+	for i := 0; i < n && i < len(sims); i++ {
+		result = append(result, sims[i].idx)
+	}
+	return result
+}
+
 func findGenomeNeighbors(films []Film, targetIdx int, genomeFactors map[int][]float64, n int) []int {
 	targetTmdb := films[targetIdx].TmdbID
 	targetVec, ok := genomeFactors[targetTmdb]
@@ -454,15 +500,18 @@ func isSequel(t1, t2 string) bool {
 }
 
 func recommend(films []Film, targetIdx int, dedupSequels bool,
-	itemFactors, genomeFactors map[int][]float64, idf map[string]float64) []Candidate {
+	itemFactors, genomeFactors, plotFactors map[int][]float64, idf map[string]float64) []Candidate {
 	targetTmdb := films[targetIdx].TmdbID
 
-	// Stage 1: retrieve candidates from all three sources
+	// Stage 1: retrieve candidates from all four sources
 	mergedSet := make(map[int]bool)
 	for _, idx := range findNeighbors(films, targetIdx, 31, idf) {
 		mergedSet[idx] = true
 	}
 	for _, idx := range findGenomeNeighbors(films, targetIdx, genomeFactors, 31) {
+		mergedSet[idx] = true
+	}
+	for _, idx := range findPlotNeighbors(films, targetIdx, plotFactors, 31) {
 		mergedSet[idx] = true
 	}
 	targetVec, hasCollab := itemFactors[targetTmdb]
@@ -687,6 +736,14 @@ func main() {
 		fmt.Println("No genome factors found — using binary features for content")
 	}
 
+	plotPath := *dataDir + "/plot_factors.csv"
+	plotFactors := loadItemFactors(plotPath)
+	if len(plotFactors) > 0 {
+		fmt.Printf("Loaded plot factors for %d movies\n", len(plotFactors))
+	} else {
+		fmt.Println("No plot factors found — skipping plot embedding retrieval")
+	}
+
 	fmt.Println("Computing TF-IDF keyword weights...")
 	idf := buildIdf(films)
 	fmt.Printf("  %d unique keywords weighted\n", len(idf))
@@ -704,7 +761,7 @@ func main() {
 	fmt.Printf("\nRecommendations for: %s (%d)\n", target.Title, target.Year)
 	fmt.Println(strings.Repeat("=", 60))
 
-	results := recommend(films, targetIdx, !*noDedup, itemFactors, genomeFactors, idf)
+	results := recommend(films, targetIdx, !*noDedup, itemFactors, genomeFactors, plotFactors, idf)
 	for i, r := range results {
 		yearStr := "?"
 		if r.Year > 0 {
