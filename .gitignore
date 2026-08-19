@@ -5,6 +5,10 @@ dataset/*.csv
 !dataset/item_factors.csv
 !dataset/genome_factors.csv
 !dataset/plot_factors.csv
+dataset/movies_expanded.csv
+dataset/credits_expanded.csv
+dataset/overviews_extra.csv
+dataset/fetch_checkpoint.txt
 dataset/ml-25m/
 dataset/ml-25m.zip
 bin/

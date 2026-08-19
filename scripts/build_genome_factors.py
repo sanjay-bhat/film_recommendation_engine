@@ -41,11 +41,14 @@ def load_tmdb_ids(movies_path):
     return ids
 
 
-def load_genome_scores(ml_dir, ml_to_tmdb, tmdb_ids):
-    """Load genome scores for TMDb 5000 overlap movies."""
+def load_genome_scores(ml_dir, ml_to_tmdb, tmdb_ids=None):
+    """Load genome scores for movies with TMDb IDs (optionally filtered)."""
     path = os.path.join(ml_dir, "genome-scores.csv")
-    valid_ml_ids = {ml_id for ml_id, tmdb_id in ml_to_tmdb.items()
-                    if tmdb_id in tmdb_ids}
+    if tmdb_ids is not None:
+        valid_ml_ids = {ml_id for ml_id, tmdb_id in ml_to_tmdb.items()
+                        if tmdb_id in tmdb_ids}
+    else:
+        valid_ml_ids = set(ml_to_tmdb.keys())
 
     vectors = {}
     t0 = time.time()
@@ -136,7 +139,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Build genome content vectors from MovieLens 25M")
     parser.add_argument("--ml-dir", default="dataset/ml-25m")
-    parser.add_argument("--movies-csv", default="dataset/tmdb_5000_movies.csv")
+    parser.add_argument("--movies-csv", default=None)
     parser.add_argument("--out", default="dataset/genome_factors.csv")
     parser.add_argument("--k", type=int, default=50,
                         help="Number of reduced dimensions")
@@ -148,14 +151,24 @@ def main():
 
     print("=== Building Genome Content Vectors ===\n")
 
-    print("Step 1: Loading TMDb 5000 movie IDs...")
-    tmdb_ids = load_tmdb_ids(args.movies_csv)
-    print(f"  {len(tmdb_ids)} TMDb movies loaded\n")
+    tmdb_ids = None
+    if args.movies_csv:
+        if not os.path.exists(args.movies_csv):
+            print(f"Error: Movies CSV not found at '{args.movies_csv}'")
+            sys.exit(1)
+        print("Step 1: Loading movie IDs from CSV filter...")
+        tmdb_ids = load_tmdb_ids(args.movies_csv)
+        print(f"  {len(tmdb_ids)} movies loaded\n")
+    else:
+        print("Step 1: No movie filter — including all MovieLens movies\n")
 
     print("Step 2: Loading MovieLens → TMDb ID mapping...")
     ml_to_tmdb = load_links(args.ml_dir)
-    overlap = sum(1 for t in ml_to_tmdb.values() if t in tmdb_ids)
-    print(f"  {overlap} movies overlap with TMDb 5000\n")
+    if tmdb_ids:
+        overlap = sum(1 for t in ml_to_tmdb.values() if t in tmdb_ids)
+        print(f"  {overlap} movies overlap with filter\n")
+    else:
+        print(f"  {len(ml_to_tmdb)} MovieLens movies mapped\n")
 
     print("Step 3: Loading genome tag count...")
     n_tags = load_tag_count(args.ml_dir)

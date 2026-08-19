@@ -39,8 +39,13 @@ fn main() {
     }
 
     println!("Loading dataset...");
-    let movies_path = format!("{}/tmdb_5000_movies.csv", data_dir);
-    let credits_path = format!("{}/tmdb_5000_credits.csv", data_dir);
+    let expanded_movies = format!("{}/movies_expanded.csv", data_dir);
+    let expanded_credits = format!("{}/credits_expanded.csv", data_dir);
+    let (movies_path, credits_path) = if std::path::Path::new(&expanded_movies).exists() {
+        (expanded_movies, expanded_credits)
+    } else {
+        (format!("{}/tmdb_5000_movies.csv", data_dir), format!("{}/tmdb_5000_credits.csv", data_dir))
+    };
 
     let movie_rows = match read_csv(&movies_path) {
         Ok(r) => r,

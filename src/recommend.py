@@ -474,8 +474,14 @@ def main():
     if not args.movie and args.id is None:
         parser.error("Provide either --movie or --id")
 
-    movies_path = os.path.join(args.data_dir, "tmdb_5000_movies.csv")
-    credits_path = os.path.join(args.data_dir, "tmdb_5000_credits.csv")
+    expanded_movies = os.path.join(args.data_dir, "movies_expanded.csv")
+    expanded_credits = os.path.join(args.data_dir, "credits_expanded.csv")
+    if os.path.exists(expanded_movies) and os.path.exists(expanded_credits):
+        movies_path = expanded_movies
+        credits_path = expanded_credits
+    else:
+        movies_path = os.path.join(args.data_dir, "tmdb_5000_movies.csv")
+        credits_path = os.path.join(args.data_dir, "tmdb_5000_credits.csv")
 
     if not os.path.exists(movies_path) or not os.path.exists(credits_path):
         print(f"Error: Dataset not found in '{args.data_dir}/'")

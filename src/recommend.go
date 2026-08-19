@@ -697,8 +697,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	moviesPath := *dataDir + "/tmdb_5000_movies.csv"
-	creditsPath := *dataDir + "/tmdb_5000_credits.csv"
+	moviesPath := *dataDir + "/movies_expanded.csv"
+	creditsPath := *dataDir + "/credits_expanded.csv"
+	if _, err := os.Stat(moviesPath); os.IsNotExist(err) {
+		moviesPath = *dataDir + "/tmdb_5000_movies.csv"
+		creditsPath = *dataDir + "/tmdb_5000_credits.csv"
+	}
 
 	fmt.Println("Loading dataset...")
 	movieRows, err := loadMovies(moviesPath)

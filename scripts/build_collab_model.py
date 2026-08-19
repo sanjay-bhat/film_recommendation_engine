@@ -37,7 +37,7 @@ def load_links(ml_dir):
 
 
 def load_tmdb_ids(movies_path):
-    """Load TMDb 5000 movie IDs."""
+    """Load movie IDs from a movies CSV."""
     ids = set()
     with open(movies_path, encoding="utf-8") as f:
         for row in csv.DictReader(f):
@@ -45,12 +45,14 @@ def load_tmdb_ids(movies_path):
     return ids
 
 
-def load_ratings(ml_dir, ml_to_tmdb, tmdb_ids):
-    """Load ratings for movies that exist in both MovieLens and TMDb 5000."""
+def load_ratings(ml_dir, ml_to_tmdb, tmdb_ids=None):
+    """Load ratings for movies that have TMDb IDs (optionally filtered to a set)."""
     path = os.path.join(ml_dir, "ratings.csv")
 
-    # Only keep ratings for movies we can map to TMDb 5000
-    valid_ml_ids = {ml_id for ml_id, tmdb_id in ml_to_tmdb.items() if tmdb_id in tmdb_ids}
+    if tmdb_ids is not None:
+        valid_ml_ids = {ml_id for ml_id, tmdb_id in ml_to_tmdb.items() if tmdb_id in tmdb_ids}
+    else:
+        valid_ml_ids = set(ml_to_tmdb.keys())
 
     user_ids = {}
     item_ids = {}
@@ -154,7 +156,7 @@ def export_factors(item_factors, idx_to_ml_id, ml_to_tmdb, output_path, k):
 def main():
     parser = argparse.ArgumentParser(description="Build collaborative filtering model from MovieLens 25M")
     parser.add_argument("--ml-dir", default="dataset/ml-25m", help="Path to extracted MovieLens 25M directory")
-    parser.add_argument("--movies-csv", default="dataset/tmdb_5000_movies.csv", help="Path to TMDb 5000 movies CSV")
+    parser.add_argument("--movies-csv", default=None, help="Path to movies CSV (omit to include all MovieLens movies)")
     parser.add_argument("--out", default="dataset/item_factors.csv", help="Output path for item factors")
     parser.add_argument("--k", type=int, default=50, help="Number of latent factors for SVD")
     args = parser.parse_args()
@@ -164,22 +166,28 @@ def main():
         print("Download from: https://grouplens.org/datasets/movielens/25m/")
         sys.exit(1)
 
-    if not os.path.exists(args.movies_csv):
-        print(f"Error: TMDb movies CSV not found at '{args.movies_csv}'")
-        sys.exit(1)
-
     print("=== Building Collaborative Filtering Model ===\n")
 
-    print("Step 1: Loading TMDb 5000 movie IDs...")
-    tmdb_ids = load_tmdb_ids(args.movies_csv)
-    print(f"  {len(tmdb_ids)} TMDb movies loaded\n")
+    tmdb_ids = None
+    if args.movies_csv:
+        if not os.path.exists(args.movies_csv):
+            print(f"Error: Movies CSV not found at '{args.movies_csv}'")
+            sys.exit(1)
+        print("Step 1: Loading movie IDs from CSV filter...")
+        tmdb_ids = load_tmdb_ids(args.movies_csv)
+        print(f"  {len(tmdb_ids)} movies loaded\n")
+    else:
+        print("Step 1: No movie filter — including all MovieLens movies\n")
 
     print("Step 2: Loading MovieLens → TMDb ID mapping...")
     ml_to_tmdb = load_links(args.ml_dir)
-    overlap = sum(1 for tmdb_id in ml_to_tmdb.values() if tmdb_id in tmdb_ids)
-    print(f"  {len(ml_to_tmdb)} MovieLens movies mapped, {overlap} overlap with TMDb 5000\n")
+    if tmdb_ids:
+        overlap = sum(1 for tmdb_id in ml_to_tmdb.values() if tmdb_id in tmdb_ids)
+        print(f"  {len(ml_to_tmdb)} MovieLens movies mapped, {overlap} overlap with filter\n")
+    else:
+        print(f"  {len(ml_to_tmdb)} MovieLens movies mapped\n")
 
-    print("Step 3: Loading ratings for overlapping movies...")
+    print("Step 3: Loading ratings...")
     rows_u, rows_i, rows_v, n_users, n_items, idx_to_ml_id = load_ratings(
         args.ml_dir, ml_to_tmdb, tmdb_ids
     )

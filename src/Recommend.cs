@@ -29,10 +29,11 @@ if (string.IsNullOrEmpty(movie) && id < 0)
 }
 
 Console.WriteLine("Loading dataset...");
-var films = FilmLoader.Load(
-    Path.Combine(dataDir, "tmdb_5000_movies.csv"),
-    Path.Combine(dataDir, "tmdb_5000_credits.csv")
-);
+var expandedMovies = Path.Combine(dataDir, "movies_expanded.csv");
+var expandedCredits = Path.Combine(dataDir, "credits_expanded.csv");
+var moviesFile = File.Exists(expandedMovies) ? expandedMovies : Path.Combine(dataDir, "tmdb_5000_movies.csv");
+var creditsFile = File.Exists(expandedCredits) ? expandedCredits : Path.Combine(dataDir, "tmdb_5000_credits.csv");
+var films = FilmLoader.Load(moviesFile, creditsFile);
 
 Console.WriteLine("Building film records...");
 
