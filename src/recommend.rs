@@ -62,6 +62,18 @@ fn main() {
         println!("No collaborative factors found — using content-based only");
     }
 
+    let genome_path = format!("{}/genome_factors.csv", data_dir);
+    let genome_factors = load_item_factors(&genome_path);
+    if !genome_factors.is_empty() {
+        println!("Loaded genome factors for {} movies", genome_factors.len());
+    } else {
+        println!("No genome factors found — using binary features for content");
+    }
+
+    println!("Computing TF-IDF keyword weights...");
+    let idf = build_idf(&films);
+    println!("  {} unique keywords weighted", idf.len());
+
     let target_idx = if !movie.is_empty() {
         let idx = find_by_title(&films, &movie);
         if idx < 0 {
@@ -77,7 +89,7 @@ fn main() {
     println!("\nRecommendations for: {} ({})", target.title, target.year);
     println!("{}", "=".repeat(60));
 
-    let results = recommend(&films, target_idx, !no_dedup, &item_factors);
+    let results = recommend(&films, target_idx, !no_dedup, &item_factors, &genome_factors, &idf);
     for (i, r) in results.iter().enumerate() {
         let year_str = if r.year > 0 { r.year.to_string() } else { "?".to_string() };
         println!("  {}. {} ({}) — IMDB: {:.1}", i + 1, r.title, year_str, r.score);
@@ -324,15 +336,35 @@ fn get_features(film: &Film) -> Vec<String> {
     features
 }
 
-fn euclidean(a: &[i32], b: &[i32]) -> f64 {
-    let sum: i64 = a.iter().zip(b.iter()).map(|(x, y)| {
-        let d = (*x as i64) - (*y as i64);
-        d * d
-    }).sum();
-    (sum as f64).sqrt()
+fn build_idf(films: &[Film]) -> HashMap<String, f64> {
+    let n_docs = films.len() as f64;
+    let mut doc_freq: HashMap<String, usize> = HashMap::new();
+    for f in films {
+        if f.plot_keywords.is_empty() { continue; }
+        let mut seen = HashSet::new();
+        for kw in f.plot_keywords.split('|') {
+            if !kw.is_empty() && seen.insert(kw.to_string()) {
+                *doc_freq.entry(kw.to_string()).or_insert(0) += 1;
+            }
+        }
+    }
+    let mut idf = HashMap::new();
+    for (token, df) in &doc_freq {
+        idf.insert(token.clone(), (n_docs / *df as f64).ln());
+    }
+    idf
 }
 
-fn find_neighbors(films: &[Film], target_idx: usize, n: usize) -> Vec<usize> {
+fn euclidean(a: &[f64], b: &[f64]) -> f64 {
+    let sum: f64 = a.iter().zip(b.iter()).map(|(x, y)| {
+        let d = x - y;
+        d * d
+    }).sum();
+    sum.sqrt()
+}
+
+fn find_neighbors(films: &[Film], target_idx: usize, n: usize,
+                  idf: &HashMap<String, f64>) -> Vec<usize> {
     let target_features = get_features(&films[target_idx]);
     let mut all_genres = HashSet::new();
     for f in films {
@@ -345,9 +377,19 @@ fn find_neighbors(films: &[Film], target_idx: usize, n: usize) -> Vec<usize> {
     feature_set.extend(all_genres);
     let feature_list: Vec<String> = feature_set.into_iter().collect();
 
-    let vectors: Vec<Vec<i32>> = films.iter().map(|film| {
+    let keywords: HashSet<&String> = idf.keys().collect();
+
+    let vectors: Vec<Vec<f64>> = films.iter().map(|film| {
         let film_feats: HashSet<String> = get_features(film).into_iter().collect();
-        feature_list.iter().map(|f| if film_feats.contains(f) { 1 } else { 0 }).collect()
+        feature_list.iter().map(|f| {
+            if !film_feats.contains(f) {
+                0.0
+            } else if keywords.contains(f) {
+                *idf.get(f).unwrap_or(&1.0)
+            } else {
+                1.0
+            }
+        }).collect()
     }).collect();
 
     let target_vec = &vectors[target_idx];
@@ -357,6 +399,46 @@ fn find_neighbors(films: &[Film], target_idx: usize, n: usize) -> Vec<usize> {
     dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
     dists.iter().take(n).map(|(idx, _)| *idx).collect()
+}
+
+fn find_genome_neighbors(films: &[Film], target_idx: usize,
+                         genome_factors: &HashMap<i32, Vec<f64>>, n: usize) -> Vec<usize> {
+    let target_tmdb = films[target_idx].tmdb_id;
+    let target_vec = match genome_factors.get(&target_tmdb) {
+        Some(v) => v,
+        None => return Vec::new(),
+    };
+
+    let mut sims: Vec<(usize, f64)> = Vec::new();
+    for (i, film) in films.iter().enumerate() {
+        if i == target_idx { continue; }
+        if let Some(vec) = genome_factors.get(&film.tmdb_id) {
+            let dot: f64 = target_vec.iter().zip(vec.iter()).map(|(a, b)| a * b).sum();
+            if dot > 0.0 { sims.push((i, dot)); }
+        }
+    }
+    sims.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    sims.iter().take(n).map(|(idx, _)| *idx).collect()
+}
+
+fn find_collab_neighbors(films: &[Film], target_idx: usize,
+                         item_factors: &HashMap<i32, Vec<f64>>, n: usize) -> Vec<usize> {
+    let target_tmdb = films[target_idx].tmdb_id;
+    let target_vec = match item_factors.get(&target_tmdb) {
+        Some(v) => v,
+        None => return Vec::new(),
+    };
+
+    let mut sims: Vec<(usize, f64)> = Vec::new();
+    for (i, film) in films.iter().enumerate() {
+        if i == target_idx { continue; }
+        if let Some(vec) = item_factors.get(&film.tmdb_id) {
+            let dot: f64 = target_vec.iter().zip(vec.iter()).map(|(a, b)| a * b).sum();
+            if dot > 0.0 { sims.push((i, dot)); }
+        }
+    }
+    sims.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    sims.iter().take(n).map(|(idx, _)| *idx).collect()
 }
 
 fn load_item_factors(path: &str) -> HashMap<i32, Vec<f64>> {
@@ -422,13 +504,28 @@ fn is_sequel(t1: &str, t2: &str) -> bool {
 }
 
 fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool,
-             item_factors: &HashMap<i32, Vec<f64>>) -> Vec<Candidate> {
-    let neighbor_idxs = find_neighbors(films, target_idx, 31);
+             item_factors: &HashMap<i32, Vec<f64>>,
+             genome_factors: &HashMap<i32, Vec<f64>>,
+             idf: &HashMap<String, f64>) -> Vec<Candidate> {
     let target_tmdb = films[target_idx].tmdb_id;
 
+    // Stage 1: retrieve candidates from all three sources
+    let mut merged: HashSet<usize> = HashSet::new();
+    for idx in find_neighbors(films, target_idx, 31, idf) {
+        merged.insert(idx);
+    }
+    for idx in find_collab_neighbors(films, target_idx, item_factors, 31) {
+        merged.insert(idx);
+    }
+    for idx in find_genome_neighbors(films, target_idx, genome_factors, 31) {
+        merged.insert(idx);
+    }
+    merged.remove(&target_idx);
+
+    // Stage 2: score the merged pool
     let mut max_votes = 0;
     let mut candidates: Vec<Candidate> = Vec::new();
-    for &idx in &neighbor_idxs {
+    for &idx in &merged {
         let f = &films[idx];
         if f.vote_count > max_votes { max_votes = f.vote_count; }
         candidates.push(Candidate {
@@ -441,11 +538,11 @@ fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool,
         });
     }
 
-    let main_title = candidates[0].title.clone();
-    let main_year = candidates[0].year as f64;
+    let main_title = &films[target_idx].title;
+    let main_year = films[target_idx].year as f64;
 
-    for (ci, c) in candidates.iter_mut().enumerate() {
-        if is_sequel(&main_title, &c.title) {
+    for c in candidates.iter_mut() {
+        if is_sequel(main_title, &c.title) {
             c.rank_score = 0.0;
             continue;
         }
@@ -456,14 +553,9 @@ fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool,
             gaussian(c.votes as f64, max_votes as f64, max_votes as f64)
         } else { 0.0 };
         let content_score = c.score * c.score * fact1 * fact2;
-        let cand_tmdb = films[neighbor_idxs[ci]].tmdb_id;
-        let csim = collab_similarity(item_factors, target_tmdb, cand_tmdb);
-        if csim > 0.0 {
-            c.rank_score = (1.0 - COLLAB_WEIGHT) * content_score
-                + COLLAB_WEIGHT * csim * c.score * c.score;
-        } else {
-            c.rank_score = content_score;
-        }
+        let csim = collab_similarity(item_factors, target_tmdb, films[c.index].tmdb_id);
+        let collab_score = csim * fact1 * fact2;
+        c.rank_score = (1.0 - COLLAB_WEIGHT) * content_score + COLLAB_WEIGHT * collab_score;
     }
 
     candidates.sort_by(|a, b| b.rank_score.partial_cmp(&a.rank_score).unwrap());
