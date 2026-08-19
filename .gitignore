@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 dataset/*.csv
 !dataset/item_factors.csv
+!dataset/genome_factors.csv
 dataset/ml-25m/
 dataset/ml-25m.zip
 bin/
