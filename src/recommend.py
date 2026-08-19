@@ -234,8 +234,8 @@ def is_sequel(title1, title2):
     return fuzz.ratio(title1, title2) > 50 or fuzz.token_set_ratio(title1, title2) > 50
 
 
-def score_candidate(main_title, max_votes, year_ref, title, year, imdb_score, votes,
-                     collab_sim=0.0):
+def score_candidate(main_title, max_votes, year_ref, title, year, imdb_score,
+                    votes, collab_sim=0.0):
     if is_sequel(main_title, title):
         return 0.0
     fact1 = gaussian(year_ref, year, 20) if year_ref and year else 1.0

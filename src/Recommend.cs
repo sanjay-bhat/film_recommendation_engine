@@ -62,8 +62,6 @@ for (int i = 0; i < results.Count; i++)
     Console.WriteLine($"  {i + 1}. {r.Title} ({yearStr}) — IMDB: {r.Score:F1}");
 }
 
-const double CollabWeight = 0.4;
-
 record Film(
     int TmdbId, string Title, string Genres, string PlotKeywords,
     string Director, string Actor1, string Actor2, string Actor3,
@@ -291,6 +289,8 @@ static class CollabFilter
 
 static class Recommender
 {
+    const double CollabWeight = 0.4;
+
     public static List<Candidate> Recommend(List<Film> films, int targetIdx, bool dedupSequels,
                                             Dictionary<int, double[]>? itemFactors = null)
     {
