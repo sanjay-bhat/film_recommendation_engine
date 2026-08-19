@@ -17,7 +17,10 @@ import (
 	"strings"
 )
 
+const collabWeight = 0.4
+
 type Film struct {
+	TmdbID       int
 	Title        string
 	Genres       string
 	PlotKeywords string
@@ -135,7 +138,9 @@ func buildFilms(movies, credits []map[string]interface{}) []Film {
 			c = credits[i]
 		}
 
+		tmdbID, _ := strconv.Atoi(fmt.Sprintf("%v", m["id"]))
 		film := Film{
+			TmdbID:       tmdbID,
 			Title:        fmt.Sprintf("%v", m["title"]),
 			Genres:       pipeNames(fmt.Sprintf("%v", m["genres"])),
 			PlotKeywords: pipeNames(fmt.Sprintf("%v", m["keywords"])),
@@ -254,6 +259,56 @@ func findNeighbors(films []Film, targetIdx, n int) []int {
 	return result
 }
 
+func loadItemFactors(path string) map[int][]float64 {
+	factors := make(map[int][]float64)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return factors
+	}
+	lines := strings.Split(string(data), "\n")
+	for i, line := range lines {
+		if i == 0 || strings.TrimSpace(line) == "" {
+			continue
+		}
+		fields := strings.Split(line, ",")
+		if len(fields) < 2 {
+			continue
+		}
+		tmdbID, err := strconv.Atoi(fields[0])
+		if err != nil {
+			continue
+		}
+		vec := make([]float64, 0, len(fields)-1)
+		for _, f := range fields[1:] {
+			v, err := strconv.ParseFloat(f, 64)
+			if err != nil {
+				continue
+			}
+			vec = append(vec, v)
+		}
+		factors[tmdbID] = vec
+	}
+	return factors
+}
+
+func collabSimilarity(factors map[int][]float64, idA, idB int) float64 {
+	va, okA := factors[idA]
+	vb, okB := factors[idB]
+	if !okA || !okB {
+		return 0.0
+	}
+	dot := 0.0
+	for i := range va {
+		if i < len(vb) {
+			dot += va[i] * vb[i]
+		}
+	}
+	if dot < 0 {
+		return 0.0
+	}
+	return dot
+}
+
 func gaussian(x, y, sigma float64) float64 {
 	if sigma == 0 {
 		return 0
@@ -317,8 +372,9 @@ func isSequel(t1, t2 string) bool {
 	return fuzzyRatio(t1, t2) > 50
 }
 
-func recommend(films []Film, targetIdx int, dedupSequels bool) []Candidate {
+func recommend(films []Film, targetIdx int, dedupSequels bool, itemFactors map[int][]float64) []Candidate {
 	neighborIdxs := findNeighbors(films, targetIdx, 31)
+	targetTmdb := films[targetIdx].TmdbID
 
 	maxVotes := 0
 	candidates := make([]Candidate, 0, len(neighborIdxs))
@@ -353,7 +409,13 @@ func recommend(films []Film, targetIdx int, dedupSequels bool) []Candidate {
 		if maxVotes > 0 {
 			fact2 = gaussian(float64(c.Votes), float64(maxVotes), float64(maxVotes))
 		}
-		c.RankScore = c.Score * c.Score * fact1 * fact2
+		contentScore := c.Score * c.Score * fact1 * fact2
+		csim := collabSimilarity(itemFactors, targetTmdb, films[neighborIdxs[i]].TmdbID)
+		if csim > 0 {
+			c.RankScore = (1-collabWeight)*contentScore + collabWeight*csim*c.Score*c.Score
+		} else {
+			c.RankScore = contentScore
+		}
 	}
 
 	for i := 0; i < len(candidates); i++ {
@@ -484,6 +546,14 @@ func main() {
 	fmt.Println("Building film records...")
 	films := buildFilms(movieRows, creditMaps)
 
+	factorsPath := *dataDir + "/item_factors.csv"
+	itemFactors := loadItemFactors(factorsPath)
+	if len(itemFactors) > 0 {
+		fmt.Printf("Loaded collaborative factors for %d movies\n", len(itemFactors))
+	} else {
+		fmt.Println("No collaborative factors found — using content-based only")
+	}
+
 	targetIdx := *id
 	if *movie != "" {
 		targetIdx = findByTitle(films, *movie)
@@ -497,7 +567,7 @@ func main() {
 	fmt.Printf("\nRecommendations for: %s (%d)\n", target.Title, target.Year)
 	fmt.Println(strings.Repeat("=", 60))
 
-	results := recommend(films, targetIdx, !*noDedup)
+	results := recommend(films, targetIdx, !*noDedup, itemFactors)
 	for i, r := range results {
 		yearStr := "?"
 		if r.Year > 0 {

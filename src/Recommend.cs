@@ -36,6 +36,13 @@ var films = FilmLoader.Load(
 
 Console.WriteLine("Building film records...");
 
+var factorsPath = Path.Combine(dataDir, "item_factors.csv");
+var itemFactors = CollabFilter.LoadFactors(factorsPath);
+if (itemFactors.Count > 0)
+    Console.WriteLine($"Loaded collaborative factors for {itemFactors.Count} movies");
+else
+    Console.WriteLine("No collaborative factors found — using content-based only");
+
 var targetIdx = id >= 0 ? id : FilmFinder.FindByTitle(films, movie);
 if (targetIdx < 0)
 {
@@ -47,7 +54,7 @@ var target = films[targetIdx];
 Console.WriteLine($"\nRecommendations for: {target.Title} ({target.Year})");
 Console.WriteLine(new string('=', 60));
 
-var results = Recommender.Recommend(films, targetIdx, !noDedup);
+var results = Recommender.Recommend(films, targetIdx, !noDedup, itemFactors);
 for (int i = 0; i < results.Count; i++)
 {
     var r = results[i];
@@ -55,8 +62,10 @@ for (int i = 0; i < results.Count; i++)
     Console.WriteLine($"  {i + 1}. {r.Title} ({yearStr}) — IMDB: {r.Score:F1}");
 }
 
+const double CollabWeight = 0.4;
+
 record Film(
-    string Title, string Genres, string PlotKeywords,
+    int TmdbId, string Title, string Genres, string PlotKeywords,
     string Director, string Actor1, string Actor2, string Actor3,
     int Year, double VoteAverage, int VoteCount, double Popularity);
 
@@ -86,7 +95,10 @@ static class FilmLoader
             int.TryParse(m.GetValueOrDefault("vote_count", "0"), out var vc);
             double.TryParse(m.GetValueOrDefault("popularity", "0"), out var pop);
 
+            int.TryParse(m.GetValueOrDefault("id", "0"), out var tmdbId);
+
             films.Add(new Film(
+                TmdbId: tmdbId,
                 Title: m.GetValueOrDefault("title", ""),
                 Genres: PipeNames(m.GetValueOrDefault("genres", "[]")),
                 PlotKeywords: PipeNames(m.GetValueOrDefault("keywords", "[]")),
@@ -242,9 +254,45 @@ static class FilmFinder
     public static bool IsSequel(string t1, string t2) => FuzzyRatio(t1.ToLower(), t2.ToLower()) > 50;
 }
 
+static class CollabFilter
+{
+    public static Dictionary<int, double[]> LoadFactors(string path)
+    {
+        var factors = new Dictionary<int, double[]>();
+        if (!File.Exists(path)) return factors;
+
+        using var reader = new StreamReader(path);
+        reader.ReadLine(); // skip header
+        while (!reader.EndOfStream)
+        {
+            var line = reader.ReadLine();
+            if (string.IsNullOrEmpty(line)) continue;
+            var fields = line.Split(',');
+            if (fields.Length < 2) continue;
+            if (!int.TryParse(fields[0], out var tmdbId)) continue;
+            var vec = new double[fields.Length - 1];
+            for (int i = 1; i < fields.Length; i++)
+                double.TryParse(fields[i], out vec[i - 1]);
+            factors[tmdbId] = vec;
+        }
+        return factors;
+    }
+
+    public static double Similarity(Dictionary<int, double[]> factors, int idA, int idB)
+    {
+        if (!factors.TryGetValue(idA, out var va) || !factors.TryGetValue(idB, out var vb))
+            return 0.0;
+        double dot = 0;
+        for (int i = 0; i < va.Length && i < vb.Length; i++)
+            dot += va[i] * vb[i];
+        return Math.Max(0.0, dot);
+    }
+}
+
 static class Recommender
 {
-    public static List<Candidate> Recommend(List<Film> films, int targetIdx, bool dedupSequels)
+    public static List<Candidate> Recommend(List<Film> films, int targetIdx, bool dedupSequels,
+                                            Dictionary<int, double[]>? itemFactors = null)
     {
         var neighborIdxs = FindNeighbors(films, targetIdx, 31);
 
@@ -259,6 +307,8 @@ static class Recommender
 
         var mainTitle = candidates[0].Title;
         double mainYear = candidates[0].Year;
+        int targetTmdb = films[targetIdx].TmdbId;
+        var factors = itemFactors ?? new Dictionary<int, double[]>();
 
         foreach (var c in candidates)
         {
@@ -269,7 +319,12 @@ static class Recommender
             }
             double fact1 = mainYear > 0 && c.Year > 0 ? Gaussian(mainYear, c.Year, 20) : 1.0;
             double fact2 = maxVotes > 0 ? Gaussian(c.Votes, maxVotes, maxVotes) : 0.0;
-            c.RankScore = c.Score * c.Score * fact1 * fact2;
+            double contentScore = c.Score * c.Score * fact1 * fact2;
+            double csim = CollabFilter.Similarity(factors, targetTmdb, films[c.Index].TmdbId);
+            if (csim > 0)
+                c.RankScore = (1 - CollabWeight) * contentScore + CollabWeight * csim * c.Score * c.Score;
+            else
+                c.RankScore = contentScore;
         }
 
         candidates.Sort((a, b) => b.RankScore.CompareTo(a.RankScore));
