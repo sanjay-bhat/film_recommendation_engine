@@ -172,12 +172,30 @@ def get_features(film):
     return [f for f in features if f]
 
 
+def build_idf(films):
+    """Compute IDF weights for all keywords across the corpus."""
+    n_docs = len(films)
+    doc_freq = defaultdict(int)
+    for film in films:
+        kw = film.get("plot_keywords", "")
+        if not kw:
+            continue
+        for token in set(kw.split("|")):
+            if token:
+                doc_freq[token] += 1
+    idf = {}
+    for token, df in doc_freq.items():
+        idf[token] = math.log(n_docs / df)
+    return idf
+
+
 def euclidean_distance(vec_a, vec_b):
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(vec_a, vec_b)))
 
 
-def find_neighbors(films, target_idx, n=31):
-    """Find the n nearest films by binary feature vectors."""
+def find_neighbors(films, target_idx, n=31, idf=None):
+    """Find the n nearest films by TF-IDF weighted feature vectors."""
+    idf = idf or {}
     target_features = get_features(films[target_idx])
     all_genres = set()
     for film in films:
@@ -185,10 +203,18 @@ def find_neighbors(films, target_idx, n=31):
             all_genres.update(film["genres"].split("|"))
     feature_set = list(set(target_features) | all_genres)
 
+    keywords = set(idf.keys())
     vectors = []
     for film in films:
         film_features = set(get_features(film))
-        vec = [1 if f in film_features else 0 for f in feature_set]
+        vec = []
+        for f in feature_set:
+            if f not in film_features:
+                vec.append(0.0)
+            elif f in keywords:
+                vec.append(idf.get(f, 1.0))
+            else:
+                vec.append(1.0)
         vectors.append(vec)
 
     target_vec = vectors[target_idx]
@@ -214,6 +240,42 @@ def load_item_factors(path):
     return factors
 
 
+def load_genome_factors(path):
+    """Load pre-computed genome tag vectors → {tmdb_id: [g0..g49]}."""
+    factors = {}
+    if not os.path.exists(path):
+        return factors
+    with open(path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            tmdb_id = int(row["tmdb_id"])
+            vec = [float(row[k]) for k in row if k.startswith("g")]
+            factors[tmdb_id] = vec
+    return factors
+
+
+def find_genome_neighbors(films, target_idx, genome_factors, n=31):
+    """Find the n most similar films by genome tag vectors."""
+    target_tmdb = films[target_idx].get("tmdb_id", 0)
+    target_vec = genome_factors.get(target_tmdb)
+    if target_vec is None:
+        return []
+
+    sims = []
+    for i, film in enumerate(films):
+        if i == target_idx:
+            continue
+        tmdb_id = film.get("tmdb_id", 0)
+        vec = genome_factors.get(tmdb_id)
+        if vec is None:
+            continue
+        dot = sum(a * b for a, b in zip(target_vec, vec))
+        if dot > 0:
+            sims.append((i, dot))
+
+    sims.sort(key=lambda x: x[1], reverse=True)
+    return [idx for idx, _ in sims[:n]]
+
+
 def collab_similarity(factors, tmdb_id_a, tmdb_id_b):
     """Cosine similarity between two movies' latent factor vectors."""
     va = factors.get(tmdb_id_a)
@@ -222,6 +284,29 @@ def collab_similarity(factors, tmdb_id_a, tmdb_id_b):
         return 0.0
     dot = sum(a * b for a, b in zip(va, vb))
     return max(0.0, dot)
+
+
+def find_collab_neighbors(films, target_idx, factors, n=31):
+    """Find the n most similar films by collaborative SVD vectors."""
+    target_tmdb = films[target_idx].get("tmdb_id", 0)
+    target_vec = factors.get(target_tmdb)
+    if target_vec is None:
+        return []
+
+    sims = []
+    for i, film in enumerate(films):
+        if i == target_idx:
+            continue
+        tmdb_id = film.get("tmdb_id", 0)
+        vec = factors.get(tmdb_id)
+        if vec is None:
+            continue
+        dot = sum(a * b for a, b in zip(target_vec, vec))
+        if dot > 0:
+            sims.append((i, dot))
+
+    sims.sort(key=lambda x: x[1], reverse=True)
+    return [idx for idx, _ in sims[:n]]
 
 
 def gaussian(x, y, sigma):
@@ -241,19 +326,29 @@ def score_candidate(main_title, max_votes, year_ref, title, year, imdb_score,
     fact1 = gaussian(year_ref, year, 20) if year_ref and year else 1.0
     fact2 = gaussian(votes, max_votes, max_votes) if votes and max_votes > 0 else 0.0
     content_score = imdb_score ** 2 * fact1 * fact2
-    if collab_sim > 0:
-        return (1 - COLLAB_WEIGHT) * content_score + COLLAB_WEIGHT * collab_sim * imdb_score ** 2
-    return content_score
+    collab_score = collab_sim * fact1 * fact2
+    return (1 - COLLAB_WEIGHT) * content_score + COLLAB_WEIGHT * collab_score
 
 
-def recommend(films, target_idx, dedup_sequels=True, item_factors=None):
-    """Return up to 5 recommended films."""
-    neighbor_indices = find_neighbors(films, target_idx)
+def recommend(films, target_idx, dedup_sequels=True, item_factors=None,
+              genome_factors=None, idf=None):
+    """Return up to 5 recommended films via three-way retrieval."""
+    factors = item_factors or {}
+    gfactors = genome_factors or {}
     target_tmdb = films[target_idx].get("tmdb_id", 0)
 
+    # Stage 1: retrieve candidates from all three sources
+    content_indices = set(find_neighbors(films, target_idx, idf=idf))
+    collab_indices = set(find_collab_neighbors(films, target_idx, factors))
+    genome_indices = set(find_genome_neighbors(films, target_idx, gfactors))
+    merged_indices = content_indices | collab_indices | genome_indices
+    if target_idx in merged_indices:
+        merged_indices.discard(target_idx)
+
+    # Stage 2: score the merged pool
     candidates = []
     max_votes = 0
-    for idx in neighbor_indices:
+    for idx in merged_indices:
         film = films[idx]
         votes = film.get("vote_count", 0) or 0
         max_votes = max(max_votes, votes)
@@ -266,12 +361,13 @@ def recommend(films, target_idx, dedup_sequels=True, item_factors=None):
             "tmdb_id": film.get("tmdb_id", 0),
         })
 
-    main = candidates[0]
-    factors = item_factors or {}
+    main_film = films[target_idx]
+    main_title = main_film["movie_title"]
+    main_year = main_film.get("title_year")
     for c in candidates:
         csim = collab_similarity(factors, target_tmdb, c["tmdb_id"])
         c["rank_score"] = score_candidate(
-            main["title"], max_votes, main["year"],
+            main_title, max_votes, main_year,
             c["title"], c["year"], c["score"], c["votes"],
             collab_sim=csim,
         )
@@ -365,6 +461,17 @@ def main():
     else:
         print("No collaborative factors found — using content-based only")
 
+    genome_path = os.path.join(args.data_dir, "genome_factors.csv")
+    genome_factors = load_genome_factors(genome_path)
+    if genome_factors:
+        print(f"Loaded genome factors for {len(genome_factors)} movies")
+    else:
+        print("No genome factors found — using binary features for content")
+
+    print("Computing TF-IDF keyword weights...")
+    idf = build_idf(films)
+    print(f"  {len(idf)} unique keywords weighted")
+
     if args.id is not None:
         target_idx = args.id
     else:
@@ -378,7 +485,8 @@ def main():
     print("=" * 60)
 
     results = recommend(films, target_idx, dedup_sequels=not args.no_dedup,
-                        item_factors=item_factors)
+                        item_factors=item_factors,
+                        genome_factors=genome_factors, idf=idf)
     for i, r in enumerate(results, 1):
         print(f"  {i}. {r['title']} ({r['year'] or '?'}) — IMDB: {r['score']}")
 

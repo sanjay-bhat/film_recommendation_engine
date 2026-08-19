@@ -43,6 +43,17 @@ if (itemFactors.Count > 0)
 else
     Console.WriteLine("No collaborative factors found — using content-based only");
 
+var genomePath = Path.Combine(dataDir, "genome_factors.csv");
+var genomeFactors = CollabFilter.LoadFactors(genomePath);
+if (genomeFactors.Count > 0)
+    Console.WriteLine($"Loaded genome factors for {genomeFactors.Count} movies");
+else
+    Console.WriteLine("No genome factors found — using binary features for content");
+
+Console.WriteLine("Computing TF-IDF keyword weights...");
+var idf = Recommender.BuildIdf(films);
+Console.WriteLine($"  {idf.Count} unique keywords weighted");
+
 var targetIdx = id >= 0 ? id : FilmFinder.FindByTitle(films, movie);
 if (targetIdx < 0)
 {
@@ -54,7 +65,7 @@ var target = films[targetIdx];
 Console.WriteLine($"\nRecommendations for: {target.Title} ({target.Year})");
 Console.WriteLine(new string('=', 60));
 
-var results = Recommender.Recommend(films, targetIdx, !noDedup, itemFactors);
+var results = Recommender.Recommend(films, targetIdx, !noDedup, itemFactors, genomeFactors, idf);
 for (int i = 0; i < results.Count; i++)
 {
     var r = results[i];
@@ -67,7 +78,7 @@ record Film(
     string Director, string Actor1, string Actor2, string Actor3,
     int Year, double VoteAverage, int VoteCount, double Popularity);
 
-record Candidate(string Title, int Year, double Score, int Votes, int Index)
+record Candidate(string Title, int Year, double Score, int Votes, int Index, int TmdbId)
 {
     public double RankScore { get; set; }
 }
@@ -291,24 +302,61 @@ static class Recommender
 {
     const double CollabWeight = 0.4;
 
-    public static List<Candidate> Recommend(List<Film> films, int targetIdx, bool dedupSequels,
-                                            Dictionary<int, double[]>? itemFactors = null)
+    public static Dictionary<string, double> BuildIdf(List<Film> films)
     {
-        var neighborIdxs = FindNeighbors(films, targetIdx, 31);
+        double nDocs = films.Count;
+        var docFreq = new Dictionary<string, int>();
+        foreach (var f in films)
+        {
+            if (string.IsNullOrEmpty(f.PlotKeywords)) continue;
+            var seen = new HashSet<string>();
+            foreach (var kw in f.PlotKeywords.Split('|'))
+            {
+                if (kw != "" && seen.Add(kw))
+                {
+                    docFreq.TryGetValue(kw, out var c);
+                    docFreq[kw] = c + 1;
+                }
+            }
+        }
+        var idf = new Dictionary<string, double>();
+        foreach (var (token, df) in docFreq)
+            idf[token] = Math.Log(nDocs / df);
+        return idf;
+    }
 
+    public static List<Candidate> Recommend(List<Film> films, int targetIdx, bool dedupSequels,
+                                            Dictionary<int, double[]>? itemFactors = null,
+                                            Dictionary<int, double[]>? genomeFactors = null,
+                                            Dictionary<string, double>? idf = null)
+    {
+        var factors = itemFactors ?? new Dictionary<int, double[]>();
+        var gFactors = genomeFactors ?? new Dictionary<int, double[]>();
+        var idfWeights = idf ?? new Dictionary<string, double>();
+        int targetTmdb = films[targetIdx].TmdbId;
+
+        // Stage 1: retrieve candidates from all three sources
+        var merged = new HashSet<int>();
+        foreach (var idx in FindNeighbors(films, targetIdx, 31, idfWeights))
+            merged.Add(idx);
+        foreach (var idx in FindCollabNeighbors(films, targetIdx, factors, 31))
+            merged.Add(idx);
+        foreach (var idx in FindGenomeNeighbors(films, targetIdx, gFactors, 31))
+            merged.Add(idx);
+        merged.Remove(targetIdx);
+
+        // Stage 2: score the merged pool
         int maxVotes = 0;
         var candidates = new List<Candidate>();
-        foreach (var idx in neighborIdxs)
+        foreach (var idx in merged)
         {
             var f = films[idx];
             if (f.VoteCount > maxVotes) maxVotes = f.VoteCount;
-            candidates.Add(new Candidate(f.Title, f.Year, f.VoteAverage, f.VoteCount, idx));
+            candidates.Add(new Candidate(f.Title, f.Year, f.VoteAverage, f.VoteCount, idx, f.TmdbId));
         }
 
-        var mainTitle = candidates[0].Title;
-        double mainYear = candidates[0].Year;
-        int targetTmdb = films[targetIdx].TmdbId;
-        var factors = itemFactors ?? new Dictionary<int, double[]>();
+        var mainTitle = films[targetIdx].Title;
+        double mainYear = films[targetIdx].Year;
 
         foreach (var c in candidates)
         {
@@ -320,11 +368,9 @@ static class Recommender
             double fact1 = mainYear > 0 && c.Year > 0 ? Gaussian(mainYear, c.Year, 20) : 1.0;
             double fact2 = maxVotes > 0 ? Gaussian(c.Votes, maxVotes, maxVotes) : 0.0;
             double contentScore = c.Score * c.Score * fact1 * fact2;
-            double csim = CollabFilter.Similarity(factors, targetTmdb, films[c.Index].TmdbId);
-            if (csim > 0)
-                c.RankScore = (1 - CollabWeight) * contentScore + CollabWeight * csim * c.Score * c.Score;
-            else
-                c.RankScore = contentScore;
+            double csim = CollabFilter.Similarity(factors, targetTmdb, c.TmdbId);
+            double collabScore = csim * fact1 * fact2;
+            c.RankScore = (1 - CollabWeight) * contentScore + CollabWeight * collabScore;
         }
 
         candidates.Sort((a, b) => b.RankScore.CompareTo(a.RankScore));
@@ -373,7 +419,8 @@ static class Recommender
         return features;
     }
 
-    static List<int> FindNeighbors(List<Film> films, int targetIdx, int n)
+    static List<int> FindNeighbors(List<Film> films, int targetIdx, int n,
+                                   Dictionary<string, double> idf)
     {
         var targetFeatures = GetFeatures(films[targetIdx]);
         var allGenres = new HashSet<string>();
@@ -386,11 +433,17 @@ static class Recommender
         featureSet.UnionWith(allGenres);
         var featureList = featureSet.ToList();
 
-        var vectors = new List<int[]>();
+        var keywords = new HashSet<string>(idf.Keys);
+        var vectors = new List<double[]>();
         foreach (var film in films)
         {
             var filmFeats = new HashSet<string>(GetFeatures(film));
-            var vec = featureList.Select(f => filmFeats.Contains(f) ? 1 : 0).ToArray();
+            var vec = featureList.Select(f =>
+            {
+                if (!filmFeats.Contains(f)) return 0.0;
+                if (keywords.Contains(f)) return idf.GetValueOrDefault(f, 1.0);
+                return 1.0;
+            }).ToArray();
             vectors.Add(vec);
         }
 
@@ -403,12 +456,52 @@ static class Recommender
         return dists;
     }
 
-    static double Euclidean(int[] a, int[] b)
+    static List<int> FindCollabNeighbors(List<Film> films, int targetIdx,
+                                          Dictionary<int, double[]> factors, int n)
+    {
+        int targetTmdb = films[targetIdx].TmdbId;
+        if (!factors.TryGetValue(targetTmdb, out var targetVec)) return new List<int>();
+
+        var sims = new List<(int idx, double sim)>();
+        for (int i = 0; i < films.Count; i++)
+        {
+            if (i == targetIdx) continue;
+            if (!factors.TryGetValue(films[i].TmdbId, out var vec)) continue;
+            double dot = 0;
+            for (int j = 0; j < targetVec.Length && j < vec.Length; j++)
+                dot += targetVec[j] * vec[j];
+            if (dot > 0) sims.Add((i, dot));
+        }
+        sims.Sort((a, b) => b.sim.CompareTo(a.sim));
+        return sims.Take(n).Select(s => s.idx).ToList();
+    }
+
+    static List<int> FindGenomeNeighbors(List<Film> films, int targetIdx,
+                                          Dictionary<int, double[]> factors, int n)
+    {
+        int targetTmdb = films[targetIdx].TmdbId;
+        if (!factors.TryGetValue(targetTmdb, out var targetVec)) return new List<int>();
+
+        var sims = new List<(int idx, double sim)>();
+        for (int i = 0; i < films.Count; i++)
+        {
+            if (i == targetIdx) continue;
+            if (!factors.TryGetValue(films[i].TmdbId, out var vec)) continue;
+            double dot = 0;
+            for (int j = 0; j < targetVec.Length && j < vec.Length; j++)
+                dot += targetVec[j] * vec[j];
+            if (dot > 0) sims.Add((i, dot));
+        }
+        sims.Sort((a, b) => b.sim.CompareTo(a.sim));
+        return sims.Take(n).Select(s => s.idx).ToList();
+    }
+
+    static double Euclidean(double[] a, double[] b)
     {
         double sum = 0;
         for (int i = 0; i < a.Length; i++)
         {
-            int d = a[i] - b[i];
+            double d = a[i] - b[i];
             sum += d * d;
         }
         return Math.Sqrt(sum);

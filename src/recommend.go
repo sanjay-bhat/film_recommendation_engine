@@ -189,16 +189,38 @@ func getFeatures(film Film) []string {
 	return features
 }
 
-func euclidean(a, b []int) float64 {
-	sum := 0
+func buildIdf(films []Film) map[string]float64 {
+	nDocs := float64(len(films))
+	docFreq := make(map[string]int)
+	for _, f := range films {
+		if f.PlotKeywords == "" {
+			continue
+		}
+		seen := make(map[string]bool)
+		for _, kw := range strings.Split(f.PlotKeywords, "|") {
+			if kw != "" && !seen[kw] {
+				docFreq[kw]++
+				seen[kw] = true
+			}
+		}
+	}
+	idf := make(map[string]float64, len(docFreq))
+	for token, df := range docFreq {
+		idf[token] = math.Log(nDocs / float64(df))
+	}
+	return idf
+}
+
+func euclidean(a, b []float64) float64 {
+	sum := 0.0
 	for i := range a {
 		d := a[i] - b[i]
 		sum += d * d
 	}
-	return math.Sqrt(float64(sum))
+	return math.Sqrt(sum)
 }
 
-func findNeighbors(films []Film, targetIdx, n int) []int {
+func findNeighbors(films []Film, targetIdx, n int, idf map[string]float64) []int {
 	targetFeatures := getFeatures(films[targetIdx])
 	allGenres := make(map[string]bool)
 	for _, f := range films {
@@ -220,16 +242,29 @@ func findNeighbors(films []Film, targetIdx, n int) []int {
 		featureList = append(featureList, f)
 	}
 
-	vectors := make([][]int, len(films))
+	keywords := make(map[string]bool, len(idf))
+	for k := range idf {
+		keywords[k] = true
+	}
+
+	vectors := make([][]float64, len(films))
 	for i, film := range films {
 		filmFeats := make(map[string]bool)
 		for _, f := range getFeatures(film) {
 			filmFeats[f] = true
 		}
-		vec := make([]int, len(featureList))
+		vec := make([]float64, len(featureList))
 		for j, f := range featureList {
-			if filmFeats[f] {
-				vec[j] = 1
+			if !filmFeats[f] {
+				vec[j] = 0.0
+			} else if keywords[f] {
+				if w, ok := idf[f]; ok {
+					vec[j] = w
+				} else {
+					vec[j] = 1.0
+				}
+			} else {
+				vec[j] = 1.0
 			}
 		}
 		vectors[i] = vec
@@ -255,6 +290,52 @@ func findNeighbors(films []Film, targetIdx, n int) []int {
 	result := make([]int, 0, n)
 	for i := 0; i < n && i < len(dists); i++ {
 		result = append(result, dists[i].idx)
+	}
+	return result
+}
+
+func findGenomeNeighbors(films []Film, targetIdx int, genomeFactors map[int][]float64, n int) []int {
+	targetTmdb := films[targetIdx].TmdbID
+	targetVec, ok := genomeFactors[targetTmdb]
+	if !ok {
+		return nil
+	}
+
+	type simPair struct {
+		idx int
+		sim float64
+	}
+	var sims []simPair
+	for i, film := range films {
+		if i == targetIdx {
+			continue
+		}
+		vec, ok := genomeFactors[film.TmdbID]
+		if !ok {
+			continue
+		}
+		dot := 0.0
+		for j := range targetVec {
+			if j < len(vec) {
+				dot += targetVec[j] * vec[j]
+			}
+		}
+		if dot > 0 {
+			sims = append(sims, simPair{i, dot})
+		}
+	}
+
+	for i := 0; i < len(sims); i++ {
+		for j := i + 1; j < len(sims); j++ {
+			if sims[j].sim > sims[i].sim {
+				sims[i], sims[j] = sims[j], sims[i]
+			}
+		}
+	}
+
+	result := make([]int, 0, n)
+	for i := 0; i < n && i < len(sims); i++ {
+		result = append(result, sims[i].idx)
 	}
 	return result
 }
@@ -372,13 +453,60 @@ func isSequel(t1, t2 string) bool {
 	return fuzzyRatio(t1, t2) > 50
 }
 
-func recommend(films []Film, targetIdx int, dedupSequels bool, itemFactors map[int][]float64) []Candidate {
-	neighborIdxs := findNeighbors(films, targetIdx, 31)
+func recommend(films []Film, targetIdx int, dedupSequels bool,
+	itemFactors, genomeFactors map[int][]float64, idf map[string]float64) []Candidate {
 	targetTmdb := films[targetIdx].TmdbID
 
+	// Stage 1: retrieve candidates from all three sources
+	mergedSet := make(map[int]bool)
+	for _, idx := range findNeighbors(films, targetIdx, 31, idf) {
+		mergedSet[idx] = true
+	}
+	for _, idx := range findGenomeNeighbors(films, targetIdx, genomeFactors, 31) {
+		mergedSet[idx] = true
+	}
+	targetVec, hasCollab := itemFactors[targetTmdb]
+	if hasCollab {
+		type simPair struct {
+			idx int
+			sim float64
+		}
+		var sims []simPair
+		for i, film := range films {
+			if i == targetIdx {
+				continue
+			}
+			vec, ok := itemFactors[film.TmdbID]
+			if !ok {
+				continue
+			}
+			dot := 0.0
+			for j := range targetVec {
+				if j < len(vec) {
+					dot += targetVec[j] * vec[j]
+				}
+			}
+			if dot > 0 {
+				sims = append(sims, simPair{i, dot})
+			}
+		}
+		for i := 0; i < len(sims); i++ {
+			for j := i + 1; j < len(sims); j++ {
+				if sims[j].sim > sims[i].sim {
+					sims[i], sims[j] = sims[j], sims[i]
+				}
+			}
+		}
+		for i := 0; i < 31 && i < len(sims); i++ {
+			mergedSet[sims[i].idx] = true
+		}
+	}
+	delete(mergedSet, targetIdx)
+
+	// Stage 2: score the merged pool
 	maxVotes := 0
-	candidates := make([]Candidate, 0, len(neighborIdxs))
-	for _, idx := range neighborIdxs {
+	candidates := make([]Candidate, 0, len(mergedSet))
+	for idx := range mergedSet {
 		f := films[idx]
 		if f.VoteCount > maxVotes {
 			maxVotes = f.VoteCount
@@ -392,8 +520,8 @@ func recommend(films []Film, targetIdx int, dedupSequels bool, itemFactors map[i
 		})
 	}
 
-	mainTitle := candidates[0].Title
-	mainYear := float64(candidates[0].Year)
+	mainTitle := films[targetIdx].Title
+	mainYear := float64(films[targetIdx].Year)
 
 	for i := range candidates {
 		c := &candidates[i]
@@ -410,12 +538,9 @@ func recommend(films []Film, targetIdx int, dedupSequels bool, itemFactors map[i
 			fact2 = gaussian(float64(c.Votes), float64(maxVotes), float64(maxVotes))
 		}
 		contentScore := c.Score * c.Score * fact1 * fact2
-		csim := collabSimilarity(itemFactors, targetTmdb, films[neighborIdxs[i]].TmdbID)
-		if csim > 0 {
-			c.RankScore = (1-collabWeight)*contentScore + collabWeight*csim*c.Score*c.Score
-		} else {
-			c.RankScore = contentScore
-		}
+		csim := collabSimilarity(itemFactors, targetTmdb, films[c.Index].TmdbID)
+		collabScore := csim * fact1 * fact2
+		c.RankScore = (1-collabWeight)*contentScore + collabWeight*collabScore
 	}
 
 	for i := 0; i < len(candidates); i++ {
@@ -554,6 +679,18 @@ func main() {
 		fmt.Println("No collaborative factors found — using content-based only")
 	}
 
+	genomePath := *dataDir + "/genome_factors.csv"
+	genomeFactors := loadItemFactors(genomePath)
+	if len(genomeFactors) > 0 {
+		fmt.Printf("Loaded genome factors for %d movies\n", len(genomeFactors))
+	} else {
+		fmt.Println("No genome factors found — using binary features for content")
+	}
+
+	fmt.Println("Computing TF-IDF keyword weights...")
+	idf := buildIdf(films)
+	fmt.Printf("  %d unique keywords weighted\n", len(idf))
+
 	targetIdx := *id
 	if *movie != "" {
 		targetIdx = findByTitle(films, *movie)
@@ -567,7 +704,7 @@ func main() {
 	fmt.Printf("\nRecommendations for: %s (%d)\n", target.Title, target.Year)
 	fmt.Println(strings.Repeat("=", 60))
 
-	results := recommend(films, targetIdx, !*noDedup, itemFactors)
+	results := recommend(films, targetIdx, !*noDedup, itemFactors, genomeFactors, idf)
 	for i, r := range results {
 		yearStr := "?"
 		if r.Year > 0 {
