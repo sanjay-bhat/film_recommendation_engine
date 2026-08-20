@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://image.tmdb.org data:; connect-src 'none'; frame-src 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://image.tmdb.org data:; connect-src 'self'; frame-src 'none';">
   <title>Try It Live — Film Recommendation Engine</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
@@ -450,7 +450,7 @@
 </div>
 
 <div class="stats">
-  <span>4,803</span> movies &bull; <span>40</span> pre-computed &bull; <span>5</span> recommendations each
+  <span>4,803</span> movies &bull; <span id="precomputedCount">0</span> pre-computed &bull; <span>5</span> recommendations each
 </div>
 
 <script>
@@ -464,288 +464,35 @@ function sanitizeInput(str) {
   return str.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 100);
 }
 
-const DB = {
-  "Avatar": [
-    {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
-    {"title":"Star Trek Into Darkness","year":2013,"imdb":7.7},
-    {"title":"John Carter","year":2012,"imdb":6.6},
-    {"title":"Ender's Game","year":2013,"imdb":6.7},
-    {"title":"Pacific Rim","year":2013,"imdb":6.9}
-  ],
-  "Inception": [
-    {"title":"Interstellar","year":2014,"imdb":8.1},
-    {"title":"The Dark Knight","year":2008,"imdb":8.5},
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"Shutter Island","year":2010,"imdb":7.8},
-    {"title":"Memento","year":2000,"imdb":8.1}
-  ],
-  "The Dark Knight": [
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"Batman Begins","year":2005,"imdb":7.9},
-    {"title":"Interstellar","year":2014,"imdb":8.1},
-    {"title":"Memento","year":2000,"imdb":8.1}
-  ],
-  "The Dark Knight Rises": [
-    {"title":"The Dark Knight","year":2008,"imdb":8.5},
-    {"title":"Batman Begins","year":2005,"imdb":7.9},
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"Interstellar","year":2014,"imdb":8.1}
-  ],
-  "Interstellar": [
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"The Dark Knight","year":2008,"imdb":8.5},
-    {"title":"Memento","year":2000,"imdb":8.1},
-    {"title":"Gravity","year":2013,"imdb":7.8}
-  ],
-  "The Avengers": [
-    {"title":"Iron Man","year":2008,"imdb":7.9},
-    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7},
-    {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
-    {"title":"Thor","year":2011,"imdb":7.0},
-    {"title":"X-Men: Days of Future Past","year":2014,"imdb":7.9}
-  ],
-  "Iron Man": [
-    {"title":"The Avengers","year":2012,"imdb":7.9},
-    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7},
-    {"title":"Thor","year":2011,"imdb":7.0},
-    {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
-    {"title":"Spider-Man","year":2002,"imdb":7.3}
-  ],
-  "Titanic": [
-    {"title":"The Great Gatsby","year":2013,"imdb":7.3},
-    {"title":"Revolutionary Road","year":2008,"imdb":7.3},
-    {"title":"Catch Me If You Can","year":2002,"imdb":8.0},
-    {"title":"Gangs of New York","year":2002,"imdb":7.5},
-    {"title":"The Aviator","year":2004,"imdb":7.5}
-  ],
-  "The Matrix": [
-    {"title":"The Terminator","year":1984,"imdb":7.7},
-    {"title":"Blade Runner","year":1982,"imdb":8.2},
-    {"title":"Minority Report","year":2002,"imdb":7.7},
-    {"title":"Total Recall","year":1990,"imdb":7.5},
-    {"title":"Edge of Tomorrow","year":2014,"imdb":7.9}
-  ],
-  "Jurassic Park": [
-    {"title":"Jurassic World","year":2015,"imdb":7.0},
-    {"title":"Indiana Jones and the Last Crusade","year":1989,"imdb":8.3},
-    {"title":"Jaws","year":1975,"imdb":8.0},
-    {"title":"E.T. the Extra-Terrestrial","year":1982,"imdb":7.9},
-    {"title":"Close Encounters of the Third Kind","year":1977,"imdb":7.7}
-  ],
-  "Forrest Gump": [
-    {"title":"Cast Away","year":2000,"imdb":7.7},
-    {"title":"The Green Mile","year":1999,"imdb":8.5},
-    {"title":"Saving Private Ryan","year":1998,"imdb":8.5},
-    {"title":"The Shawshank Redemption","year":1994,"imdb":8.5},
-    {"title":"Catch Me If You Can","year":2002,"imdb":8.0}
-  ],
-  "Fight Club": [
-    {"title":"Se7en","year":1995,"imdb":8.6},
-    {"title":"Gone Girl","year":2014,"imdb":8.1},
-    {"title":"The Game","year":1997,"imdb":7.8},
-    {"title":"American History X","year":1998,"imdb":8.5},
-    {"title":"Memento","year":2000,"imdb":8.1}
-  ],
-  "Pulp Fiction": [
-    {"title":"Kill Bill: Vol. 1","year":2003,"imdb":8.1},
-    {"title":"Django Unchained","year":2012,"imdb":8.2},
-    {"title":"Inglourious Basterds","year":2009,"imdb":8.3},
-    {"title":"Reservoir Dogs","year":1992,"imdb":8.3},
-    {"title":"The Hateful Eight","year":2015,"imdb":7.8}
-  ],
-  "The Shawshank Redemption": [
-    {"title":"The Green Mile","year":1999,"imdb":8.5},
-    {"title":"Forrest Gump","year":1994,"imdb":8.8},
-    {"title":"Schindler's List","year":1993,"imdb":8.9},
-    {"title":"Saving Private Ryan","year":1998,"imdb":8.5},
-    {"title":"A Beautiful Mind","year":2001,"imdb":8.2}
-  ],
-  "The Godfather": [
-    {"title":"Goodfellas","year":1990,"imdb":8.7},
-    {"title":"Scarface","year":1983,"imdb":8.3},
-    {"title":"Casino","year":1995,"imdb":8.2},
-    {"title":"The Departed","year":2006,"imdb":8.5},
-    {"title":"Heat","year":1995,"imdb":8.2}
-  ],
-  "Gladiator": [
-    {"title":"Troy","year":2004,"imdb":7.2},
-    {"title":"300","year":2006,"imdb":7.7},
-    {"title":"Braveheart","year":1995,"imdb":8.3},
-    {"title":"Kingdom of Heaven","year":2005,"imdb":7.2},
-    {"title":"Robin Hood","year":2010,"imdb":6.7}
-  ],
-  "The Lord of the Rings: The Fellowship of the Ring": [
-    {"title":"The Hobbit: An Unexpected Journey","year":2012,"imdb":7.8},
-    {"title":"Harry Potter and the Philosopher's Stone","year":2001,"imdb":7.6},
-    {"title":"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe","year":2005,"imdb":6.9},
-    {"title":"Pirates of the Caribbean: The Curse of the Black Pearl","year":2003,"imdb":8.0},
-    {"title":"Star Wars","year":1977,"imdb":8.7}
-  ],
-  "Star Wars": [
-    {"title":"The Empire Strikes Back","year":1980,"imdb":8.8},
-    {"title":"Indiana Jones and the Last Crusade","year":1989,"imdb":8.3},
-    {"title":"E.T. the Extra-Terrestrial","year":1982,"imdb":7.9},
-    {"title":"The Lord of the Rings: The Fellowship of the Ring","year":2001,"imdb":8.8},
-    {"title":"Back to the Future","year":1985,"imdb":8.5}
-  ],
-  "The Prestige": [
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"The Dark Knight","year":2008,"imdb":8.5},
-    {"title":"Interstellar","year":2014,"imdb":8.1},
-    {"title":"Memento","year":2000,"imdb":8.1},
-    {"title":"Shutter Island","year":2010,"imdb":7.8}
-  ],
-  "Batman Begins": [
-    {"title":"The Dark Knight","year":2008,"imdb":8.5},
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"Interstellar","year":2014,"imdb":8.1},
-    {"title":"Memento","year":2000,"imdb":8.1}
-  ],
-  "Pirates of the Caribbean: The Curse of the Black Pearl": [
-    {"title":"The Lord of the Rings: The Fellowship of the Ring","year":2001,"imdb":8.8},
-    {"title":"Indiana Jones and the Last Crusade","year":1989,"imdb":8.3},
-    {"title":"Harry Potter and the Philosopher's Stone","year":2001,"imdb":7.6},
-    {"title":"The Hobbit: An Unexpected Journey","year":2012,"imdb":7.8},
-    {"title":"National Treasure","year":2004,"imdb":6.9}
-  ],
-  "Toy Story": [
-    {"title":"Finding Nemo","year":2003,"imdb":8.1},
-    {"title":"Monsters, Inc.","year":2001,"imdb":8.1},
-    {"title":"The Incredibles","year":2004,"imdb":8.0},
-    {"title":"Up","year":2009,"imdb":8.3},
-    {"title":"WALL·E","year":2008,"imdb":8.4}
-  ],
-  "Finding Nemo": [
-    {"title":"Toy Story","year":1995,"imdb":8.3},
-    {"title":"Monsters, Inc.","year":2001,"imdb":8.1},
-    {"title":"The Incredibles","year":2004,"imdb":8.0},
-    {"title":"Up","year":2009,"imdb":8.3},
-    {"title":"Ratatouille","year":2007,"imdb":8.0}
-  ],
-  "The Lion King": [
-    {"title":"Aladdin","year":1992,"imdb":8.0},
-    {"title":"The Little Mermaid","year":1989,"imdb":7.6},
-    {"title":"Beauty and the Beast","year":1991,"imdb":8.0},
-    {"title":"Mulan","year":1998,"imdb":7.6},
-    {"title":"Tarzan","year":1999,"imdb":7.2}
-  ],
-  "Spider-Man": [
-    {"title":"X-Men","year":2000,"imdb":7.4},
-    {"title":"Iron Man","year":2008,"imdb":7.9},
-    {"title":"Batman Begins","year":2005,"imdb":7.9},
-    {"title":"The Amazing Spider-Man","year":2012,"imdb":6.9},
-    {"title":"The Avengers","year":2012,"imdb":7.9}
-  ],
-  "X-Men": [
-    {"title":"Spider-Man","year":2002,"imdb":7.3},
-    {"title":"X-Men: Days of Future Past","year":2014,"imdb":7.9},
-    {"title":"Iron Man","year":2008,"imdb":7.9},
-    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7},
-    {"title":"The Avengers","year":2012,"imdb":7.9}
-  ],
-  "Transformers": [
-    {"title":"Pacific Rim","year":2013,"imdb":6.9},
-    {"title":"Iron Man","year":2008,"imdb":7.9},
-    {"title":"Terminator 2: Judgment Day","year":1991,"imdb":8.5},
-    {"title":"RoboCop","year":1987,"imdb":7.5},
-    {"title":"Edge of Tomorrow","year":2014,"imdb":7.9}
-  ],
-  "Harry Potter and the Philosopher's Stone": [
-    {"title":"The Chronicles of Narnia: The Lion, the Witch and the Wardrobe","year":2005,"imdb":6.9},
-    {"title":"The Lord of the Rings: The Fellowship of the Ring","year":2001,"imdb":8.8},
-    {"title":"The Hobbit: An Unexpected Journey","year":2012,"imdb":7.8},
-    {"title":"Percy Jackson & the Olympians: The Lightning Thief","year":2010,"imdb":5.9},
-    {"title":"Frozen","year":2013,"imdb":7.6}
-  ],
-  "Frozen": [
-    {"title":"Tangled","year":2010,"imdb":7.8},
-    {"title":"Brave","year":2012,"imdb":7.2},
-    {"title":"The Lion King","year":1994,"imdb":8.5},
-    {"title":"Moana","year":2016,"imdb":7.6},
-    {"title":"Beauty and the Beast","year":1991,"imdb":8.0}
-  ],
-  "The Hunger Games": [
-    {"title":"Divergent","year":2014,"imdb":6.7},
-    {"title":"The Maze Runner","year":2014,"imdb":6.8},
-    {"title":"Ender's Game","year":2013,"imdb":6.7},
-    {"title":"Gravity","year":2013,"imdb":7.8},
-    {"title":"The Hunger Games: Catching Fire","year":2013,"imdb":7.5}
-  ],
-  "Gravity": [
-    {"title":"Interstellar","year":2014,"imdb":8.1},
-    {"title":"The Martian","year":2015,"imdb":8.0},
-    {"title":"Apollo 13","year":1995,"imdb":7.6},
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"Life of Pi","year":2012,"imdb":7.9}
-  ],
-  "Mad Max: Fury Road": [
-    {"title":"Edge of Tomorrow","year":2014,"imdb":7.9},
-    {"title":"Dredd","year":2012,"imdb":7.1},
-    {"title":"Terminator 2: Judgment Day","year":1991,"imdb":8.5},
-    {"title":"Die Hard","year":1988,"imdb":8.2},
-    {"title":"The Road Warrior","year":1981,"imdb":7.6}
-  ],
-  "Guardians of the Galaxy": [
-    {"title":"The Avengers","year":2012,"imdb":7.9},
-    {"title":"Iron Man","year":2008,"imdb":7.9},
-    {"title":"Star Trek Into Darkness","year":2013,"imdb":7.7},
-    {"title":"Thor","year":2011,"imdb":7.0},
-    {"title":"Captain America: The Winter Soldier","year":2014,"imdb":7.7}
-  ],
-  "Django Unchained": [
-    {"title":"Inglourious Basterds","year":2009,"imdb":8.3},
-    {"title":"Pulp Fiction","year":1994,"imdb":8.9},
-    {"title":"Kill Bill: Vol. 1","year":2003,"imdb":8.1},
-    {"title":"The Hateful Eight","year":2015,"imdb":7.8},
-    {"title":"Reservoir Dogs","year":1992,"imdb":8.3}
-  ],
-  "The Wolf of Wall Street": [
-    {"title":"Catch Me If You Can","year":2002,"imdb":8.0},
-    {"title":"Goodfellas","year":1990,"imdb":8.7},
-    {"title":"The Departed","year":2006,"imdb":8.5},
-    {"title":"The Aviator","year":2004,"imdb":7.5},
-    {"title":"Gangs of New York","year":2002,"imdb":7.5}
-  ],
-  "Shutter Island": [
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"Memento","year":2000,"imdb":8.1},
-    {"title":"Se7en","year":1995,"imdb":8.6},
-    {"title":"Gone Girl","year":2014,"imdb":8.1}
-  ],
-  "Memento": [
-    {"title":"The Prestige","year":2006,"imdb":8.1},
-    {"title":"Inception","year":2010,"imdb":8.1},
-    {"title":"Shutter Island","year":2010,"imdb":7.8},
-    {"title":"Fight Club","year":1999,"imdb":8.8},
-    {"title":"Se7en","year":1995,"imdb":8.6}
-  ],
-  "Se7en": [
-    {"title":"Fight Club","year":1999,"imdb":8.8},
-    {"title":"The Silence of the Lambs","year":1991,"imdb":8.6},
-    {"title":"Gone Girl","year":2014,"imdb":8.1},
-    {"title":"Zodiac","year":2007,"imdb":7.7},
-    {"title":"Memento","year":2000,"imdb":8.1}
-  ],
-  "Alien": [
-    {"title":"Aliens","year":1986,"imdb":8.4},
-    {"title":"The Terminator","year":1984,"imdb":7.7},
-    {"title":"Predator","year":1987,"imdb":7.8},
-    {"title":"Blade Runner","year":1982,"imdb":8.2},
-    {"title":"The Thing","year":1982,"imdb":8.2}
-  ],
-  "Terminator 2: Judgment Day": [
-    {"title":"The Terminator","year":1984,"imdb":7.7},
-    {"title":"Aliens","year":1986,"imdb":8.4},
-    {"title":"Predator","year":1987,"imdb":7.8},
-    {"title":"RoboCop","year":1987,"imdb":7.5},
-    {"title":"Die Hard","year":1988,"imdb":8.2}
-  ]
-};
+let DB = {};
+
+const CACHE_KEY = 'filmrec_db';
+const CACHE_VERSION = 'v1';
+
+async function loadDatabase() {
+  const cached = localStorage.getItem(CACHE_KEY);
+  const cachedVersion = localStorage.getItem(CACHE_KEY + '_v');
+  if (cached && cachedVersion === CACHE_VERSION) {
+    DB = JSON.parse(cached);
+    onDatabaseLoaded();
+    return;
+  }
+  try {
+    const resp = await fetch('demo_db.json');
+    DB = await resp.json();
+    localStorage.setItem(CACHE_KEY, JSON.stringify(DB));
+    localStorage.setItem(CACHE_KEY + '_v', CACHE_VERSION);
+  } catch (e) {
+    console.error('Failed to load database:', e);
+  }
+  onDatabaseLoaded();
+}
+
+function onDatabaseLoaded() {
+  TITLES.length = 0;
+  TITLES.push(...Object.keys(DB));
+  document.getElementById('precomputedCount').textContent = TITLES.length.toLocaleString();
+}
 
 const POSTERS = {
   "300": "/h7Lcio0c9ohxPhSZg42eTlKIVVY.jpg",
@@ -870,7 +617,8 @@ const POSTERS = {
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/";
 
-const TITLES = Object.keys(DB);
+const TITLES = [];
+loadDatabase();
 
 const input = document.getElementById('searchInput');
 const clearBtn = document.getElementById('clearBtn');
