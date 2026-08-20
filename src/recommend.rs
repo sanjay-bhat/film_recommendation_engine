@@ -39,8 +39,13 @@ fn main() {
     }
 
     println!("Loading dataset...");
-    let movies_path = format!("{}/tmdb_5000_movies.csv", data_dir);
-    let credits_path = format!("{}/tmdb_5000_credits.csv", data_dir);
+    let expanded_movies = format!("{}/movies_expanded.csv", data_dir);
+    let expanded_credits = format!("{}/credits_expanded.csv", data_dir);
+    let (movies_path, credits_path) = if std::path::Path::new(&expanded_movies).exists() {
+        (expanded_movies, expanded_credits)
+    } else {
+        (format!("{}/tmdb_5000_movies.csv", data_dir), format!("{}/tmdb_5000_credits.csv", data_dir))
+    };
 
     let movie_rows = match read_csv(&movies_path) {
         Ok(r) => r,
@@ -70,6 +75,14 @@ fn main() {
         println!("No genome factors found — using binary features for content");
     }
 
+    let plot_path = format!("{}/plot_factors.csv", data_dir);
+    let plot_factors = load_item_factors(&plot_path);
+    if !plot_factors.is_empty() {
+        println!("Loaded plot factors for {} movies", plot_factors.len());
+    } else {
+        println!("No plot factors found — skipping plot embedding retrieval");
+    }
+
     println!("Computing TF-IDF keyword weights...");
     let idf = build_idf(&films);
     println!("  {} unique keywords weighted", idf.len());
@@ -89,7 +102,7 @@ fn main() {
     println!("\nRecommendations for: {} ({})", target.title, target.year);
     println!("{}", "=".repeat(60));
 
-    let results = recommend(&films, target_idx, !no_dedup, &item_factors, &genome_factors, &idf);
+    let results = recommend(&films, target_idx, !no_dedup, &item_factors, &genome_factors, &plot_factors, &idf);
     for (i, r) in results.iter().enumerate() {
         let year_str = if r.year > 0 { r.year.to_string() } else { "?".to_string() };
         println!("  {}. {} ({}) — IMDB: {:.1}", i + 1, r.title, year_str, r.score);
@@ -401,6 +414,26 @@ fn find_neighbors(films: &[Film], target_idx: usize, n: usize,
     dists.iter().take(n).map(|(idx, _)| *idx).collect()
 }
 
+fn find_plot_neighbors(films: &[Film], target_idx: usize,
+                       plot_factors: &HashMap<i32, Vec<f64>>, n: usize) -> Vec<usize> {
+    let target_tmdb = films[target_idx].tmdb_id;
+    let target_vec = match plot_factors.get(&target_tmdb) {
+        Some(v) => v,
+        None => return Vec::new(),
+    };
+
+    let mut sims: Vec<(usize, f64)> = Vec::new();
+    for (i, film) in films.iter().enumerate() {
+        if i == target_idx { continue; }
+        if let Some(vec) = plot_factors.get(&film.tmdb_id) {
+            let dot: f64 = target_vec.iter().zip(vec.iter()).map(|(a, b)| a * b).sum();
+            if dot > 0.0 { sims.push((i, dot)); }
+        }
+    }
+    sims.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    sims.iter().take(n).map(|(idx, _)| *idx).collect()
+}
+
 fn find_genome_neighbors(films: &[Film], target_idx: usize,
                          genome_factors: &HashMap<i32, Vec<f64>>, n: usize) -> Vec<usize> {
     let target_tmdb = films[target_idx].tmdb_id;
@@ -506,10 +539,11 @@ fn is_sequel(t1: &str, t2: &str) -> bool {
 fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool,
              item_factors: &HashMap<i32, Vec<f64>>,
              genome_factors: &HashMap<i32, Vec<f64>>,
+             plot_factors: &HashMap<i32, Vec<f64>>,
              idf: &HashMap<String, f64>) -> Vec<Candidate> {
     let target_tmdb = films[target_idx].tmdb_id;
 
-    // Stage 1: retrieve candidates from all three sources
+    // Stage 1: retrieve candidates from all four sources
     let mut merged: HashSet<usize> = HashSet::new();
     for idx in find_neighbors(films, target_idx, 31, idf) {
         merged.insert(idx);
@@ -518,6 +552,9 @@ fn recommend(films: &[Film], target_idx: usize, dedup_sequels: bool,
         merged.insert(idx);
     }
     for idx in find_genome_neighbors(films, target_idx, genome_factors, 31) {
+        merged.insert(idx);
+    }
+    for idx in find_plot_neighbors(films, target_idx, plot_factors, 31) {
         merged.insert(idx);
     }
     merged.remove(&target_idx);

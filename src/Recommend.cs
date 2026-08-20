@@ -29,10 +29,11 @@ if (string.IsNullOrEmpty(movie) && id < 0)
 }
 
 Console.WriteLine("Loading dataset...");
-var films = FilmLoader.Load(
-    Path.Combine(dataDir, "tmdb_5000_movies.csv"),
-    Path.Combine(dataDir, "tmdb_5000_credits.csv")
-);
+var expandedMovies = Path.Combine(dataDir, "movies_expanded.csv");
+var expandedCredits = Path.Combine(dataDir, "credits_expanded.csv");
+var moviesFile = File.Exists(expandedMovies) ? expandedMovies : Path.Combine(dataDir, "tmdb_5000_movies.csv");
+var creditsFile = File.Exists(expandedCredits) ? expandedCredits : Path.Combine(dataDir, "tmdb_5000_credits.csv");
+var films = FilmLoader.Load(moviesFile, creditsFile);
 
 Console.WriteLine("Building film records...");
 
@@ -50,6 +51,13 @@ if (genomeFactors.Count > 0)
 else
     Console.WriteLine("No genome factors found — using binary features for content");
 
+var plotPath = Path.Combine(dataDir, "plot_factors.csv");
+var plotFactors = CollabFilter.LoadFactors(plotPath);
+if (plotFactors.Count > 0)
+    Console.WriteLine($"Loaded plot factors for {plotFactors.Count} movies");
+else
+    Console.WriteLine("No plot factors found — skipping plot embedding retrieval");
+
 Console.WriteLine("Computing TF-IDF keyword weights...");
 var idf = Recommender.BuildIdf(films);
 Console.WriteLine($"  {idf.Count} unique keywords weighted");
@@ -65,7 +73,7 @@ var target = films[targetIdx];
 Console.WriteLine($"\nRecommendations for: {target.Title} ({target.Year})");
 Console.WriteLine(new string('=', 60));
 
-var results = Recommender.Recommend(films, targetIdx, !noDedup, itemFactors, genomeFactors, idf);
+var results = Recommender.Recommend(films, targetIdx, !noDedup, itemFactors, genomeFactors, plotFactors, idf);
 for (int i = 0; i < results.Count; i++)
 {
     var r = results[i];
@@ -328,20 +336,24 @@ static class Recommender
     public static List<Candidate> Recommend(List<Film> films, int targetIdx, bool dedupSequels,
                                             Dictionary<int, double[]>? itemFactors = null,
                                             Dictionary<int, double[]>? genomeFactors = null,
+                                            Dictionary<int, double[]>? plotFactors = null,
                                             Dictionary<string, double>? idf = null)
     {
         var factors = itemFactors ?? new Dictionary<int, double[]>();
         var gFactors = genomeFactors ?? new Dictionary<int, double[]>();
+        var pFactors = plotFactors ?? new Dictionary<int, double[]>();
         var idfWeights = idf ?? new Dictionary<string, double>();
         int targetTmdb = films[targetIdx].TmdbId;
 
-        // Stage 1: retrieve candidates from all three sources
+        // Stage 1: retrieve candidates from all four sources
         var merged = new HashSet<int>();
         foreach (var idx in FindNeighbors(films, targetIdx, 31, idfWeights))
             merged.Add(idx);
         foreach (var idx in FindCollabNeighbors(films, targetIdx, factors, 31))
             merged.Add(idx);
         foreach (var idx in FindGenomeNeighbors(films, targetIdx, gFactors, 31))
+            merged.Add(idx);
+        foreach (var idx in FindPlotNeighbors(films, targetIdx, pFactors, 31))
             merged.Add(idx);
         merged.Remove(targetIdx);
 
@@ -458,6 +470,26 @@ static class Recommender
 
     static List<int> FindCollabNeighbors(List<Film> films, int targetIdx,
                                           Dictionary<int, double[]> factors, int n)
+    {
+        int targetTmdb = films[targetIdx].TmdbId;
+        if (!factors.TryGetValue(targetTmdb, out var targetVec)) return new List<int>();
+
+        var sims = new List<(int idx, double sim)>();
+        for (int i = 0; i < films.Count; i++)
+        {
+            if (i == targetIdx) continue;
+            if (!factors.TryGetValue(films[i].TmdbId, out var vec)) continue;
+            double dot = 0;
+            for (int j = 0; j < targetVec.Length && j < vec.Length; j++)
+                dot += targetVec[j] * vec[j];
+            if (dot > 0) sims.Add((i, dot));
+        }
+        sims.Sort((a, b) => b.sim.CompareTo(a.sim));
+        return sims.Take(n).Select(s => s.idx).ToList();
+    }
+
+    static List<int> FindPlotNeighbors(List<Film> films, int targetIdx,
+                                        Dictionary<int, double[]> factors, int n)
     {
         int targetTmdb = films[targetIdx].TmdbId;
         if (!factors.TryGetValue(targetTmdb, out var targetVec)) return new List<int>();

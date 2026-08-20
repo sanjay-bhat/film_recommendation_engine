@@ -253,6 +253,19 @@ def load_genome_factors(path):
     return factors
 
 
+def load_plot_factors(path):
+    """Load pre-computed plot embedding vectors → {tmdb_id: [p0..p49]}."""
+    factors = {}
+    if not os.path.exists(path):
+        return factors
+    with open(path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            tmdb_id = int(row["tmdb_id"])
+            vec = [float(row[k]) for k in row if k.startswith("p")]
+            factors[tmdb_id] = vec
+    return factors
+
+
 def find_genome_neighbors(films, target_idx, genome_factors, n=31):
     """Find the n most similar films by genome tag vectors."""
     target_tmdb = films[target_idx].get("tmdb_id", 0)
@@ -266,6 +279,29 @@ def find_genome_neighbors(films, target_idx, genome_factors, n=31):
             continue
         tmdb_id = film.get("tmdb_id", 0)
         vec = genome_factors.get(tmdb_id)
+        if vec is None:
+            continue
+        dot = sum(a * b for a, b in zip(target_vec, vec))
+        if dot > 0:
+            sims.append((i, dot))
+
+    sims.sort(key=lambda x: x[1], reverse=True)
+    return [idx for idx, _ in sims[:n]]
+
+
+def find_plot_neighbors(films, target_idx, plot_factors, n=31):
+    """Find the n most similar films by plot embedding vectors."""
+    target_tmdb = films[target_idx].get("tmdb_id", 0)
+    target_vec = plot_factors.get(target_tmdb)
+    if target_vec is None:
+        return []
+
+    sims = []
+    for i, film in enumerate(films):
+        if i == target_idx:
+            continue
+        tmdb_id = film.get("tmdb_id", 0)
+        vec = plot_factors.get(tmdb_id)
         if vec is None:
             continue
         dot = sum(a * b for a, b in zip(target_vec, vec))
@@ -331,17 +367,19 @@ def score_candidate(main_title, max_votes, year_ref, title, year, imdb_score,
 
 
 def recommend(films, target_idx, dedup_sequels=True, item_factors=None,
-              genome_factors=None, idf=None):
-    """Return up to 5 recommended films via three-way retrieval."""
+              genome_factors=None, plot_factors=None, idf=None):
+    """Return up to 5 recommended films via four-way retrieval."""
     factors = item_factors or {}
     gfactors = genome_factors or {}
+    pfactors = plot_factors or {}
     target_tmdb = films[target_idx].get("tmdb_id", 0)
 
-    # Stage 1: retrieve candidates from all three sources
+    # Stage 1: retrieve candidates from all four sources
     content_indices = set(find_neighbors(films, target_idx, idf=idf))
     collab_indices = set(find_collab_neighbors(films, target_idx, factors))
     genome_indices = set(find_genome_neighbors(films, target_idx, gfactors))
-    merged_indices = content_indices | collab_indices | genome_indices
+    plot_indices = set(find_plot_neighbors(films, target_idx, pfactors))
+    merged_indices = content_indices | collab_indices | genome_indices | plot_indices
     if target_idx in merged_indices:
         merged_indices.discard(target_idx)
 
@@ -436,8 +474,14 @@ def main():
     if not args.movie and args.id is None:
         parser.error("Provide either --movie or --id")
 
-    movies_path = os.path.join(args.data_dir, "tmdb_5000_movies.csv")
-    credits_path = os.path.join(args.data_dir, "tmdb_5000_credits.csv")
+    expanded_movies = os.path.join(args.data_dir, "movies_expanded.csv")
+    expanded_credits = os.path.join(args.data_dir, "credits_expanded.csv")
+    if os.path.exists(expanded_movies) and os.path.exists(expanded_credits):
+        movies_path = expanded_movies
+        credits_path = expanded_credits
+    else:
+        movies_path = os.path.join(args.data_dir, "tmdb_5000_movies.csv")
+        credits_path = os.path.join(args.data_dir, "tmdb_5000_credits.csv")
 
     if not os.path.exists(movies_path) or not os.path.exists(credits_path):
         print(f"Error: Dataset not found in '{args.data_dir}/'")
@@ -468,6 +512,13 @@ def main():
     else:
         print("No genome factors found — using binary features for content")
 
+    plot_path = os.path.join(args.data_dir, "plot_factors.csv")
+    plot_factors = load_plot_factors(plot_path)
+    if plot_factors:
+        print(f"Loaded plot factors for {len(plot_factors)} movies")
+    else:
+        print("No plot factors found — skipping plot embedding retrieval")
+
     print("Computing TF-IDF keyword weights...")
     idf = build_idf(films)
     print(f"  {len(idf)} unique keywords weighted")
@@ -486,7 +537,8 @@ def main():
 
     results = recommend(films, target_idx, dedup_sequels=not args.no_dedup,
                         item_factors=item_factors,
-                        genome_factors=genome_factors, idf=idf)
+                        genome_factors=genome_factors,
+                        plot_factors=plot_factors, idf=idf)
     for i, r in enumerate(results, 1):
         print(f"  {i}. {r['title']} ({r['year'] or '?'}) — IMDB: {r['score']}")
 

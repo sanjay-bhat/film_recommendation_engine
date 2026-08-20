@@ -1,7 +1,7 @@
 MOVIE ?= The Dark Knight Rises
 DATA_DIR ?= dataset
 
-.PHONY: all build run clean setup unzip setup-collab
+.PHONY: all build run clean setup unzip setup-collab setup-expanded
 
 all: build
 
@@ -26,6 +26,13 @@ setup-collab: unzip
 	fi
 	python scripts/build_collab_model.py --ml-dir $(DATA_DIR)/ml-25m --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/item_factors.csv
 	python scripts/build_genome_factors.py --ml-dir $(DATA_DIR)/ml-25m --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/genome_factors.csv
+	python scripts/build_plot_embeddings.py --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --out $(DATA_DIR)/plot_factors.csv
+
+setup-expanded: setup-collab
+	python scripts/build_expanded_dataset.py --ml-dir $(DATA_DIR)/ml-25m --out-dir $(DATA_DIR)
+	python scripts/build_collab_model.py --ml-dir $(DATA_DIR)/ml-25m --out $(DATA_DIR)/item_factors.csv
+	python scripts/build_genome_factors.py --ml-dir $(DATA_DIR)/ml-25m --out $(DATA_DIR)/genome_factors.csv
+	python scripts/build_plot_embeddings.py --movies-csv $(DATA_DIR)/tmdb_5000_movies.csv --extra-overviews $(DATA_DIR)/overviews_extra.csv --out $(DATA_DIR)/plot_factors.csv
 
 # --- Build ---
 
