@@ -2,9 +2,9 @@
 """
 Fetch plot overviews from TMDb API for movies missing them.
 
-Uses asyncio + aiohttp with rate limiting (35 req/10s window).
+Uses asyncio + aiohttp with concurrent requests (40 at a time).
 Only fetches for genome-tagged movies not in TMDb 5000.
-Writes overviews to a simple CSV: tmdb_id,overview
+Writes overviews incrementally to a CSV: tmdb_id,overview
 
 Usage:
     python scripts/fetch_overviews.py --api-key YOUR_KEY
@@ -15,8 +15,9 @@ import argparse
 import asyncio
 import csv
 import os
-import sys
 import time
+
+import aiohttp
 
 
 def get_target_ids(ml_dir, tmdb_movies_path):
@@ -54,66 +55,52 @@ def load_done(out_path):
     return done
 
 
-async def fetch_batch(session, ids, api_key, results, semaphore):
-    """Fetch a batch of movie overviews concurrently."""
-    async def fetch_one(tmdb_id):
+async def run_fetch(target_ids, api_key, out_path, concurrency=40):
+    """Fetch overviews concurrently with a semaphore-based rate limiter."""
+    semaphore = asyncio.Semaphore(concurrency)
+    timeout = aiohttp.ClientTimeout(total=5)
+    lock = asyncio.Lock()
+    counter = {"done": 0, "total": len(target_ids)}
+    t0 = time.time()
+
+    async def fetch_one(session, tmdb_id):
         async with semaphore:
             url = f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={api_key}"
+            overview = ""
             try:
-                async with session.get(url, timeout=asyncio.timeout(15)) as resp:
+                async with session.get(url, timeout=timeout) as resp:
                     if resp.status == 429:
-                        retry = int(resp.headers.get("Retry-After", 5))
+                        retry = int(resp.headers.get("Retry-After", 2))
                         await asyncio.sleep(retry)
-                        async with session.get(url, timeout=asyncio.timeout(15)) as resp2:
+                        async with session.get(url, timeout=timeout) as resp2:
                             if resp2.status == 200:
                                 data = await resp2.json()
-                                results[tmdb_id] = data.get("overview", "") or ""
+                                overview = data.get("overview", "") or ""
                     elif resp.status == 200:
                         data = await resp.json()
-                        results[tmdb_id] = data.get("overview", "") or ""
-                    elif resp.status == 404:
-                        results[tmdb_id] = ""
+                        overview = data.get("overview", "") or ""
             except Exception:
-                results[tmdb_id] = ""
+                pass
 
-    tasks = [fetch_one(tid) for tid in ids]
-    await asyncio.gather(*tasks)
+            async with lock:
+                with open(out_path, "a", newline="", encoding="utf-8") as f:
+                    csv.writer(f).writerow([tmdb_id, overview])
+                counter["done"] += 1
+                done = counter["done"]
+                if done % 500 == 0 or done == counter["total"]:
+                    elapsed = time.time() - t0
+                    rate = done / elapsed if elapsed > 0 else 0
+                    remaining = counter["total"] - done
+                    eta = remaining / rate if rate > 0 else 0
+                    print(f"  [{done}/{counter['total']}] "
+                          f"rate={rate:.1f}/s ETA={eta/60:.1f}min", flush=True)
 
+    connector = aiohttp.TCPConnector(limit=concurrency)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = [fetch_one(session, tid) for tid in target_ids]
+        await asyncio.gather(*tasks)
 
-async def run_fetch(target_ids, api_key, out_path, batch_size=35):
-    """Fetch overviews with rate limiting."""
-    import aiohttp
-
-    results = {}
-    semaphore = asyncio.Semaphore(batch_size)
-
-    async with aiohttp.ClientSession() as session:
-        total = len(target_ids)
-        t0 = time.time()
-
-        for i in range(0, total, batch_size):
-            batch = target_ids[i:i + batch_size]
-            window_start = time.time()
-
-            await fetch_batch(session, batch, api_key, results, semaphore)
-
-            elapsed_window = time.time() - window_start
-            if elapsed_window < 10 and i + batch_size < total:
-                await asyncio.sleep(10 - elapsed_window)
-
-            done = i + len(batch)
-            if done % 500 < batch_size or done >= total:
-                elapsed = time.time() - t0
-                rate = done / elapsed if elapsed > 0 else 0
-                eta = (total - done) / rate if rate > 0 else 0
-                print(f"  [{done}/{total}] rate={rate:.1f}/s ETA={eta/60:.0f}min")
-
-    with open(out_path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        for tmdb_id, overview in sorted(results.items()):
-            writer.writerow([tmdb_id, overview])
-
-    return len(results)
+    return counter["done"]
 
 
 def main():
@@ -145,9 +132,10 @@ def main():
         with open(args.out, "w", newline="", encoding="utf-8") as f:
             csv.writer(f).writerow(["tmdb_id", "overview"])
 
-    print(f"\nFetching overviews (35 req/10s window)...")
-    fetched = asyncio.run(run_fetch(target_ids, args.api_key, args.out))
-    print(f"\nDone! Fetched {fetched} overviews → {args.out}")
+    concurrency = 40
+    print(f"\nFetching overviews ({len(target_ids)} movies, {concurrency} concurrent)...")
+    fetched = asyncio.run(run_fetch(target_ids, args.api_key, args.out, concurrency))
+    print(f"\nDone! Fetched {fetched} overviews -> {args.out}")
 
 
 if __name__ == "__main__":

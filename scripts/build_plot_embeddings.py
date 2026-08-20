@@ -19,16 +19,25 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
-def load_overviews(movies_path):
-    """Load TMDb 5000 movie IDs and plot overviews."""
-    entries = []
+def load_overviews(movies_path, extra_path=None):
+    """Load movie IDs and plot overviews from TMDb 5000 + optional extra CSV."""
+    entries = {}
     with open(movies_path, encoding="utf-8") as f:
         for row in csv.DictReader(f):
             tmdb_id = int(row["id"])
             overview = row.get("overview", "").strip()
             if overview:
-                entries.append((tmdb_id, overview))
-    return entries
+                entries[tmdb_id] = overview
+
+    if extra_path and os.path.exists(extra_path):
+        with open(extra_path, encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                tmdb_id = int(row["tmdb_id"])
+                overview = row.get("overview", "").strip()
+                if overview and tmdb_id not in entries:
+                    entries[tmdb_id] = overview
+
+    return [(tid, ov) for tid, ov in sorted(entries.items())]
 
 
 def reduce_dimensions(embeddings, k=50):
@@ -68,6 +77,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Build plot embedding vectors from TMDb 5000 overviews")
     parser.add_argument("--movies-csv", default="dataset/tmdb_5000_movies.csv")
+    parser.add_argument("--extra-overviews", default=None,
+                        help="Extra overviews CSV (tmdb_id,overview)")
     parser.add_argument("--out", default="dataset/plot_factors.csv")
     parser.add_argument("--k", type=int, default=50,
                         help="Number of reduced dimensions")
@@ -82,7 +93,7 @@ def main():
     print("=== Building Plot Embedding Vectors ===\n")
 
     print("Step 1: Loading movie overviews...")
-    entries = load_overviews(args.movies_csv)
+    entries = load_overviews(args.movies_csv, args.extra_overviews)
     tmdb_ids = [e[0] for e in entries]
     overviews = [e[1] for e in entries]
     print(f"  {len(entries)} movies with overviews\n")

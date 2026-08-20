@@ -121,20 +121,23 @@ film_recommendation_engine/
 
 ## Dataset
 
-Uses two datasets:
+Uses two datasets, merged into an expanded catalog of **62,000+ movies**:
 
-**[TMDb 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata)** — content features:
+**[TMDb 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata)** — content-feature backbone:
 - **4,803 movies** with budget, revenue, genres, keywords, and ratings
 - **4,803 credit entries** with full cast and crew data
 - Keywords cleaned via NLTK stemming and WordNet synonym merging (9,474 → 2,121 unique keywords)
 
-**[MovieLens 25M](https://grouplens.org/datasets/movielens/25m/)** — collaborative & genome signals:
+**[MovieLens 25M](https://grouplens.org/datasets/movielens/25m/)** — collaborative, genome & rating signals:
 - **25 million ratings** from 162,000 users across 62,000 movies
-- **4,595 movies** overlap with TMDb 5000 (96% coverage)
-- **1,128 genome tags** per movie — relevance scores for tags like "dark hero", "plot twist", "atmospheric"
-- Pre-computed SVD item factors in `dataset/item_factors.csv` (~2 MB)
-- Pre-computed genome factors in `dataset/genome_factors.csv` (~2 MB)
-- Pre-computed plot embedding factors in `dataset/plot_factors.csv` (~2 MB)
+- **58,945 movies** with collaborative factors (up from 4,595 with TMDb 5000 filtering)
+- **13,803 movies** with genome tag factors (1,128 tags per movie — "dark hero", "plot twist", "atmospheric")
+- Movies outside TMDb 5000 participate via collaborative, genome, and plot retrieval without needing content features
+
+**Pre-computed factor files** (shipped in repo, no ML dependencies needed at runtime):
+- `dataset/item_factors.csv` — collaborative SVD factors (k=50, ~27 MB)
+- `dataset/genome_factors.csv` — genome tag SVD factors (k=50, ~6.5 MB)
+- `dataset/plot_factors.csv` — plot sentence embedding PCA factors (d=50, ~2 MB)
 
 ## Implementations
 
