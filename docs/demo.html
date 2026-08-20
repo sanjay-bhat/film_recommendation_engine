@@ -232,8 +232,8 @@
     .coverflow {
       position: relative;
       width: 100%;
-      height: 360px;
-      perspective: 600px;
+      height: 380px;
+      perspective: 800px;
       overflow: hidden;
       margin: 20px 0 0;
     }
@@ -242,8 +242,8 @@
       position: absolute;
       left: 50%;
       top: 0;
-      width: 200px;
-      margin-left: -100px;
+      width: 220px;
+      margin-left: -110px;
       transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease;
       transform-style: preserve-3d;
       cursor: pointer;
@@ -261,64 +261,78 @@
     }
 
     .coverflow-slide.pos-left-1 {
-      transform: translateX(-260px) rotateY(55deg) scale(0.6);
-      opacity: 0.6;
-      z-index: 4;
+      transform: translateX(-200px) rotateY(65deg) scale(0.82);
+      opacity: 0.9;
+      z-index: 3;
       pointer-events: auto;
     }
 
     .coverflow-slide.pos-right-1 {
-      transform: translateX(260px) rotateY(-55deg) scale(0.6);
-      opacity: 0.6;
-      z-index: 4;
+      transform: translateX(200px) rotateY(-65deg) scale(0.82);
+      opacity: 0.9;
+      z-index: 3;
       pointer-events: auto;
     }
 
     .coverflow-slide.pos-left-2 {
-      transform: translateX(-380px) rotateY(55deg) scale(0.45);
-      opacity: 0.3;
-      z-index: 3;
+      transform: translateX(-300px) rotateY(65deg) scale(0.78);
+      opacity: 0.8;
+      z-index: 2;
       pointer-events: auto;
     }
 
     .coverflow-slide.pos-right-2 {
-      transform: translateX(380px) rotateY(-55deg) scale(0.45);
-      opacity: 0.3;
-      z-index: 3;
+      transform: translateX(300px) rotateY(-65deg) scale(0.78);
+      opacity: 0.8;
+      z-index: 2;
+      pointer-events: auto;
+    }
+
+    .coverflow-slide.pos-left-3 {
+      transform: translateX(-380px) rotateY(65deg) scale(0.72);
+      opacity: 0.6;
+      z-index: 1;
+      pointer-events: auto;
+    }
+
+    .coverflow-slide.pos-right-3 {
+      transform: translateX(380px) rotateY(-65deg) scale(0.72);
+      opacity: 0.6;
+      z-index: 1;
       pointer-events: auto;
     }
 
     .coverflow-poster {
-      width: 200px;
-      height: 300px;
-      border-radius: 4px;
+      width: 220px;
+      height: 220px;
+      border-radius: 2px;
       object-fit: cover;
       background: #2a1a4e;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.8);
       display: block;
     }
 
     .coverflow-poster-fallback {
-      width: 200px;
-      height: 300px;
-      border-radius: 4px;
+      width: 220px;
+      height: 220px;
+      border-radius: 2px;
       background: #2a1a4e;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 56px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.8);
     }
 
     .coverflow-reflect {
-      width: 200px;
-      height: 50px;
-      border-radius: 0 0 4px 4px;
+      width: 220px;
+      height: 80px;
+      border-radius: 0 0 2px 2px;
       object-fit: cover;
       object-position: bottom;
       transform: scaleY(-1);
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent 60%);
-      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent 60%);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent 70%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent 70%);
       margin-top: -1px;
       pointer-events: none;
       display: block;
@@ -450,7 +464,7 @@
 </div>
 
 <div class="stats">
-  <span>4,803</span> movies &bull; <span id="precomputedCount">0</span> pre-computed &bull; <span>5</span> recommendations each
+  <span>4,803</span> movies &bull; <span id="precomputedCount">0</span> pre-computed &bull; <span>7</span> recommendations each
 </div>
 
 <script>
@@ -467,7 +481,7 @@ function sanitizeInput(str) {
 let DB = {};
 
 const CACHE_KEY = 'filmrec_db';
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 
 async function loadDatabase() {
   const cached = localStorage.getItem(CACHE_KEY);
@@ -563,7 +577,7 @@ clearBtn.addEventListener('click', () => {
   input.focus();
 });
 
-const POS_CLASSES = ['pos-left-2', 'pos-left-1', 'pos-center', 'pos-right-1', 'pos-right-2'];
+const POS_CLASSES = ['pos-left-3', 'pos-left-2', 'pos-left-1', 'pos-center', 'pos-right-1', 'pos-right-2', 'pos-right-3'];
 
 function goToSlide(idx) {
   if (idx < 0 || idx >= slideCount) return;
@@ -577,8 +591,10 @@ function goToSlide(idx) {
     else if (offset === 1) s.classList.add('pos-right-1');
     else if (offset === -2) s.classList.add('pos-left-2');
     else if (offset === 2) s.classList.add('pos-right-2');
-    s.style.opacity = Math.abs(offset) > 2 ? '0' : '';
-    s.style.pointerEvents = Math.abs(offset) > 2 ? 'none' : '';
+    else if (offset === -3) s.classList.add('pos-left-3');
+    else if (offset === 3) s.classList.add('pos-right-3');
+    s.style.opacity = Math.abs(offset) > 3 ? '0' : '';
+    s.style.pointerEvents = Math.abs(offset) > 3 ? 'none' : '';
   });
 
   const r = currentRecs[idx];
