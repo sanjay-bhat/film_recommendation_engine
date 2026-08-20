@@ -261,29 +261,29 @@
     }
 
     .coverflow-slide.pos-left-1 {
-      transform: translateX(-180px) rotateY(45deg) scale(0.8);
-      opacity: 1;
+      transform: translateX(-260px) rotateY(55deg) scale(0.6);
+      opacity: 0.6;
       z-index: 4;
       pointer-events: auto;
     }
 
     .coverflow-slide.pos-right-1 {
-      transform: translateX(180px) rotateY(-45deg) scale(0.8);
-      opacity: 1;
+      transform: translateX(260px) rotateY(-55deg) scale(0.6);
+      opacity: 0.6;
       z-index: 4;
       pointer-events: auto;
     }
 
     .coverflow-slide.pos-left-2 {
-      transform: translateX(-300px) rotateY(45deg) scale(0.7);
-      opacity: 0.5;
+      transform: translateX(-380px) rotateY(55deg) scale(0.45);
+      opacity: 0.3;
       z-index: 3;
       pointer-events: auto;
     }
 
     .coverflow-slide.pos-right-2 {
-      transform: translateX(300px) rotateY(-45deg) scale(0.7);
-      opacity: 0.5;
+      transform: translateX(380px) rotateY(-55deg) scale(0.45);
+      opacity: 0.3;
       z-index: 3;
       pointer-events: auto;
     }
@@ -467,7 +467,7 @@ function sanitizeInput(str) {
 let DB = {};
 
 const CACHE_KEY = 'filmrec_db';
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 
 async function loadDatabase() {
   const cached = localStorage.getItem(CACHE_KEY);
