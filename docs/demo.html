@@ -228,54 +228,151 @@
       margin-top: 4px;
     }
 
-    .rec-card {
-      background: #1a0a2e;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .coverflow {
       position: relative;
+      width: 100%;
+      height: 360px;
+      perspective: 600px;
       overflow: hidden;
-      animation: slideIn 0.3s ease-out forwards;
-      opacity: 0;
-      transform: translateY(10px);
+      margin: 20px 0 0;
     }
-    .rec-card::before {
-      content: '';
+
+    .coverflow-slide {
       position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(123,97,255,0.1), rgba(0,229,255,0.05));
+      left: 50%;
+      top: 0;
+      width: 200px;
+      margin-left: -100px;
+      transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease;
+      transform-style: preserve-3d;
+      cursor: pointer;
+      opacity: 0;
+      z-index: 0;
+      pointer-events: none;
     }
 
-    @keyframes slideIn {
-      to { opacity: 1; transform: translateY(0); }
+    .coverflow-slide.pos-center {
+      transform: translateX(0) rotateY(0deg) scale(1);
+      opacity: 1;
+      z-index: 5;
+      pointer-events: auto;
+      cursor: default;
     }
 
-    .rec-info { position: relative; }
-    .rec-title {
+    .coverflow-slide.pos-left-1 {
+      transform: translateX(-180px) rotateY(45deg) scale(0.8);
+      opacity: 1;
+      z-index: 4;
+      pointer-events: auto;
+    }
+
+    .coverflow-slide.pos-right-1 {
+      transform: translateX(180px) rotateY(-45deg) scale(0.8);
+      opacity: 1;
+      z-index: 4;
+      pointer-events: auto;
+    }
+
+    .coverflow-slide.pos-left-2 {
+      transform: translateX(-300px) rotateY(45deg) scale(0.7);
+      opacity: 0.5;
+      z-index: 3;
+      pointer-events: auto;
+    }
+
+    .coverflow-slide.pos-right-2 {
+      transform: translateX(300px) rotateY(-45deg) scale(0.7);
+      opacity: 0.5;
+      z-index: 3;
+      pointer-events: auto;
+    }
+
+    .coverflow-poster {
+      width: 200px;
+      height: 300px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: #2a1a4e;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+      display: block;
+    }
+
+    .coverflow-poster-fallback {
+      width: 200px;
+      height: 300px;
+      border-radius: 4px;
+      background: #2a1a4e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+    }
+
+    .coverflow-reflect {
+      width: 200px;
+      height: 50px;
+      border-radius: 0 0 4px 4px;
+      object-fit: cover;
+      object-position: bottom;
+      transform: scaleY(-1);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent 60%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent 60%);
+      margin-top: -1px;
+      pointer-events: none;
+      display: block;
+    }
+
+    .coverflow-info {
+      text-align: center;
+      padding: 16px 0 4px;
+      position: relative;
+    }
+
+    .coverflow-title {
       font-size: 16px;
       font-weight: 600;
       color: #fff;
     }
-    .rec-year {
-      font-size: 12px;
-      color: rgba(123,97,255,0.7);
-      margin-top: 3px;
+
+    .coverflow-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 6px;
     }
 
-    .rec-score {
-      font-size: 14px;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 8px;
-      position: relative;
-      flex-shrink: 0;
+    .coverflow-year {
+      font-size: 12px;
+      color: rgba(123,97,255,0.7);
     }
-    .rec-score.high { color: #00e5ff; background: rgba(0,229,255,0.2); }
-    .rec-score.mid { color: #7b61ff; background: rgba(123,97,255,0.2); }
-    .rec-score.low { color: #ff2d95; background: rgba(255,45,149,0.2); }
+
+    .coverflow-score {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+    .coverflow-score.high { color: #00e5ff; background: rgba(0,229,255,0.2); }
+    .coverflow-score.mid { color: #7b61ff; background: rgba(123,97,255,0.2); }
+    .coverflow-score.low { color: #ff2d95; background: rgba(255,45,149,0.2); }
+
+    .coverflow-divider {
+      width: 80%;
+      max-width: 500px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(123,97,255,0.3), transparent);
+      margin: 0 auto 8px;
+    }
+
+    .carousel-counter {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(192,132,252,0.5);
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
 
     .empty-state {
       text-align: center;
@@ -337,7 +434,10 @@
       <div class="label">Because you liked</div>
       <div class="movie-name" id="selectedMovie"></div>
     </div>
-    <div id="recCards"></div>
+    <div class="coverflow" id="coverflow"></div>
+    <div class="coverflow-divider"></div>
+    <div class="coverflow-info" id="coverflowInfo"></div>
+    <div class="carousel-counter" id="carouselCounter"></div>
   </div>
 
   <div class="empty-state" id="emptyState">
@@ -636,6 +736,129 @@ const DB = {
   ]
 };
 
+const POSTERS = {
+  "300": "/h7Lcio0c9ohxPhSZg42eTlKIVVY.jpg",
+  "A Beautiful Mind": "/rEIg5yJdNOt9fmX4P8gU9LeNoTQ.jpg",
+  "Aladdin": "/eLFfl7vS8dkeG1hKp5mwbm37V83.jpg",
+  "Alien": "/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg",
+  "Aliens": "/r1x5JGpyqZU8PYhbs4UcrO1Xb6x.jpg",
+  "American History X": "/x2drgoXYZ8484lqyDj7L1CEVR4T.jpg",
+  "Apollo 13": "/tVeKscCm2fY1xDXZk8PgnZ87h9S.jpg",
+  "Avatar": "/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg",
+  "Back to the Future": "/vN5B5WgYscRGcQpVhHl6p9DDTP0.jpg",
+  "Batman Begins": "/sPX89Td70IDDjVr85jdSBb4rWGr.jpg",
+  "Beauty and the Beast": "/hUJ0UvQ5tgE2Z9WpfuduVSdiCiU.jpg",
+  "Blade Runner": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+  "Brave": "/1XAuDtMWpL0sYSFK0R6EZate2Ux.jpg",
+  "Braveheart": "/or1gBugydmjToAEq7OZY0owwFk.jpg",
+  "Captain America: The Winter Soldier": "/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg",
+  "Casino": "/lMrxYKKhd4lqRzwUHAy5gcx9PSO.jpg",
+  "Cast Away": "/7lLJgKnAicAcR5UEuo8xhSMj18w.jpg",
+  "Catch Me If You Can": "/ctjEj2xM32OvBXCq8zAdK3ZrsAj.jpg",
+  "Close Encounters of the Third Kind": "/yaPx3cK9zGFX3SbcKwxWM1QIbUh.jpg",
+  "Die Hard": "/7Bjd8kfmDSOzpmhySpEhkUyK2oH.jpg",
+  "Divergent": "/aNh4Q3iuPKDMPi2SL7GgOpiLukX.jpg",
+  "Django Unchained": "/7oWY8VDWW7thTzWh3OKYRkWUlD5.jpg",
+  "Dredd": "/cfSnKn8NDU3m8UxihjVcYprA0Aq.jpg",
+  "E.T. the Extra-Terrestrial": "/an0nD6uq6byfxXCfk6lQBzdL2J1.jpg",
+  "Edge of Tomorrow": "/nBM9MMa2WCwvMG4IJ3eiGUdbPe6.jpg",
+  "Ender's Game": "/pVcRI5YKnkkgaAD876jBeKb189d.jpg",
+  "Fight Club": "/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg",
+  "Finding Nemo": "/eHuGQ10FUzK1mdOY69wF5pGgEf5.jpg",
+  "Forrest Gump": "/Cw4hIUIAmSYfK9QfaUW5igp9La.jpg",
+  "Frozen": "/itAKcobTYGpYT8Phwjd8c9hleTo.jpg",
+  "Gangs of New York": "/lemqKtcCuAano5aqrzxYiKC8kkn.jpg",
+  "Gladiator": "/wN2xWp1eIwCKOD0BHTcErTBv1Uq.jpg",
+  "Gone Girl": "/ts996lKsxvjkO2yiYG0ht4qAicO.jpg",
+  "Goodfellas": "/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg",
+  "Gravity": "/kZ2nZw8D681aphje8NJi8EfbL1U.jpg",
+  "Guardians of the Galaxy": "/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg",
+  "Harry Potter and the Philosopher's Stone": "/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
+  "Heat": "/umSVjVdbVwtx5ryCA2QXL44Durm.jpg",
+  "Inception": "/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg",
+  "Indiana Jones and the Last Crusade": "/sizg1AU8f8JDZX4QIgE4pjUMBvx.jpg",
+  "Inglourious Basterds": "/aupnPtagH9JVBuMrGEanf4iqXEQ.jpg",
+  "Interstellar": "/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg",
+  "Iron Man": "/78lPtwv72eTNqFW9COBYI0dWDJa.jpg",
+  "Jaws": "/lxM6kqilAdpdhqUl2biYp5frUxE.jpg",
+  "John Carter": "/lCxz1Yus07QCQQCb6I0Dr3Lmqpx.jpg",
+  "Jurassic Park": "/63viWuPfYQjRYLSZSZNq7dglJP5.jpg",
+  "Jurassic World": "/1RICxzeoNCAO5NpcRMIgg1XT6fm.jpg",
+  "Kill Bill: Vol. 1": "/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg",
+  "Kingdom of Heaven": "/rNaBe4TwbMef71sgscqabpGKsxh.jpg",
+  "Life of Pi": "/iLgRu4hhSr6V1uManX6ukDriiSc.jpg",
+  "Mad Max: Fury Road": "/ulcAi4dKpAjHwYGS08vNyx9H6I9.jpg",
+  "Memento": "/nzlv62aC0octS5AklAiWpXLX9Z0.jpg",
+  "Minority Report": "/qtgFcnwh9dAFLocsDk2ySDVS8UF.jpg",
+  "Moana": "/zKVgiv5qHCvCLT4A2ymJi5QeXDH.jpg",
+  "Monsters, Inc.": "/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg",
+  "Mulan": "/jAbexAtB0aSfP5Ay4TpWHARyVnG.jpg",
+  "National Treasure": "/pxL6E4GBOPUG6CdkO9cUQN5VMwI.jpg",
+  "Pacific Rim": "/8wo4eN8dWKaKlxhSvBz19uvj8gA.jpg",
+  "Percy Jackson & the Olympians: The Lightning Thief": "/brzpTyZ5bnM7s53C1KSk1TmrMO6.jpg",
+  "Pirates of the Caribbean: The Curse of the Black Pearl": "/poHwCZeWzJCShH7tOjg8RIoyjcw.jpg",
+  "Predator": "/pHpq9yNUIo6aDoCXEBzjSolywgz.jpg",
+  "Pulp Fiction": "/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg",
+  "Ratatouille": "/t3vaWRPSf6WjDSamIkKDs1iQWna.jpg",
+  "Reservoir Dogs": "/xi8Iu6qyTfyZVDVy60raIOYJJmk.jpg",
+  "Revolutionary Road": "/cvkD3yiVXLg3as8EAG3LaTycONQ.jpg",
+  "Robin Hood": "/92Tsfx7SFafOqWsotvrlJbHyehd.jpg",
+  "RoboCop": "/hHtOgGb3NihlyRATHlKPaFApbrd.jpg",
+  "Saving Private Ryan": "/uqx37cS8cpHg8U35f9U5IBlrCV3.jpg",
+  "Scarface": "/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg",
+  "Schindler's List": "/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg",
+  "Se7en": "/191nKfP0ehp3uIvWqgPbFmI4lv9.jpg",
+  "Shutter Island": "/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg",
+  "Spider-Man": "/iPOn6DinuVyLY17YM9mKuPofV08.jpg",
+  "Star Trek Into Darkness": "/Aim3kVNh1MPIxPEFeJrl9e9Uf1a.jpg",
+  "Star Wars": "/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg",
+  "Tangled": "/ym7Kst6a4uodryxqbGOxmewF235.jpg",
+  "Tarzan": "/bTvHlcqiOjGa3lFtbrTLTM3zasY.jpg",
+  "Terminator 2: Judgment Day": "/jFTVD4XoWQTcg7wdyJKa8PEds5q.jpg",
+  "The Amazing Spider-Man": "/jexoNYnPd6vVrmygwF6QZmWPFdu.jpg",
+  "The Avengers": "/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg",
+  "The Aviator": "/lx4kWcZc3o9PaNxlQpEJZM17XUI.jpg",
+  "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe": "/iREd0rNCjYdf5Ar0vfaW32yrkm.jpg",
+  "The Dark Knight": "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+  "The Dark Knight Rises": "/hr0L2aueqlP2BYUblTTjmtn0hw4.jpg",
+  "The Departed": "/nT97ifVT2J1yMQmeq20Qblg61T.jpg",
+  "The Empire Strikes Back": "/nNAeTmF4CtdSgMDplXTDPOpYzsX.jpg",
+  "The Game": "/zSqJ1qFq8NXFfi7JeIYMlzyR0dx.jpg",
+  "The Godfather": "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+  "The Great Gatsby": "/nimh1rrDDLhgpG8XAYoUZXHYwb6.jpg",
+  "The Green Mile": "/8VG8fDNiy50H4FedGwdSVUPoaJe.jpg",
+  "The Hateful Eight": "/jIywvdPjia2t3eKYbjVTcwBQlG8.jpg",
+  "The Hobbit: An Unexpected Journey": "/yHA9Fc37VmpUA5UncTxxo3rTGVA.jpg",
+  "The Hunger Games": "/yXCbOiVDCxO71zI7cuwBRXdftq8.jpg",
+  "The Hunger Games: Catching Fire": "/vrQHDXjVmbYzadOXQ0UaObunoy2.jpg",
+  "The Incredibles": "/2LqaLgk4Z226KkgPJuiOQ58wvrm.jpg",
+  "The Lion King": "/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg",
+  "The Little Mermaid": "/plcZXvI310FkbwIptvd6rqk63LP.jpg",
+  "The Lord of the Rings: The Fellowship of the Ring": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+  "The Martian": "/fASz8A0yFE3QB6LgGoOfwvFSseV.jpg",
+  "The Matrix": "/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg",
+  "The Maze Runner": "/ode14q7WtDugFDp78fo9lCsmay9.jpg",
+  "The Prestige": "/Ag2B2KHKQPukjH7WutmgnnSNurZ.jpg",
+  "The Shawshank Redemption": "/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg",
+  "The Silence of the Lambs": "/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg",
+  "The Terminator": "/qvktm0BHcnmDpul4Hz01GIazWPr.jpg",
+  "The Thing": "/tzGY49kseSE9QAKk47uuDGwnSCu.jpg",
+  "The Wolf of Wall Street": "/kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg",
+  "Thor": "/prSfAi1xGrhLQNxVSUFh61xQ4Qy.jpg",
+  "Titanic": "/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg",
+  "Total Recall": "/wVbeL6fkbTKSmNfalj4VoAUUqJv.jpg",
+  "Toy Story": "/sfQtVlIHljToOwYjhe21KPGzZWK.jpg",
+  "Transformers": "/iRCgqpdVE4wyLQvGYU3ZP7pAtUc.jpg",
+  "Troy": "/a07wLy4ONfpsjnBqMwhlWTJTcm.jpg",
+  "Up": "/mFvoEwSfLqbcWwFsDjQebn9bzFe.jpg",
+  "WALL·E": "/hbhFnRzzg6ZDmm8YAmxBnQpQIPh.jpg",
+  "X-Men": "/ikA8UhYdTGpqbatFa93nIf6noSr.jpg",
+  "X-Men: Days of Future Past": "/tYfijzolzgoMOtegh1Y7j2Enorg.jpg",
+  "Zodiac": "/6YmeO4pB7XTh8P8F960O1uA14JO.jpg"
+};
+
+const TMDB_IMG = "https://image.tmdb.org/t/p/";
+
 const TITLES = Object.keys(DB);
 
 const input = document.getElementById('searchInput');
@@ -643,8 +866,13 @@ const clearBtn = document.getElementById('clearBtn');
 const suggestionsEl = document.getElementById('suggestions');
 const resultsEl = document.getElementById('results');
 const selectedMovieEl = document.getElementById('selectedMovie');
-const recCardsEl = document.getElementById('recCards');
+const coverflowEl = document.getElementById('coverflow');
+const coverflowInfo = document.getElementById('coverflowInfo');
+const carouselCounter = document.getElementById('carouselCounter');
 const emptyState = document.getElementById('emptyState');
+let currentSlide = 0;
+let slideCount = 0;
+let currentRecs = [];
 
 input.addEventListener('input', () => {
   const q = input.value.trim().toLowerCase();
@@ -687,6 +915,85 @@ clearBtn.addEventListener('click', () => {
   input.focus();
 });
 
+const POS_CLASSES = ['pos-left-2', 'pos-left-1', 'pos-center', 'pos-right-1', 'pos-right-2'];
+
+function goToSlide(idx) {
+  if (idx < 0 || idx >= slideCount) return;
+  currentSlide = idx;
+  const slides = coverflowEl.querySelectorAll('.coverflow-slide');
+  slides.forEach((s, i) => {
+    POS_CLASSES.forEach(c => s.classList.remove(c));
+    const offset = i - idx;
+    if (offset === 0) s.classList.add('pos-center');
+    else if (offset === -1) s.classList.add('pos-left-1');
+    else if (offset === 1) s.classList.add('pos-right-1');
+    else if (offset === -2) s.classList.add('pos-left-2');
+    else if (offset === 2) s.classList.add('pos-right-2');
+    s.style.opacity = Math.abs(offset) > 2 ? '0' : '';
+    s.style.pointerEvents = Math.abs(offset) > 2 ? 'none' : '';
+  });
+
+  const r = currentRecs[idx];
+  const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+  coverflowInfo.innerHTML = `
+    <div class="coverflow-title">${r.title}</div>
+    <div class="coverflow-meta">
+      <span class="coverflow-year">${r.year}</span>
+      <span class="coverflow-score ${scoreClass}">&#9733; ${r.imdb}</span>
+    </div>`;
+  carouselCounter.textContent = `${idx + 1} / ${slideCount}`;
+}
+
+coverflowEl.addEventListener('click', (e) => {
+  const slide = e.target.closest('.coverflow-slide');
+  if (!slide) return;
+  const idx = parseInt(slide.dataset.idx);
+  if (idx !== currentSlide) goToSlide(idx);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!resultsEl.classList.contains('visible')) return;
+  if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
+  if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
+});
+
+let touchStartX = 0, touchStartTime = 0, isDragging = false;
+coverflowEl.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartTime = Date.now();
+  isDragging = true;
+  coverflowEl.querySelectorAll('.coverflow-slide').forEach(s => {
+    s.style.transition = 'none';
+  });
+}, {passive: true});
+
+coverflowEl.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  const dx = e.touches[0].clientX - touchStartX;
+  const slides = coverflowEl.querySelectorAll('.coverflow-slide');
+  slides.forEach(s => {
+    const base = parseFloat(s.style.getPropertyValue('--base-tx') || '0');
+    s.style.transform = s.style.transform.replace(/translateX\([^)]+\)/, `translateX(${base + dx * 0.4}px)`);
+  });
+}, {passive: true});
+
+coverflowEl.addEventListener('touchend', (e) => {
+  isDragging = false;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dt = Date.now() - touchStartTime;
+  const velocity = Math.abs(dx) / dt;
+  const threshold = velocity > 0.3 ? 20 : 50;
+  coverflowEl.querySelectorAll('.coverflow-slide').forEach(s => {
+    s.style.transition = '';
+  });
+  if (Math.abs(dx) > threshold) {
+    if (dx < 0) goToSlide(currentSlide + 1);
+    else goToSlide(currentSlide - 1);
+  } else {
+    goToSlide(currentSlide);
+  }
+}, {passive: true});
+
 function selectMovie(title) {
   input.value = title;
   suggestionsEl.classList.remove('visible');
@@ -695,18 +1002,27 @@ function selectMovie(title) {
 
   const recs = DB[title];
   if (!recs) return;
+  currentRecs = recs;
 
   selectedMovieEl.textContent = title;
-  recCardsEl.innerHTML = recs.map((r, i) => {
-    const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
-    return `<div class="rec-card" style="animation-delay: ${i * 0.08}s">
-      <div class="rec-info">
-        <div class="rec-title">${r.title}</div>
-        <div class="rec-year">${r.year}</div>
-      </div>
-      <div class="rec-score ${scoreClass}">&#9733; ${r.imdb}</div>
+
+  coverflowEl.innerHTML = recs.map((r, i) => {
+    const poster = POSTERS[r.title];
+    const posterEl = poster
+      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${poster}" alt="${r.title}">`
+      : `<div class="coverflow-poster-fallback">🎬</div>`;
+    const reflectEl = poster
+      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${poster}" alt="">`
+      : '';
+    return `<div class="coverflow-slide" data-idx="${i}">
+      ${posterEl}
+      ${reflectEl}
     </div>`;
   }).join('');
+
+  slideCount = recs.length;
+  currentSlide = 0;
+  goToSlide(0);
   resultsEl.classList.add('visible');
 }
 
