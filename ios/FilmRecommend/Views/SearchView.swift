@@ -123,9 +123,7 @@ struct SearchView: View {
                     .foregroundColor(neonCyan)
                     .padding(.bottom, 4)
 
-                ForEach(viewModel.recommendations) { rec in
-                    RecommendationCard(recommendation: rec)
-                }
+                CoverFlowView(recommendations: viewModel.recommendations)
             }
         }
     }

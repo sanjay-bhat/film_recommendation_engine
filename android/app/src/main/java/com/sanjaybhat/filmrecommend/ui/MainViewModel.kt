@@ -36,11 +36,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun sanitizeQuery(input: String): String {
+        return input.replace(Regex("[\\x00-\\x1f\\x7f]"), "").take(100)
+    }
+
     fun onQueryChanged(query: String) {
-        _state.value = _state.value.copy(query = query)
-        if (query.length >= 2) {
+        val clean = sanitizeQuery(query)
+        _state.value = _state.value.copy(query = clean)
+        if (clean.length >= 2) {
             viewModelScope.launch(Dispatchers.IO) {
-                val results = engine.searchTitles(query)
+                val results = engine.searchTitles(clean)
                 _state.value = _state.value.copy(suggestions = results)
             }
         } else {

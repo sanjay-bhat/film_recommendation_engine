@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://image.tmdb.org data:; connect-src 'none'; frame-src 'none';">
   <title>Try It Live — Film Recommendation Engine</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
@@ -423,7 +424,7 @@
 <div class="container">
   <div class="search-box">
     <span class="search-icon">&#128269;</span>
-    <input type="text" class="search-input" id="searchInput" placeholder="Search for a movie..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search for a movie..." autocomplete="off" autocorrect="off" spellcheck="false" maxlength="100">
     <button class="clear-btn" id="clearBtn">&#10005;</button>
   </div>
 
@@ -453,6 +454,16 @@
 </div>
 
 <script>
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function sanitizeInput(str) {
+  return str.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 100);
+}
+
 const DB = {
   "Avatar": [
     {"title":"Guardians of the Galaxy","year":2014,"imdb":7.9},
@@ -875,7 +886,7 @@ let slideCount = 0;
 let currentRecs = [];
 
 input.addEventListener('input', () => {
-  const q = input.value.trim().toLowerCase();
+  const q = sanitizeInput(input.value).trim().toLowerCase();
   clearBtn.classList.toggle('visible', input.value.length > 0);
 
   if (q.length < 2) {
@@ -891,11 +902,12 @@ input.addEventListener('input', () => {
   }
 
   suggestionsEl.innerHTML = matches.map(title => {
+    const safe = escapeHtml(title);
     const idx = title.toLowerCase().indexOf(q);
-    const before = title.substring(0, idx);
-    const match = title.substring(idx, idx + q.length);
-    const after = title.substring(idx + q.length);
-    return `<div class="suggestion-item" data-title="${title}">${before}<span class="match">${match}</span>${after}</div>`;
+    const before = escapeHtml(title.substring(0, idx));
+    const match = escapeHtml(title.substring(idx, idx + q.length));
+    const after = escapeHtml(title.substring(idx + q.length));
+    return `<div class="suggestion-item" data-title="${safe}">${before}<span class="match">${match}</span>${after}</div>`;
   }).join('');
   suggestionsEl.classList.add('visible');
 });
@@ -936,10 +948,10 @@ function goToSlide(idx) {
   const r = currentRecs[idx];
   const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
   coverflowInfo.innerHTML = `
-    <div class="coverflow-title">${r.title}</div>
+    <div class="coverflow-title">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
-      <span class="coverflow-year">${r.year}</span>
-      <span class="coverflow-score ${scoreClass}">&#9733; ${r.imdb}</span>
+      <span class="coverflow-year">${Number(r.year)}</span>
+      <span class="coverflow-score ${scoreClass}">&#9733; ${Number(r.imdb)}</span>
     </div>`;
   carouselCounter.textContent = `${idx + 1} / ${slideCount}`;
 }
@@ -1008,11 +1020,13 @@ function selectMovie(title) {
 
   coverflowEl.innerHTML = recs.map((r, i) => {
     const poster = POSTERS[r.title];
-    const posterEl = poster
-      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${poster}" alt="${r.title}">`
+    const safeTitle = escapeHtml(r.title);
+    const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+    const posterEl = safePath
+      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" alt="${safeTitle}">`
       : `<div class="coverflow-poster-fallback">🎬</div>`;
-    const reflectEl = poster
-      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${poster}" alt="">`
+    const reflectEl = safePath
+      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" alt="">`
       : '';
     return `<div class="coverflow-slide" data-idx="${i}">
       ${posterEl}
