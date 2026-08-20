@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Film Recommendation Engine — Synthwave Banner" width="100%">
+  <img src="assets/banner.svg" alt="Film Recommendation Engine — Cinematic Banner" width="100%">
 </p>
 
 # Film Recommendation Engine
@@ -7,22 +7,22 @@
 [![CI](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![release](https://img.shields.io/badge/release-v0.5.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
+[![release](https://img.shields.io/badge/release-v0.7.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
 [![go report](https://img.shields.io/badge/go%20report-retired-lightgrey.svg)](https://goreportcard.com/report/github.com/sanjay-bhat/film_recommendation_engine)
 
-A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M**. Give it a movie you love, and it returns 5 films you'll probably love too — by combining TF-IDF weighted content features, sentence embeddings on plot summaries, MovieLens genome tag vectors, and collaborative filtering learned from 25 million real user ratings.
+A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M**. Give it a movie you love, and it returns 7 films you'll probably love too — using a 9-signal weighted hybrid scoring formula that blends content similarity, collaborative filtering, genre Jaccard overlap, plot embeddings, genome tags, actor/director overlap, popularity, and release-year proximity.
 
 ## Preview
 
 <p align="center">
-  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/demo">
+  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/">
     <img src="assets/demo_website.gif" alt="Website Demo" width="100%">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/demo">
-    <img src="https://img.shields.io/badge/Try_it_live-Website-00e5ff?style=for-the-badge&logo=githubpages&logoColor=white" alt="Try it live — Website">
+  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/">
+    <img src="https://img.shields.io/badge/Try_it_live-Website-c4a35a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Try it live — Website">
   </a>
 </p>
 
@@ -44,17 +44,21 @@ A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M*
 
 ## How It Works
 
-The engine combines four recommendation strategies:
+Four-way retrieval gathers ~120 candidates from content, collaborative, genome, and plot sources, then a **9-signal weighted hybrid** ranks them:
 
-| Strategy | What It Does |
-|:---|:---|
-| **Content-Based (TF-IDF)** | Builds a TF-IDF weighted feature matrix from director, cast, keywords, and genres. Rare keywords (e.g., "time_travel") score higher than common ones (e.g., "love"). Finds 31 nearest neighbors via Euclidean distance. |
-| **Plot Embeddings** | Encodes plot summaries with `all-MiniLM-L6-v2` sentence transformer (384-dim), reduced to 50 dimensions via PCA. Captures narrative similarity that structured features miss. |
-| **Genome Tags** | Uses 1,128 MovieLens genome tag relevance scores per movie, reduced to 50 dimensions via SVD. Captures thematic similarity (mood, setting, era) that keywords miss. |
-| **Collaborative Filtering** | Truncated SVD (k=50) on 25M real user ratings learns latent taste factors. Item-item cosine similarity finds movies real audiences rated similarly. |
-| **Four-Way Retrieval** | Retrieves 31 candidates from each source independently, merges into a ~120-candidate pool, then ranks — so the best signal from each approach surfaces. |
-| **Hybrid Scoring** | Blends content and collaborative signals: `(1−α) × content + α × collab`, where α=0.4. Content score uses `IMDB² × φ(votes) × φ(year)` Gaussian weighting. |
-| **Sequel Detection** | Fuzzy string matching deduplicates franchise entries, so you don't get three Pirates of the Caribbean films back. |
+| Signal | Weight | Source |
+|:---|:---|:---|
+| **Content Similarity** | 25% | TF-IDF features (director, cast, keywords, genres) via Euclidean distance |
+| **Collaborative Filtering** | 15% | Truncated SVD (k=50) on 25M real user ratings, item-item cosine similarity |
+| **Genre Jaccard** | 15% | Set intersection-over-union of genre labels |
+| **Plot Embeddings** | 10% | `all-MiniLM-L6-v2` sentence transformer (384-dim → 50d via PCA) |
+| **Genome Tags** | 8% | 1,128 MovieLens genome tag scores (mood, setting, era) reduced to 50d via SVD |
+| **Actor Overlap** | 8% | Jaccard overlap of top-3 billed actors |
+| **Director Match** | 7% | Binary signal — same director gets full weight |
+| **Log Popularity** | 7% | `log(1 + votes)` normalized to [0,1] |
+| **Year Proximity** | 5% | Gaussian decay (σ=15 years) around the source film's release |
+
+Sequel deduplication via fuzzy string matching prevents franchise flooding.
 
 ## Quick Start
 
@@ -151,7 +155,7 @@ The core recommendation algorithm is available in six languages across CLI, web,
 | CLI | Go | `src/recommend.go` | Single-file, standard library only |
 | Android | Kotlin | `android/` | Jetpack Compose, Material 3, fully offline |
 | iOS | Swift | `ios/` | SwiftUI, async/await, fully offline |
-| Web | HTML/CSS/JS | `docs/` | GitHub Pages, synthwave theme |
+| Web | HTML/CSS/JS | `docs/` | GitHub Pages, WebGL bokeh particles, Cover Flow UI |
 
 ## License
 
