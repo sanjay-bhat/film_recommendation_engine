@@ -23,18 +23,23 @@ class MovieViewModel: ObservableObject {
         }
     }
 
+    private func sanitizeQuery(_ input: String) -> String {
+        let cleaned = input.unicodeScalars.filter { $0.value >= 0x20 && $0.value != 0x7f }
+        return String(String.UnicodeScalarView(cleaned)).prefix(100).description
+    }
+
     func onQueryChanged(_ newQuery: String) {
-        query = newQuery
+        query = sanitizeQuery(newQuery)
         searchTask?.cancel()
 
-        guard newQuery.count >= 2 else {
+        guard query.count >= 2 else {
             suggestions = []
             return
         }
 
         searchTask = Task {
-            let results = await Task.detached { [engine] in
-                engine.searchTitles(query: newQuery)
+            let results = await Task.detached { [engine, q = self.query] in
+                engine.searchTitles(query: q)
             }.value
 
             if !Task.isCancelled {
