@@ -1,123 +1,125 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0a0015"/>
-      <stop offset="45%" stop-color="#1a0a2e"/>
-      <stop offset="70%" stop-color="#2d1b4e"/>
-      <stop offset="100%" stop-color="#4a1942"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#08080c"/>
+      <stop offset="100%" stop-color="#0f0f14"/>
     </linearGradient>
-    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ff6ec7"/>
-      <stop offset="50%" stop-color="#ff3c7d"/>
-      <stop offset="100%" stop-color="#ff8c00"/>
+    <linearGradient id="goldText" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4b96a"/>
+      <stop offset="100%" stop-color="#a08040"/>
     </linearGradient>
-    <linearGradient id="gridGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ff2d95" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#ff2d95" stop-opacity="0.05"/>
+    <linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c4a35a" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#c4a35a" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#c4a35a" stop-opacity="0.6"/>
+      <stop offset="70%" stop-color="#c4a35a" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c4a35a" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="titleGlow" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#00e5ff"/>
-      <stop offset="100%" stop-color="#7b61ff"/>
-    </linearGradient>
-    <filter id="neonGlow" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur1"/>
-      <feMerge>
-        <feMergeNode in="blur1"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="softGlow" x="-5%" y="-5%" width="110%" height="110%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur"/>
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <filter id="sunGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="12"/>
+    <filter id="bokeh" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
     </filter>
-    <clipPath id="sunClip">
-      <rect x="0" y="0" width="900" height="210"/>
-    </clipPath>
-    <clipPath id="gridClip">
-      <rect x="0" y="210" width="900" height="110"/>
-    </clipPath>
+    <filter id="softBokeh" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
+    </filter>
   </defs>
 
-  <!-- Sky background -->
-  <rect width="900" height="320" fill="url(#sky)"/>
+  <!-- Background -->
+  <rect width="900" height="320" fill="url(#bg)"/>
 
-  <!-- Stars -->
-  <g fill="#ffffff" opacity="0.4">
-    <circle cx="67" cy="28" r="1"/><circle cx="145" cy="55" r="0.8"/>
-    <circle cx="230" cy="18" r="1.2"/><circle cx="310" cy="42" r="0.7"/>
-    <circle cx="412" cy="15" r="1"/><circle cx="520" cy="38" r="0.9"/>
-    <circle cx="590" cy="22" r="1.1"/><circle cx="680" cy="50" r="0.8"/>
-    <circle cx="750" cy="12" r="1"/><circle cx="830" cy="35" r="0.7"/>
-    <circle cx="100" cy="72" r="0.6"/><circle cx="260" cy="80" r="0.9"/>
-    <circle cx="470" cy="65" r="0.7"/><circle cx="640" cy="78" r="1"/>
-    <circle cx="790" cy="68" r="0.8"/><circle cx="50" cy="95" r="0.5"/>
-    <circle cx="380" cy="88" r="0.6"/><circle cx="710" cy="90" r="0.7"/>
-    <circle cx="170" cy="105" r="0.8"/><circle cx="555" cy="100" r="0.6"/>
+  <!-- Subtle vignette -->
+  <rect width="900" height="320" fill="url(#bg)" opacity="0"/>
+  <ellipse cx="450" cy="160" rx="500" ry="200" fill="none" stroke="#1a1a22" stroke-width="200" opacity="0.3"/>
+
+  <!-- Bokeh particles -->
+  <circle cx="120" cy="80" r="4" fill="#c4a35a" opacity="0.12" filter="url(#bokeh)"/>
+  <circle cx="780" cy="60" r="3" fill="#c4a35a" opacity="0.1" filter="url(#bokeh)"/>
+  <circle cx="650" cy="250" r="5" fill="#c4a35a" opacity="0.08" filter="url(#softBokeh)"/>
+  <circle cx="200" cy="240" r="3.5" fill="#c4a35a" opacity="0.1" filter="url(#bokeh)"/>
+  <circle cx="450" cy="40" r="2.5" fill="#c4a35a" opacity="0.15" filter="url(#bokeh)"/>
+  <circle cx="340" cy="280" r="4" fill="#c4a35a" opacity="0.07" filter="url(#softBokeh)"/>
+  <circle cx="60" cy="180" r="3" fill="#c4a35a" opacity="0.09" filter="url(#bokeh)"/>
+  <circle cx="830" cy="150" r="4.5" fill="#c4a35a" opacity="0.06" filter="url(#softBokeh)"/>
+  <circle cx="500" cy="290" r="2" fill="#c4a35a" opacity="0.12" filter="url(#bokeh)"/>
+  <circle cx="720" cy="100" r="3" fill="#c4a35a" opacity="0.11" filter="url(#bokeh)"/>
+  <circle cx="280" cy="50" r="2" fill="#d4b96a" opacity="0.13" filter="url(#bokeh)"/>
+  <circle cx="580" cy="180" r="3.5" fill="#c4a35a" opacity="0.05" filter="url(#softBokeh)"/>
+  <circle cx="150" cy="290" r="2.5" fill="#c4a35a" opacity="0.1" filter="url(#bokeh)"/>
+  <circle cx="400" cy="130" r="1.5" fill="#d4b96a" opacity="0.18" filter="url(#bokeh)"/>
+  <circle cx="850" cy="270" r="3" fill="#c4a35a" opacity="0.08" filter="url(#bokeh)"/>
+
+  <!-- Small dust particles -->
+  <circle cx="90" cy="120" r="1" fill="#c4a35a" opacity="0.2"/>
+  <circle cx="300" cy="160" r="0.8" fill="#c4a35a" opacity="0.15"/>
+  <circle cx="550" cy="70" r="1" fill="#c4a35a" opacity="0.18"/>
+  <circle cx="700" cy="200" r="0.7" fill="#c4a35a" opacity="0.2"/>
+  <circle cx="180" cy="190" r="0.9" fill="#c4a35a" opacity="0.12"/>
+  <circle cx="620" cy="130" r="1.1" fill="#c4a35a" opacity="0.14"/>
+  <circle cx="420" cy="220" r="0.8" fill="#c4a35a" opacity="0.16"/>
+  <circle cx="760" cy="280" r="1" fill="#c4a35a" opacity="0.1"/>
+
+  <!-- Horizontal gold accent lines -->
+  <line x1="100" y1="115" x2="360" y2="115" stroke="url(#goldLine)" stroke-width="0.5"/>
+  <line x1="540" y1="115" x2="800" y2="115" stroke="url(#goldLine)" stroke-width="0.5"/>
+  <line x1="100" y1="205" x2="360" y2="205" stroke="url(#goldLine)" stroke-width="0.5"/>
+  <line x1="540" y1="205" x2="800" y2="205" stroke="url(#goldLine)" stroke-width="0.5"/>
+
+  <!-- Film strip decoration (left) -->
+  <g opacity="0.06">
+    <rect x="30" y="60" width="28" height="200" rx="2" fill="none" stroke="#c4a35a" stroke-width="0.8"/>
+    <rect x="34" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="34" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="48" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
   </g>
 
-  <!-- Sun glow -->
-  <g clip-path="url(#sunClip)">
-    <circle cx="450" cy="210" r="70" fill="#ff6ec7" opacity="0.12" filter="url(#sunGlow)"/>
-    <circle cx="450" cy="210" r="50" fill="url(#sun)"/>
-    <!-- Sun horizontal slice lines -->
-    <g>
-      <rect x="395" y="190" width="110" height="2.5" fill="#0a0015" opacity="0.8"/>
-      <rect x="400" y="196" width="100" height="3" fill="#0a0015" opacity="0.8"/>
-      <rect x="405" y="203" width="90" height="3.5" fill="#0a0015" opacity="0.75"/>
-      <rect x="410" y="210" width="80" height="4" fill="#0a0015" opacity="0.7"/>
-    </g>
+  <!-- Film strip decoration (right) -->
+  <g opacity="0.06">
+    <rect x="842" y="60" width="28" height="200" rx="2" fill="none" stroke="#c4a35a" stroke-width="0.8"/>
+    <rect x="846" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="846" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
+    <rect x="860" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
   </g>
 
-  <!-- Horizon line -->
-  <line x1="0" y1="210" x2="900" y2="210" stroke="#ff2d95" stroke-width="1.5" opacity="0.7"/>
-
-  <!-- Perspective grid floor -->
-  <g clip-path="url(#gridClip)" stroke="url(#gridGrad)" stroke-width="0.8" fill="none">
-    <!-- Horizontal lines (converging spacing) -->
-    <line x1="0" y1="220" x2="900" y2="220" opacity="0.5"/>
-    <line x1="0" y1="232" x2="900" y2="232" opacity="0.45"/>
-    <line x1="0" y1="247" x2="900" y2="247" opacity="0.4"/>
-    <line x1="0" y1="265" x2="900" y2="265" opacity="0.35"/>
-    <line x1="0" y1="287" x2="900" y2="287" opacity="0.3"/>
-    <line x1="0" y1="315" x2="900" y2="315" opacity="0.25"/>
-    <!-- Vertical lines (perspective from center) -->
-    <line x1="450" y1="210" x2="450" y2="320"/>
-    <line x1="450" y1="210" x2="330" y2="320" opacity="0.5"/>
-    <line x1="450" y1="210" x2="570" y2="320" opacity="0.5"/>
-    <line x1="450" y1="210" x2="200" y2="320" opacity="0.4"/>
-    <line x1="450" y1="210" x2="700" y2="320" opacity="0.4"/>
-    <line x1="450" y1="210" x2="50" y2="320" opacity="0.3"/>
-    <line x1="450" y1="210" x2="850" y2="320" opacity="0.3"/>
-    <line x1="450" y1="210" x2="-120" y2="320" opacity="0.2"/>
-    <line x1="450" y1="210" x2="1020" y2="320" opacity="0.2"/>
-  </g>
-
-  <!-- Main title (below horizon, on the grid) -->
-  <g filter="url(#neonGlow)">
-    <text x="450" y="252" text-anchor="middle" font-family="'Impact','Arial Black','Helvetica Neue',sans-serif" font-size="44" font-weight="bold" letter-spacing="4" fill="url(#titleGlow)">
-      FILM RECOMMENDATION
-    </text>
-    <text x="450" y="290" text-anchor="middle" font-family="'Impact','Arial Black','Helvetica Neue',sans-serif" font-size="44" font-weight="bold" letter-spacing="4" fill="url(#titleGlow)">
-      ENGINE
-    </text>
-  </g>
+  <!-- Title -->
+  <text x="450" y="148" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="700" fill="url(#goldText)" filter="url(#glow)" letter-spacing="2">Film Recommendation</text>
+  <text x="450" y="190" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="700" fill="url(#goldText)" filter="url(#glow)" letter-spacing="2">Engine</text>
 
   <!-- Subtitle -->
-  <g filter="url(#softGlow)">
-    <text x="450" y="312" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" letter-spacing="6" fill="#ff6ec7" opacity="0.9">
-      CONTENT-BASED  &#x2022;  COLLABORATIVE  &#x2022;  TMDb 5000
-    </text>
-  </g>
+  <text x="450" y="230" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#726b5e" letter-spacing="4" font-weight="400">HYBRID SCORING  ·  TMDb 5000  ·  MovieLens 25M</text>
 
-  <!-- Side decorative lines -->
-  <line x1="60" y1="240" x2="160" y2="240" stroke="#00e5ff" stroke-width="1" opacity="0.4"/>
-  <line x1="740" y1="240" x2="840" y2="240" stroke="#00e5ff" stroke-width="1" opacity="0.4"/>
-  <line x1="60" y1="295" x2="160" y2="295" stroke="#7b61ff" stroke-width="1" opacity="0.3"/>
-  <line x1="740" y1="295" x2="840" y2="295" stroke="#7b61ff" stroke-width="1" opacity="0.3"/>
+  <!-- Version badge -->
+  <rect x="405" y="250" width="90" height="22" rx="4" fill="none" stroke="#c4a35a" stroke-width="0.6" opacity="0.3"/>
+  <text x="450" y="265" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#c4a35a" opacity="0.5" letter-spacing="1" font-weight="500">v0.7.0</text>
 </svg>
