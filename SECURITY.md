@@ -38,12 +38,14 @@ All four language implementations (Python, Rust, C#, Go) accept user input via C
 
 ### GitHub Pages Site
 
-The static site in `docs/` is pure HTML/CSS/JS with:
+The static site in `docs/` is a client-side SPA with:
 
-- No form submissions or user input collection
-- No cookies or local storage
-- External dependency limited to Google Fonts (Orbitron, Share Tech Mono)
-- No analytics or tracking scripts
+- **Input sanitization**: search input is sanitized (`sanitizeInput`) and HTML-escaped (`escapeHtml`/`escapeAttr`) before DOM insertion
+- **Content Security Policy**: restricts script/style sources, blocks iframes with `frame-ancestors 'none'`, limits image sources to `self` and `image.tmdb.org`
+- **localStorage caching**: DB and poster data are cached locally; parsed JSON is validated for shape (must be non-null object) and purged on corruption
+- **Prototype pollution guard**: `hasOwnProperty` check on all user-controlled key lookups
+- **No cookies, authentication, or tracking** — no user data leaves the browser
+- External dependency limited to Google Fonts (Inter, Playfair Display)
 
 ### Dependency Surface
 
