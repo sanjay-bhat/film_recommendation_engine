@@ -9,6 +9,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <title>Film Recommendation Engine</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
@@ -751,6 +754,7 @@ async function loadDatabase() {
 function onDatabaseLoaded() {
   TITLES.length = 0;
   TITLES.push(...Object.keys(DB));
+  buildPrefixIndex();
   document.getElementById('precomputedCount').textContent = TITLES.length.toLocaleString();
 }
 
@@ -759,6 +763,29 @@ let POSTERS = {};
 const TMDB_IMG = "https://image.tmdb.org/t/p/";
 
 const TITLES = [];
+const PREFIX_INDEX = {};
+
+function buildPrefixIndex() {
+  for (const key in PREFIX_INDEX) delete PREFIX_INDEX[key];
+  for (const title of TITLES) {
+    const lower = title.toLowerCase();
+    for (let len = 2; len <= Math.min(lower.length, 20); len++) {
+      const prefix = lower.substring(0, len);
+      if (!PREFIX_INDEX[prefix]) PREFIX_INDEX[prefix] = [];
+      PREFIX_INDEX[prefix].push(title);
+    }
+    const words = lower.split(/\s+/);
+    for (let w = 1; w < words.length; w++) {
+      const rest = words.slice(w).join(' ');
+      for (let len = 2; len <= Math.min(rest.length, 20); len++) {
+        const prefix = rest.substring(0, len);
+        if (!PREFIX_INDEX[prefix]) PREFIX_INDEX[prefix] = [];
+        PREFIX_INDEX[prefix].push(title);
+      }
+    }
+  }
+}
+
 loadDatabase();
 
 const input = document.getElementById('searchInput');
@@ -775,16 +802,26 @@ let currentSlide = 0;
 let slideCount = 0;
 let currentRecs = [];
 
+let searchTimer = 0;
 input.addEventListener('input', () => {
-  const q = sanitizeInput(input.value).trim().toLowerCase();
   clearBtn.classList.toggle('visible', input.value.length > 0);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(doSearch, 150);
+});
+
+function doSearch() {
+  const q = sanitizeInput(input.value).trim().toLowerCase();
 
   if (q.length < 2) {
     suggestionsEl.classList.remove('visible');
     return;
   }
 
-  const matches = TITLES.filter(t => t.toLowerCase().includes(q)).slice(0, 8);
+  const truncated = q.substring(0, 20);
+  const candidates = PREFIX_INDEX[truncated];
+  const matches = candidates
+    ? candidates.filter(t => t.toLowerCase().includes(q)).slice(0, 8)
+    : TITLES.filter(t => t.toLowerCase().includes(q)).slice(0, 8);
 
   if (matches.length === 0) {
     suggestionsEl.classList.remove('visible');
@@ -800,7 +837,7 @@ input.addEventListener('input', () => {
     return `<div class="suggestion-item" data-title="${safe}">${before}<span class="match">${match}</span>${after}</div>`;
   }).join('');
   suggestionsEl.classList.add('visible');
-});
+}
 
 suggestionsEl.addEventListener('click', (e) => {
   const item = e.target.closest('.suggestion-item');
@@ -916,10 +953,10 @@ function selectMovie(title) {
     const safeTitle = escapeHtml(r.title);
     const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
     const posterEl = safePath
-      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" alt="${safeTitle}">`
+      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
       : `<div class="coverflow-poster-fallback">&#127916;</div>`;
     const reflectEl = safePath
-      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" alt="">`
+      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
       : '';
     return `<div class="coverflow-slide" data-idx="${i}">
       ${posterEl}
@@ -932,7 +969,7 @@ function selectMovie(title) {
     const safeTitle = escapeHtml(r.title);
     const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
     const imgEl = safePath
-      ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" alt="${safeTitle}" loading="lazy">`
+      ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="44px" alt="${safeTitle}" loading="lazy">`
       : `<div class="mobile-rec-poster-fallback">&#127916;</div>`;
     const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
     return `<div class="mobile-rec-card">
