@@ -381,6 +381,171 @@
       margin-top: 4px;
     }
 
+    /* Search history chips */
+    .search-history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .search-history:empty { display: none; }
+    .history-chip {
+      background: rgba(196,163,90,0.08);
+      border: 1px solid rgba(196,163,90,0.15);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: #c4a35a;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-chip:hover {
+      background: rgba(196,163,90,0.18);
+      border-color: rgba(196,163,90,0.35);
+    }
+
+    /* Skeleton shimmer */
+    .skeleton-poster {
+      width: 220px;
+      height: 330px;
+      border-radius: 3px;
+      background: #141418;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-poster::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(196,163,90,0.06), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .mobile-skeleton {
+      width: 44px;
+      height: 66px;
+      border-radius: 6px;
+      background: #1a1a22;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .mobile-skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(196,163,90,0.06), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    .skeleton-text {
+      height: 14px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-text::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(196,163,90,0.06), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Recommendation chaining — clickable title */
+    .coverflow-title.chainable {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .coverflow-title.chainable:hover { color: #c4a35a; }
+    .mobile-rec-card.chainable { cursor: pointer; }
+    .mobile-rec-card.chainable:hover { background: rgba(196,163,90,0.06); }
+
+    /* Surprise me — 3D submarine button */
+    .surprise-btn-wrap {
+      margin-top: 28px;
+      perspective: 300px;
+      display: inline-block;
+    }
+    .surprise-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ff4444, #cc0000 50%, #8b0000 100%);
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      position: relative;
+      box-shadow:
+        0 8px 0 #6b0000,
+        0 10px 20px rgba(0,0,0,0.5),
+        inset 0 -4px 8px rgba(0,0,0,0.3),
+        inset 0 4px 8px rgba(255,255,255,0.15);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      transform: translateY(0);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .surprise-btn::before {
+      content: '';
+      position: absolute;
+      top: 12%;
+      left: 20%;
+      width: 35%;
+      height: 25%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.3), transparent);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .surprise-btn::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 3px solid rgba(80,0,0,0.6);
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.3);
+      pointer-events: none;
+    }
+    .surprise-btn:hover {
+      background: radial-gradient(circle at 35% 30%, #ff5555, #dd1111 50%, #990000 100%);
+    }
+    .surprise-btn:active, .surprise-btn.pressed {
+      transform: translateY(6px);
+      box-shadow:
+        0 2px 0 #6b0000,
+        0 3px 8px rgba(0,0,0,0.4),
+        inset 0 -2px 4px rgba(0,0,0,0.3),
+        inset 0 4px 8px rgba(255,255,255,0.1);
+    }
+    .surprise-btn .btn-label { font-size: 12px; letter-spacing: 2px; }
+
+    @keyframes btnPressRelease {
+      0% { transform: translateY(0); }
+      30% { transform: translateY(6px); }
+      60% { transform: translateY(6px); }
+      100% { transform: translateY(0); }
+    }
+    .surprise-btn.animating {
+      animation: btnPressRelease 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
     .empty-state {
       text-align: center;
       padding: 60px 20px;
@@ -395,17 +560,6 @@
       margin: 24px 0;
     }
 
-    .stats {
-      text-align: center;
-      font-size: 11px;
-      color: #3a362f;
-      padding: 20px;
-      letter-spacing: 0.5px;
-      position: relative;
-      z-index: 1;
-      font-weight: 500;
-    }
-    .stats span { color: #726b5e; }
 
     /* About section */
     .about {
@@ -595,7 +749,6 @@
 
 <div class="header">
   <h1>Film <span>Recommendation</span> Engine</h1>
-  <p>9-Signal Hybrid Scoring &bull; TMDb 5000 &bull; MovieLens 25M</p>
 </div>
 
 <div class="container">
@@ -605,6 +758,7 @@
     <button class="clear-btn" id="clearBtn">&#10005;</button>
   </div>
 
+  <div class="search-history" id="searchHistory"></div>
   <div class="suggestions" id="suggestions"></div>
 
   <div class="results" id="results">
@@ -623,12 +777,10 @@
   <div class="empty-state" id="emptyState">
     <div class="icon">&#127916;</div>
     <p>Search for a movie you love.<br>We'll find films you'll probably love too.</p>
+    <div class="surprise-btn-wrap"><button class="surprise-btn" id="surpriseBtn"><span class="btn-label">Surprise Me</span></button></div>
   </div>
 </div>
 
-<div class="stats" style="display:none">
-  <span>4,803</span> movies &bull; <span id="precomputedCount">0</span> pre-computed &bull; <span>7</span> recommendations each
-</div>
 
 <div class="about">
   <div class="about-sep"></div>
@@ -645,7 +797,6 @@
     <div class="signal-card"><div class="weight">7%</div><div class="name">Popularity</div></div>
     <div class="signal-card"><div class="weight">5%</div><div class="name">Year</div></div>
   </div>
-  <p>Built on the <a href="https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata">TMDb 5000</a> dataset with <a href="https://grouplens.org/datasets/movielens/25m/">MovieLens 25M</a> collaborative filtering, genome tags, and sentence-transformer plot embeddings. Sequel deduplication via fuzzy string matching.</p>
   <p><a href="https://github.com/sanjay-bhat/film_recommendation_engine">View on GitHub &rarr;</a></p>
 </div>
 
@@ -775,6 +926,43 @@ function sanitizeInput(str) {
   return str.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 100);
 }
 
+// ── Search history ──
+const HISTORY_KEY = 'filmrec_history';
+const MAX_HISTORY = 5;
+
+function getSearchHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(s => typeof s === 'string').slice(0, MAX_HISTORY);
+  } catch (e) { return []; }
+}
+
+function addToHistory(title) {
+  const history = getSearchHistory().filter(t => t !== title);
+  history.unshift(title);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('searchHistory');
+  const history = getSearchHistory();
+  el.innerHTML = history.map(t =>
+    `<span class="history-chip" data-title="${escapeAttr(t)}">${escapeHtml(t)}</span>`
+  ).join('');
+}
+
+document.getElementById('searchHistory').addEventListener('click', (e) => {
+  const chip = e.target.closest('.history-chip');
+  if (!chip) return;
+  selectMovie(chip.dataset.title);
+});
+
+renderHistory();
+
 let DB = {};
 
 const CACHE_KEY = 'filmrec_db';
@@ -821,7 +1009,6 @@ function onDatabaseLoaded() {
   TITLES.length = 0;
   TITLES.push(...Object.keys(DB));
   buildPrefixIndex();
-  document.getElementById('precomputedCount').textContent = TITLES.length.toLocaleString();
 }
 
 let POSTERS = {};
@@ -943,9 +1130,11 @@ function goToSlide(idx) {
   });
 
   const r = currentRecs[idx];
+  if (!r) return;
   const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+  const canChain = Object.prototype.hasOwnProperty.call(DB, r.title);
   coverflowInfo.innerHTML = `
-    <div class="coverflow-title">${escapeHtml(r.title)}</div>
+    <div class="coverflow-title${canChain ? ' chainable' : ''}">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
       <span class="coverflow-year">${Number(r.year)}</span>
       <span class="coverflow-score ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb)}</span>
@@ -1009,8 +1198,10 @@ document.addEventListener('keydown', (e) => {
   }
   if (isExpanded) return;
   if (!resultsEl.classList.contains('visible')) return;
-  if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
-  if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
+  if (document.activeElement === input) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goToSlide(currentSlide - 1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); goToSlide(currentSlide + 1); }
+  if (e.key === 'Enter') { e.preventDefault(); expandPoster(); }
 });
 
 // ── Touch handling (swipe carousel + double-tap expand + swipe-up dismiss) ──
@@ -1086,11 +1277,31 @@ coverflowEl.addEventListener('touchend', (e) => {
   }
 }, {passive: true});
 
+function showSkeletons() {
+  coverflowEl.innerHTML = Array.from({length: 7}, (_, i) =>
+    `<div class="coverflow-slide" data-idx="${i}"><div class="skeleton-poster"></div></div>`
+  ).join('');
+  slideCount = 7;
+  currentSlide = 3;
+  goToSlide(3);
+
+  mobileRecList.innerHTML = Array.from({length: 7}, () =>
+    `<div class="mobile-rec-card">
+      <div class="mobile-skeleton"></div>
+      <div class="mobile-rec-info">
+        <div class="skeleton-text" style="width:60%"></div>
+        <div class="skeleton-text" style="width:30%;margin-top:6px"></div>
+      </div>
+    </div>`
+  ).join('');
+}
+
 function selectMovie(title) {
   input.value = title;
   suggestionsEl.classList.remove('visible');
   clearBtn.classList.add('visible');
   emptyState.style.display = 'none';
+  addToHistory(title);
 
   if (!Object.prototype.hasOwnProperty.call(DB, title)) return;
   const recs = DB[title];
@@ -1098,49 +1309,87 @@ function selectMovie(title) {
   currentRecs = recs;
 
   selectedMovieEl.textContent = title;
-
-  coverflowEl.innerHTML = recs.map((r, i) => {
-    const poster = POSTERS[r.title];
-    const safeTitle = escapeHtml(r.title);
-    const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
-    const posterEl = safePath
-      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
-      : `<div class="coverflow-poster-fallback">&#127916;</div>`;
-    const reflectEl = safePath
-      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
-      : '';
-    return `<div class="coverflow-slide" data-idx="${i}">
-      ${posterEl}
-      ${reflectEl}
-    </div>`;
-  }).join('');
-
-  mobileRecList.innerHTML = recs.map(r => {
-    const poster = POSTERS[r.title];
-    const safeTitle = escapeHtml(r.title);
-    const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
-    const imgEl = safePath
-      ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="44px" alt="${safeTitle}" loading="lazy">`
-      : `<div class="mobile-rec-poster-fallback">&#127916;</div>`;
-    const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
-    return `<div class="mobile-rec-card">
-      ${imgEl}
-      <div class="mobile-rec-info">
-        <div class="mobile-rec-title">${safeTitle}</div>
-        <div class="mobile-rec-year">${Number(r.year)}</div>
-      </div>
-      <div class="mobile-rec-score">
-        ${IMDB_LOGO}
-        <span class="val">${Number(r.imdb)}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  slideCount = recs.length;
-  currentSlide = 0;
-  goToSlide(0);
   resultsEl.classList.add('visible');
+  showSkeletons();
+
+  requestAnimationFrame(() => {
+    coverflowEl.innerHTML = recs.map((r, i) => {
+      const poster = POSTERS[r.title];
+      const safeTitle = escapeHtml(r.title);
+      const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+      const posterEl = safePath
+        ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
+        : `<div class="coverflow-poster-fallback">&#127916;</div>`;
+      const reflectEl = safePath
+        ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
+        : '';
+      return `<div class="coverflow-slide" data-idx="${i}">
+        ${posterEl}
+        ${reflectEl}
+      </div>`;
+    }).join('');
+
+    mobileRecList.innerHTML = recs.map(r => {
+      const poster = POSTERS[r.title];
+      const safeTitle = escapeHtml(r.title);
+      const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+      const canChain = Object.prototype.hasOwnProperty.call(DB, r.title);
+      const imgEl = safePath
+        ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="44px" alt="${safeTitle}" loading="lazy">`
+        : `<div class="mobile-rec-poster-fallback">&#127916;</div>`;
+      const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+      return `<div class="mobile-rec-card${canChain ? ' chainable' : ''}" data-chain="${escapeAttr(r.title)}">
+        ${imgEl}
+        <div class="mobile-rec-info">
+          <div class="mobile-rec-title">${safeTitle}</div>
+          <div class="mobile-rec-year">${Number(r.year)}</div>
+        </div>
+        <div class="mobile-rec-score">
+          ${IMDB_LOGO}
+          <span class="val">${Number(r.imdb)}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    slideCount = recs.length;
+    currentSlide = 0;
+    goToSlide(0);
+  });
 }
+
+// ── Recommendation chaining ──
+coverflowInfo.addEventListener('click', (e) => {
+  const titleEl = e.target.closest('.coverflow-title.chainable');
+  if (!titleEl) return;
+  const r = currentRecs[currentSlide];
+  if (r && Object.prototype.hasOwnProperty.call(DB, r.title)) {
+    if (isExpanded) collapsePoster(false);
+    selectMovie(r.title);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+});
+
+mobileRecList.addEventListener('click', (e) => {
+  const card = e.target.closest('.mobile-rec-card.chainable');
+  if (!card) return;
+  const chainTitle = card.dataset.chain;
+  if (chainTitle && Object.prototype.hasOwnProperty.call(DB, chainTitle)) {
+    selectMovie(chainTitle);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+});
+
+// ── Surprise Me ──
+document.getElementById('surpriseBtn').addEventListener('click', function() {
+  if (TITLES.length === 0) return;
+  const btn = this;
+  btn.classList.add('animating');
+  btn.addEventListener('animationend', () => {
+    btn.classList.remove('animating');
+  }, {once: true});
+  const pick = TITLES[Math.floor(Math.random() * TITLES.length)];
+  selectMovie(pick);
+});
 
 input.focus();
 
