@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <title>Film Recommendation Engine</title>
+  <title>FiRe Engine</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
@@ -748,7 +748,7 @@
 <canvas id="webgl-bg"></canvas>
 
 <div class="header">
-  <h1>Film <span>Recommendation</span> Engine</h1>
+  <h1 id="logoTitle" style="cursor:pointer">Fi<span>Re</span> Engine</h1>
 </div>
 
 <div class="container">
@@ -1099,15 +1099,20 @@ suggestionsEl.addEventListener('click', (e) => {
   selectMovie(item.dataset.title);
 });
 
-clearBtn.addEventListener('click', () => {
+function resetToHome() {
   input.value = '';
   clearBtn.classList.remove('visible');
   suggestionsEl.classList.remove('visible');
   resultsEl.classList.remove('visible');
   mobileRecList.innerHTML = '';
   emptyState.style.display = '';
+  if (isExpanded) collapsePoster(false);
+  window.scrollTo({top: 0, behavior: 'smooth'});
   input.focus();
-});
+}
+
+clearBtn.addEventListener('click', resetToHome);
+document.getElementById('logoTitle').addEventListener('click', resetToHome);
 
 const POS_CLASSES = ['pos-left-3', 'pos-left-2', 'pos-left-1', 'pos-center', 'pos-right-1', 'pos-right-2', 'pos-right-3'];
 
