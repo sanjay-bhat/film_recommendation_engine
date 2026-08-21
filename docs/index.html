@@ -310,10 +310,16 @@
       font-weight: 600;
       padding: 3px 10px;
       border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
     .coverflow-score.high { color: #c4a35a; background: rgba(196,163,90,0.15); }
     .coverflow-score.mid { color: #8a9e8a; background: rgba(138,158,138,0.12); }
     .coverflow-score.low { color: #8a7e6e; background: rgba(138,126,110,0.12); }
+
+    .imdb-logo { height: 14px; width: auto; vertical-align: middle; flex-shrink: 0; }
+    .mobile-rec-score .imdb-logo { height: 12px; }
 
     .coverflow-divider {
       width: 60%;
@@ -524,6 +530,7 @@
         flex-shrink: 0;
       }
       .mobile-rec-score .star { color: #c4a35a; font-size: 12px; }
+      .mobile-rec-score { gap: 6px; }
       .mobile-rec-score .val {
         font-size: 14px;
         font-weight: 700;
@@ -575,7 +582,7 @@
   </div>
 </div>
 
-<div class="stats">
+<div class="stats" style="display:none">
   <span>4,803</span> movies &bull; <span id="precomputedCount">0</span> pre-computed &bull; <span>7</span> recommendations each
 </div>
 
@@ -761,6 +768,7 @@ function onDatabaseLoaded() {
 let POSTERS = {};
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/";
+const IMDB_LOGO = `<svg class="imdb-logo" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="32" rx="4" fill="#F5C518"/><path d="M8 7h4v18H8V7zm10 0h5.3l1.8 9.2L26.8 7H32v18h-3.7V13.5L26.2 25h-2.7l-2.2-11.5V25H18V7zm18 0h5.5c1.5 0 2.7.5 3.5 1.4.7.8 1 2 1 3.5v7.2c0 1.5-.3 2.7-1 3.5-.8.9-2 1.4-3.5 1.4H36V7zm4 3.2v11.6h1.3c.6 0 1-.2 1.2-.5.2-.3.3-.9.3-1.7v-7.2c0-.8-.1-1.4-.3-1.7-.2-.3-.6-.5-1.2-.5H40zm13-3.2h5c1.8 0 3.1.4 3.8 1.3.5.6.7 1.6.7 3 0 1.5-.3 2.5-.9 3.1-.3.3-.8.6-1.5.8.9.3 1.5.7 1.8 1.3.3.6.5 1.6.5 2.8v2c0 1 .05 1.7.15 2.1.1.4.3.7.55.9V25H59c-.1-.3-.2-.9-.2-1.9v-2.3c0-1.1-.15-1.8-.4-2.1-.3-.3-.8-.5-1.5-.5H57V25h-4V7zm4 3v4.8h.8c.7 0 1.1-.1 1.4-.4.3-.3.4-.9.4-1.8v-.6c0-.9-.1-1.4-.4-1.7-.3-.3-.7-.4-1.3-.4H57z" fill="#000"/></svg>`;
 
 const TITLES = [];
 const PREFIX_INDEX = {};
@@ -881,7 +889,7 @@ function goToSlide(idx) {
     <div class="coverflow-title">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
       <span class="coverflow-year">${Number(r.year)}</span>
-      <span class="coverflow-score ${scoreClass}">&#9733; ${Number(r.imdb)}</span>
+      <span class="coverflow-score ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb)}</span>
     </div>`;
   carouselCounter.textContent = `${idx + 1} / ${slideCount}`;
 }
@@ -979,7 +987,7 @@ function selectMovie(title) {
         <div class="mobile-rec-year">${Number(r.year)}</div>
       </div>
       <div class="mobile-rec-score">
-        <span class="star">&#9733;</span>
+        ${IMDB_LOGO}
         <span class="val">${Number(r.imdb)}</span>
       </div>
     </div>`;
