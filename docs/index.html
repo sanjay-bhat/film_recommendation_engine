@@ -297,18 +297,15 @@
       transition: opacity 0.4s ease 0.3s;
     }
     .coverflow.expanded .pos-center .yt-heart {
-      opacity: 0.75;
+      opacity: 0.55;
       pointer-events: auto;
       cursor: pointer;
-      animation: heartPush 0.833s ease-in-out infinite;
     }
-    .coverflow.expanded .pos-center .yt-bulge {
-      opacity: 1;
-      animation: bulgePush 0.833s ease-in-out infinite;
+    .coverflow.expanded .pos-center .yt-heart.beating {
+      animation: heartPush 0.833s ease-in-out forwards;
     }
-    .coverflow.expanded .pos-center .yt-heart:hover,
-    .coverflow.expanded .pos-center .yt-heart:hover ~ .yt-bulge {
-      animation-play-state: paused;
+    .coverflow.expanded .pos-center .yt-bulge.beating {
+      animation: bulgePush 0.833s ease-in-out forwards;
     }
     .coverflow.expanded .pos-center .yt-heart:hover {
       opacity: 1;
@@ -1222,17 +1219,47 @@ coverflowEl.addEventListener('click', (e) => {
 const overlay = document.getElementById('coverflowOverlay');
 let isExpanded = false;
 let lastClickTime = 0;
+let heartbeatTimer = null;
+
+function startHeartbeat() {
+  stopHeartbeat();
+  function beat() {
+    const heart = coverflowEl.querySelector('.pos-center .yt-heart');
+    const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
+    if (!heart || !isExpanded) return;
+    heart.classList.remove('beating');
+    if (bulge) bulge.classList.remove('beating');
+    void heart.offsetWidth;
+    heart.classList.add('beating');
+    if (bulge) bulge.classList.add('beating');
+    heart.addEventListener('animationend', () => heart.classList.remove('beating'), {once: true});
+    if (bulge) bulge.addEventListener('animationend', () => bulge.classList.remove('beating'), {once: true});
+    const delay = 1990 + Math.random() * 2110;
+    heartbeatTimer = setTimeout(beat, delay);
+  }
+  beat();
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) { clearTimeout(heartbeatTimer); heartbeatTimer = null; }
+  const heart = coverflowEl.querySelector('.pos-center .yt-heart');
+  const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
+  if (heart) heart.classList.remove('beating');
+  if (bulge) bulge.classList.remove('beating');
+}
 
 function expandPoster() {
   if (isExpanded) return;
   isExpanded = true;
   coverflowEl.classList.add('expanded');
   overlay.classList.add('visible');
+  startHeartbeat();
 }
 
 function collapsePoster(useFlip) {
   if (!isExpanded) return;
   isExpanded = false;
+  stopHeartbeat();
   overlay.classList.remove('visible');
   if (useFlip) {
     const center = coverflowEl.querySelector('.pos-center');
