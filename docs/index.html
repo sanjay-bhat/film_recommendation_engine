@@ -327,6 +327,20 @@
       60%  { transform: translate(-50%, -50%) scale(0.88); opacity: 0; }
       100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
     }
+    .yt-flake {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 1px;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      animation: flakeChip 0.8s ease-out forwards;
+    }
+    @keyframes flakeChip {
+      0%   { opacity: 0.9; transform: translate(0, 0) rotate(0deg) scale(1); }
+      100% { opacity: 0; transform: translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(0.3); }
+    }
 
     .coverflow.expanded .coverflow-slide.pos-left-1 { transform: translateX(-420px) rotateY(65deg) scale(0.6); opacity: 0.3; }
     .coverflow.expanded .coverflow-slide.pos-right-1 { transform: translateX(420px) rotateY(-65deg) scale(0.6); opacity: 0.3; }
@@ -1234,6 +1248,28 @@ function startHeartbeat() {
     if (bulge) bulge.classList.add('beating');
     heart.addEventListener('animationend', () => heart.classList.remove('beating'), {once: true});
     if (bulge) bulge.addEventListener('animationend', () => bulge.classList.remove('beating'), {once: true});
+    const slide = heart.closest('.coverflow-slide');
+    if (slide) {
+      const count = 6 + Math.floor(Math.random() * 5);
+      for (let j = 0; j < count; j++) {
+        const flake = document.createElement('div');
+        flake.className = 'yt-flake';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 30 + Math.random() * 50;
+        flake.style.setProperty('--fx', Math.cos(angle) * dist + 'px');
+        flake.style.setProperty('--fy', Math.sin(angle) * dist + 'px');
+        flake.style.setProperty('--fr', (Math.random() * 360 - 180) + 'deg');
+        flake.style.background = Math.random() > 0.4 ? '#FF0000' : '#FFFFFF';
+        flake.style.width = (2 + Math.random() * 4) + 'px';
+        flake.style.height = (2 + Math.random() * 3) + 'px';
+        flake.style.top = 'calc(50% + ' + (Math.random() * 20 - 10) + 'px)';
+        flake.style.left = 'calc(50% + ' + (Math.random() * 30 - 15) + 'px)';
+        const flakeDelay = Math.random() * 0.15;
+        flake.style.animationDelay = flakeDelay + 's';
+        slide.appendChild(flake);
+        setTimeout(() => flake.remove(), (flakeDelay + 0.85) * 1000);
+      }
+    }
     const delay = 1990 + Math.random() * 2110;
     heartbeatTimer = setTimeout(beat, delay);
   }
@@ -1246,6 +1282,7 @@ function stopHeartbeat() {
   const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
   if (heart) heart.classList.remove('beating');
   if (bulge) bulge.classList.remove('beating');
+  coverflowEl.querySelectorAll('.yt-flake').forEach(f => f.remove());
 }
 
 function expandPoster() {
