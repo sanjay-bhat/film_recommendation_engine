@@ -184,12 +184,13 @@
       top: 0;
       width: 220px;
       margin-left: -110px;
-      transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
       transform-style: preserve-3d;
       cursor: pointer;
       opacity: 0;
       z-index: 0;
       pointer-events: none;
+      will-change: transform, opacity;
     }
 
     .coverflow-slide.pos-center {
@@ -240,6 +241,48 @@
       opacity: 0.6;
       z-index: 1;
       pointer-events: auto;
+    }
+
+    .coverflow-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,8,12,0.85);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .coverflow-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .coverflow.expanded { overflow: visible; z-index: 100; }
+
+    .coverflow.expanded .coverflow-slide.pos-center {
+      transform: translateX(0) rotateY(0deg) scale(1.55);
+      z-index: 100;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    }
+    .coverflow.expanded .coverflow-slide.pos-center .coverflow-reflect { opacity: 0; }
+
+    .coverflow.expanded .coverflow-slide.pos-left-1 { transform: translateX(-420px) rotateY(65deg) scale(0.6); opacity: 0.3; }
+    .coverflow.expanded .coverflow-slide.pos-right-1 { transform: translateX(420px) rotateY(-65deg) scale(0.6); opacity: 0.3; }
+    .coverflow.expanded .coverflow-slide.pos-left-2,
+    .coverflow.expanded .coverflow-slide.pos-left-3 { transform: translateX(-520px) rotateY(65deg) scale(0.5); opacity: 0; }
+    .coverflow.expanded .coverflow-slide.pos-right-2,
+    .coverflow.expanded .coverflow-slide.pos-right-3 { transform: translateX(520px) rotateY(-65deg) scale(0.5); opacity: 0; }
+
+    @keyframes flipBack {
+      0% { transform: translateX(0) rotateY(0deg) scale(1.55); opacity: 1; }
+      40% { transform: translateX(0) rotateX(-25deg) rotateY(15deg) scale(1.2) translateY(-40px); opacity: 0.9; }
+      100% { transform: translateX(0) rotateY(0deg) scale(1); opacity: 1; }
+    }
+    .coverflow-slide.flip-back {
+      animation: flipBack 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .coverflow-poster {
@@ -569,6 +612,7 @@
       <div class="label">Because you liked</div>
       <div class="movie-name" id="selectedMovie"></div>
     </div>
+    <div class="coverflow-overlay" id="coverflowOverlay"></div>
     <div class="coverflow" id="coverflow"></div>
     <div class="coverflow-divider"></div>
     <div class="coverflow-info" id="coverflowInfo"></div>
@@ -783,7 +827,7 @@ function onDatabaseLoaded() {
 let POSTERS = {};
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/";
-const IMDB_LOGO = `<svg class="imdb-logo" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="32" rx="4" fill="#F5C518"/><path d="M8 7h4v18H8V7zm10 0h5.3l1.8 9.2L26.8 7H32v18h-3.7V13.5L26.2 25h-2.7l-2.2-11.5V25H18V7zm18 0h5.5c1.5 0 2.7.5 3.5 1.4.7.8 1 2 1 3.5v7.2c0 1.5-.3 2.7-1 3.5-.8.9-2 1.4-3.5 1.4H36V7zm4 3.2v11.6h1.3c.6 0 1-.2 1.2-.5.2-.3.3-.9.3-1.7v-7.2c0-.8-.1-1.4-.3-1.7-.2-.3-.6-.5-1.2-.5H40zm13-3.2h5c1.8 0 3.1.4 3.8 1.3.5.6.7 1.6.7 3 0 1.5-.3 2.5-.9 3.1-.3.3-.8.6-1.5.8.9.3 1.5.7 1.8 1.3.3.6.5 1.6.5 2.8v2c0 1 .05 1.7.15 2.1.1.4.3.7.55.9V25H59c-.1-.3-.2-.9-.2-1.9v-2.3c0-1.1-.15-1.8-.4-2.1-.3-.3-.8-.5-1.5-.5H57V25h-4V7zm4 3v4.8h.8c.7 0 1.1-.1 1.4-.4.3-.3.4-.9.4-1.8v-.6c0-.9-.1-1.4-.4-1.7-.3-.3-.7-.4-1.3-.4H57z" fill="#000"/></svg>`;
+const IMDB_LOGO = `<svg class="imdb-logo" viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="6" fill="#F5C518"/><text x="24" y="17.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="900" font-style="italic" fill="#000">IMDb</text></svg>`;
 
 const TITLES = [];
 const PREFIX_INDEX = {};
@@ -916,15 +960,72 @@ coverflowEl.addEventListener('click', (e) => {
   if (idx !== currentSlide) goToSlide(idx);
 });
 
+// ── Expand/collapse poster ──
+const overlay = document.getElementById('coverflowOverlay');
+let isExpanded = false;
+let lastClickTime = 0;
+
+function expandPoster() {
+  if (isExpanded) return;
+  isExpanded = true;
+  coverflowEl.classList.add('expanded');
+  overlay.classList.add('visible');
+}
+
+function collapsePoster(useFlip) {
+  if (!isExpanded) return;
+  isExpanded = false;
+  overlay.classList.remove('visible');
+  if (useFlip) {
+    const center = coverflowEl.querySelector('.pos-center');
+    if (center) {
+      coverflowEl.classList.remove('expanded');
+      center.classList.add('flip-back');
+      center.addEventListener('animationend', () => {
+        center.classList.remove('flip-back');
+      }, {once: true});
+    }
+  } else {
+    coverflowEl.classList.remove('expanded');
+  }
+}
+
+coverflowEl.addEventListener('dblclick', (e) => {
+  const slide = e.target.closest('.coverflow-slide');
+  if (!slide) return;
+  const idx = parseInt(slide.dataset.idx);
+  if (idx === currentSlide) {
+    if (isExpanded) collapsePoster(false);
+    else expandPoster();
+  }
+});
+
+overlay.addEventListener('click', () => collapsePoster(false));
+
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isExpanded) {
+    collapsePoster(false);
+    return;
+  }
+  if (isExpanded) return;
   if (!resultsEl.classList.contains('visible')) return;
   if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
   if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
 });
 
-let touchStartX = 0, touchStartTime = 0, isDragging = false;
+// ── Touch handling (swipe carousel + double-tap expand + swipe-up dismiss) ──
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0, isDragging = false;
+let lastTapTime = 0;
+let expandTouchStartY = 0, expandTouchActive = false;
+
 coverflowEl.addEventListener('touchstart', (e) => {
+  if (isExpanded) {
+    expandTouchStartY = e.touches[0].clientY;
+    expandTouchActive = true;
+    return;
+  }
   touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
   touchStartTime = Date.now();
   isDragging = true;
   coverflowEl.querySelectorAll('.coverflow-slide').forEach(s => {
@@ -933,6 +1034,7 @@ coverflowEl.addEventListener('touchstart', (e) => {
 }, {passive: true});
 
 coverflowEl.addEventListener('touchmove', (e) => {
+  if (isExpanded) return;
   if (!isDragging) return;
   const dx = e.touches[0].clientX - touchStartX;
   const slides = coverflowEl.querySelectorAll('.coverflow-slide');
@@ -943,14 +1045,39 @@ coverflowEl.addEventListener('touchmove', (e) => {
 }, {passive: true});
 
 coverflowEl.addEventListener('touchend', (e) => {
+  if (isExpanded && expandTouchActive) {
+    expandTouchActive = false;
+    const dy = e.changedTouches[0].clientY - expandTouchStartY;
+    if (dy < -60) {
+      collapsePoster(true);
+    }
+    return;
+  }
+
   isDragging = false;
   const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
   const dt = Date.now() - touchStartTime;
-  const velocity = Math.abs(dx) / dt;
-  const threshold = velocity > 0.3 ? 20 : 50;
+
   coverflowEl.querySelectorAll('.coverflow-slide').forEach(s => {
     s.style.transition = '';
   });
+
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 300) {
+    const now = Date.now();
+    const slide = e.target.closest('.coverflow-slide');
+    if (slide && parseInt(slide.dataset.idx) === currentSlide) {
+      if (now - lastTapTime < 350) {
+        expandPoster();
+        lastTapTime = 0;
+        return;
+      }
+      lastTapTime = now;
+    }
+  }
+
+  const velocity = Math.abs(dx) / dt;
+  const threshold = velocity > 0.3 ? 20 : 50;
   if (Math.abs(dx) > threshold) {
     if (dx < 0) goToSlide(currentSlide + 1);
     else goToSlide(currentSlide - 1);
