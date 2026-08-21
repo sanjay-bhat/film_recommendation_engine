@@ -21,12 +21,6 @@ A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M*
 </p>
 
 <p align="center">
-  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/">
-    <img src="https://img.shields.io/badge/Try_it_live-Website-c4a35a?style=for-the-badge&logo=githubpages&logoColor=white" alt="Try it live — Website">
-  </a>
-</p>
-
-<p align="center">
   <img src="assets/demo_android.gif" alt="Android App Demo" width="320">
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="assets/demo_ios.gif" alt="iOS App Demo" width="320">
