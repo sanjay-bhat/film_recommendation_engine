@@ -269,6 +269,68 @@
     }
     .coverflow.expanded .coverflow-slide.pos-center .coverflow-reflect { opacity: 0; }
 
+    /* YouTube heartbeat — logo pushes through poster like heart under shirt */
+    .yt-heart {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60px;
+      height: 42px;
+      transform: translate(-50%, -50%) scale(0.94);
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease 0.3s;
+    }
+    .yt-bulge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 90px;
+      height: 90px;
+      transform: translate(-50%, -50%) scale(0.85);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,0,0,0.12) 0%, transparent 70%);
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease 0.3s;
+    }
+    .coverflow.expanded .pos-center .yt-heart {
+      opacity: 0.75;
+      pointer-events: auto;
+      cursor: pointer;
+      animation: heartPush 0.833s ease-in-out infinite;
+    }
+    .coverflow.expanded .pos-center .yt-bulge {
+      opacity: 1;
+      animation: bulgePush 0.833s ease-in-out infinite;
+    }
+    .coverflow.expanded .pos-center .yt-heart:hover,
+    .coverflow.expanded .pos-center .yt-heart:hover ~ .yt-bulge {
+      animation-play-state: paused;
+    }
+    .coverflow.expanded .pos-center .yt-heart:hover {
+      opacity: 1;
+      filter: drop-shadow(0 6px 24px rgba(255,0,0,0.7));
+    }
+    @keyframes heartPush {
+      0%   { transform: translate(-50%, -50%) scale(0.94); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+      15%  { transform: translate(-50%, -50%) scale(1.16); opacity: 0.85; filter: drop-shadow(0 4px 16px rgba(255,0,0,0.5)); }
+      30%  { transform: translate(-50%, -50%) scale(0.96); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+      45%  { transform: translate(-50%, -50%) scale(1.08); opacity: 0.7;  filter: drop-shadow(0 2px 10px rgba(255,0,0,0.35)); }
+      60%  { transform: translate(-50%, -50%) scale(0.96); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+      100% { transform: translate(-50%, -50%) scale(0.94); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+    }
+    @keyframes bulgePush {
+      0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+      15%  { transform: translate(-50%, -50%) scale(1.25); opacity: 0.7; }
+      30%  { transform: translate(-50%, -50%) scale(0.88); opacity: 0; }
+      45%  { transform: translate(-50%, -50%) scale(1.1); opacity: 0.4; }
+      60%  { transform: translate(-50%, -50%) scale(0.88); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+    }
+
     .coverflow.expanded .coverflow-slide.pos-left-1 { transform: translateX(-420px) rotateY(65deg) scale(0.6); opacity: 0.3; }
     .coverflow.expanded .coverflow-slide.pos-right-1 { transform: translateX(420px) rotateY(-65deg) scale(0.6); opacity: 0.3; }
     .coverflow.expanded .coverflow-slide.pos-left-2,
@@ -1117,6 +1179,7 @@ document.getElementById('logoTitle').addEventListener('click', resetToHome);
 const POS_CLASSES = ['pos-left-3', 'pos-left-2', 'pos-left-1', 'pos-center', 'pos-right-1', 'pos-right-2', 'pos-right-3'];
 
 function goToSlide(idx) {
+  if (isExpanded) return;
   if (idx < 0 || idx >= slideCount) return;
   currentSlide = idx;
   const slides = coverflowEl.querySelectorAll('.coverflow-slide');
@@ -1148,6 +1211,7 @@ function goToSlide(idx) {
 }
 
 coverflowEl.addEventListener('click', (e) => {
+  if (isExpanded) return;
   const slide = e.target.closest('.coverflow-slide');
   if (!slide) return;
   const idx = parseInt(slide.dataset.idx);
@@ -1328,8 +1392,10 @@ function selectMovie(title) {
       const reflectEl = safePath
         ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
         : '';
+      const ytHeart = `<svg class="yt-heart" viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg><div class="yt-bulge"></div>`;
       return `<div class="coverflow-slide" data-idx="${i}">
         ${posterEl}
+        ${ytHeart}
         ${reflectEl}
       </div>`;
     }).join('');
