@@ -36,6 +36,12 @@ A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M*
   </a>
 </p>
 
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.svg" alt="System Architecture Diagram" width="100%">
+</p>
+
 ## How It Works
 
 Four-way retrieval gathers ~120 candidates from content, collaborative, genome, and plot sources, then a **9-signal weighted hybrid** ranks them:
