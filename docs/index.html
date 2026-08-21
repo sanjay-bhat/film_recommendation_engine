@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://image.tmdb.org data:; connect-src 'self'; frame-src 'none'; manifest-src 'self'; worker-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://image.tmdb.org data:; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; manifest-src 'self'; worker-src 'self';">
   <meta name="theme-color" content="#08080c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -723,6 +723,10 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+function escapeAttr(str) {
+  return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function sanitizeInput(str) {
   return str.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 100);
 }
@@ -737,10 +741,21 @@ async function loadDatabase() {
   const cachedPosters = localStorage.getItem(CACHE_KEY + '_posters');
   const cachedVersion = localStorage.getItem(CACHE_KEY + '_v');
   if (cached && cachedPosters && cachedVersion === CACHE_VERSION) {
-    DB = JSON.parse(cached);
-    POSTERS = JSON.parse(cachedPosters);
-    onDatabaseLoaded();
-    return;
+    try {
+      const parsedDB = JSON.parse(cached);
+      const parsedPosters = JSON.parse(cachedPosters);
+      if (typeof parsedDB === 'object' && parsedDB !== null && !Array.isArray(parsedDB) &&
+          typeof parsedPosters === 'object' && parsedPosters !== null && !Array.isArray(parsedPosters)) {
+        DB = parsedDB;
+        POSTERS = parsedPosters;
+        onDatabaseLoaded();
+        return;
+      }
+    } catch (e) {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_KEY + '_posters');
+      localStorage.removeItem(CACHE_KEY + '_v');
+    }
   }
   try {
     const [dbResp, posterResp] = await Promise.all([
@@ -842,7 +857,7 @@ function doSearch() {
     const before = escapeHtml(title.substring(0, idx));
     const match = escapeHtml(title.substring(idx, idx + q.length));
     const after = escapeHtml(title.substring(idx + q.length));
-    return `<div class="suggestion-item" data-title="${safe}">${before}<span class="match">${match}</span>${after}</div>`;
+    return `<div class="suggestion-item" data-title="${escapeAttr(title)}">${before}<span class="match">${match}</span>${after}</div>`;
   }).join('');
   suggestionsEl.classList.add('visible');
 }
@@ -950,8 +965,9 @@ function selectMovie(title) {
   clearBtn.classList.add('visible');
   emptyState.style.display = 'none';
 
+  if (!Object.prototype.hasOwnProperty.call(DB, title)) return;
   const recs = DB[title];
-  if (!recs) return;
+  if (!Array.isArray(recs)) return;
   currentRecs = recs;
 
   selectedMovieEl.textContent = title;
