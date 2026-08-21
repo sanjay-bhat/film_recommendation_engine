@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <title>Film Recommendation Engine</title>
+  <title>FiRe Engine</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
@@ -268,6 +268,79 @@
       transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
     }
     .coverflow.expanded .coverflow-slide.pos-center .coverflow-reflect { opacity: 0; }
+
+    /* YouTube heartbeat — logo pushes through poster like heart under shirt */
+    .yt-heart {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60px;
+      height: 42px;
+      transform: translate(-50%, -50%) scale(0.94);
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease 0.3s;
+    }
+    .yt-bulge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 90px;
+      height: 90px;
+      transform: translate(-50%, -50%) scale(0.85);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,0,0,0.12) 0%, transparent 70%);
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease 0.3s;
+    }
+    .coverflow.expanded .pos-center .yt-heart {
+      opacity: 0.55;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .coverflow.expanded .pos-center .yt-heart.beating {
+      animation: heartPush 0.833s ease-in-out forwards;
+    }
+    .coverflow.expanded .pos-center .yt-bulge.beating {
+      animation: bulgePush 0.833s ease-in-out forwards;
+    }
+    .coverflow.expanded .pos-center .yt-heart:hover {
+      opacity: 1;
+      filter: drop-shadow(0 6px 24px rgba(255,0,0,0.7));
+    }
+    @keyframes heartPush {
+      0%   { transform: translate(-50%, -50%) scale(0.94); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+      15%  { transform: translate(-50%, -50%) scale(1.16); opacity: 0.85; filter: drop-shadow(0 4px 16px rgba(255,0,0,0.5)); }
+      30%  { transform: translate(-50%, -50%) scale(0.96); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+      45%  { transform: translate(-50%, -50%) scale(1.08); opacity: 0.7;  filter: drop-shadow(0 2px 10px rgba(255,0,0,0.35)); }
+      60%  { transform: translate(-50%, -50%) scale(0.96); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+      100% { transform: translate(-50%, -50%) scale(0.94); opacity: 0.55; filter: drop-shadow(0 0 4px rgba(255,0,0,0.15)); }
+    }
+    @keyframes bulgePush {
+      0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+      15%  { transform: translate(-50%, -50%) scale(1.25); opacity: 0.7; }
+      30%  { transform: translate(-50%, -50%) scale(0.88); opacity: 0; }
+      45%  { transform: translate(-50%, -50%) scale(1.1); opacity: 0.4; }
+      60%  { transform: translate(-50%, -50%) scale(0.88); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+    }
+    .yt-flake {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 1px;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      animation: flakeChip 0.8s ease-out forwards;
+    }
+    @keyframes flakeChip {
+      0%   { opacity: 0.9; transform: translate(0, 0) rotate(0deg) scale(1); }
+      100% { opacity: 0; transform: translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(0.3); }
+    }
 
     .coverflow.expanded .coverflow-slide.pos-left-1 { transform: translateX(-420px) rotateY(65deg) scale(0.6); opacity: 0.3; }
     .coverflow.expanded .coverflow-slide.pos-right-1 { transform: translateX(420px) rotateY(-65deg) scale(0.6); opacity: 0.3; }
@@ -748,7 +821,7 @@
 <canvas id="webgl-bg"></canvas>
 
 <div class="header">
-  <h1>Film <span>Recommendation</span> Engine</h1>
+  <h1 id="logoTitle" style="cursor:pointer">Fi<span>Re</span> Engine</h1>
 </div>
 
 <div class="container">
@@ -1099,19 +1172,25 @@ suggestionsEl.addEventListener('click', (e) => {
   selectMovie(item.dataset.title);
 });
 
-clearBtn.addEventListener('click', () => {
+function resetToHome() {
   input.value = '';
   clearBtn.classList.remove('visible');
   suggestionsEl.classList.remove('visible');
   resultsEl.classList.remove('visible');
   mobileRecList.innerHTML = '';
   emptyState.style.display = '';
+  if (isExpanded) collapsePoster(false);
+  window.scrollTo({top: 0, behavior: 'smooth'});
   input.focus();
-});
+}
+
+clearBtn.addEventListener('click', resetToHome);
+document.getElementById('logoTitle').addEventListener('click', resetToHome);
 
 const POS_CLASSES = ['pos-left-3', 'pos-left-2', 'pos-left-1', 'pos-center', 'pos-right-1', 'pos-right-2', 'pos-right-3'];
 
 function goToSlide(idx) {
+  if (isExpanded) return;
   if (idx < 0 || idx >= slideCount) return;
   currentSlide = idx;
   const slides = coverflowEl.querySelectorAll('.coverflow-slide');
@@ -1143,6 +1222,7 @@ function goToSlide(idx) {
 }
 
 coverflowEl.addEventListener('click', (e) => {
+  if (isExpanded) return;
   const slide = e.target.closest('.coverflow-slide');
   if (!slide) return;
   const idx = parseInt(slide.dataset.idx);
@@ -1153,17 +1233,70 @@ coverflowEl.addEventListener('click', (e) => {
 const overlay = document.getElementById('coverflowOverlay');
 let isExpanded = false;
 let lastClickTime = 0;
+let heartbeatTimer = null;
+
+function startHeartbeat() {
+  stopHeartbeat();
+  function beat() {
+    const heart = coverflowEl.querySelector('.pos-center .yt-heart');
+    const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
+    if (!heart || !isExpanded) return;
+    heart.classList.remove('beating');
+    if (bulge) bulge.classList.remove('beating');
+    void heart.offsetWidth;
+    heart.classList.add('beating');
+    if (bulge) bulge.classList.add('beating');
+    heart.addEventListener('animationend', () => heart.classList.remove('beating'), {once: true});
+    if (bulge) bulge.addEventListener('animationend', () => bulge.classList.remove('beating'), {once: true});
+    const slide = heart.closest('.coverflow-slide');
+    if (slide) {
+      const count = 6 + Math.floor(Math.random() * 5);
+      for (let j = 0; j < count; j++) {
+        const flake = document.createElement('div');
+        flake.className = 'yt-flake';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 30 + Math.random() * 50;
+        flake.style.setProperty('--fx', Math.cos(angle) * dist + 'px');
+        flake.style.setProperty('--fy', Math.sin(angle) * dist + 'px');
+        flake.style.setProperty('--fr', (Math.random() * 360 - 180) + 'deg');
+        flake.style.background = Math.random() > 0.4 ? '#FF0000' : '#FFFFFF';
+        flake.style.width = (2 + Math.random() * 4) + 'px';
+        flake.style.height = (2 + Math.random() * 3) + 'px';
+        flake.style.top = 'calc(50% + ' + (Math.random() * 20 - 10) + 'px)';
+        flake.style.left = 'calc(50% + ' + (Math.random() * 30 - 15) + 'px)';
+        const flakeDelay = Math.random() * 0.15;
+        flake.style.animationDelay = flakeDelay + 's';
+        slide.appendChild(flake);
+        setTimeout(() => flake.remove(), (flakeDelay + 0.85) * 1000);
+      }
+    }
+    const delay = 1990 + Math.random() * 2110;
+    heartbeatTimer = setTimeout(beat, delay);
+  }
+  beat();
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) { clearTimeout(heartbeatTimer); heartbeatTimer = null; }
+  const heart = coverflowEl.querySelector('.pos-center .yt-heart');
+  const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
+  if (heart) heart.classList.remove('beating');
+  if (bulge) bulge.classList.remove('beating');
+  coverflowEl.querySelectorAll('.yt-flake').forEach(f => f.remove());
+}
 
 function expandPoster() {
   if (isExpanded) return;
   isExpanded = true;
   coverflowEl.classList.add('expanded');
   overlay.classList.add('visible');
+  startHeartbeat();
 }
 
 function collapsePoster(useFlip) {
   if (!isExpanded) return;
   isExpanded = false;
+  stopHeartbeat();
   overlay.classList.remove('visible');
   if (useFlip) {
     const center = coverflowEl.querySelector('.pos-center');
@@ -1323,8 +1456,10 @@ function selectMovie(title) {
       const reflectEl = safePath
         ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
         : '';
+      const ytHeart = `<svg class="yt-heart" viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg><div class="yt-bulge"></div>`;
       return `<div class="coverflow-slide" data-idx="${i}">
         ${posterEl}
+        ${ytHeart}
         ${reflectEl}
       </div>`;
     }).join('');
