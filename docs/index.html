@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://image.tmdb.org data:; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; manifest-src 'self'; worker-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://image.tmdb.org data:; connect-src 'self' https://labwvnsunfhswkmlvisl.supabase.co; frame-src 'none'; frame-ancestors 'none'; manifest-src 'self'; worker-src 'self';">
   <meta name="theme-color" content="#08080c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -281,7 +281,10 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.4s ease 0.3s;
+      display: block;
+      text-decoration: none;
     }
+    .yt-heart svg { width: 100%; height: 100%; display: block; }
     .yt-bulge {
       position: absolute;
       top: 50%;
@@ -1037,11 +1040,40 @@ document.getElementById('searchHistory').addEventListener('click', (e) => {
 renderHistory();
 
 let DB = {};
+let POSTERS = {};
+let TRAILERS = {};
+
+const SUPABASE_URL = 'https://labwvnsunfhswkmlvisl.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhYnd2bnN1bmZoc3drbWx2aXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjk5NDksImV4cCI6MjEwMjk0NTk0OX0.bmaEevB0AP-GgSy3LPX2eorNLxSzTLHWQpD4Veuyg9U';
+let useSupabase = false;
+
+function sbFetch(path) {
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+  }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
 
 const CACHE_KEY = 'filmrec_db';
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 
 async function loadDatabase() {
+  try {
+    const all = [];
+    let offset = 0;
+    while (true) {
+      const batch = await sbFetch(`movies?select=title&order=title&limit=1000&offset=${offset}`);
+      all.push(...batch);
+      if (batch.length < 1000) break;
+      offset += 1000;
+    }
+    TITLES.length = 0;
+    TITLES.push(...all.map(m => m.title));
+    buildPrefixIndex();
+    useSupabase = true;
+    return;
+  } catch (e) {
+    console.warn('Supabase unavailable, falling back to static JSON:', e);
+  }
   const cached = localStorage.getItem(CACHE_KEY);
   const cachedPosters = localStorage.getItem(CACHE_KEY + '_posters');
   const cachedVersion = localStorage.getItem(CACHE_KEY + '_v');
@@ -1083,8 +1115,6 @@ function onDatabaseLoaded() {
   TITLES.push(...Object.keys(DB));
   buildPrefixIndex();
 }
-
-let POSTERS = {};
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/";
 const IMDB_LOGO = `<svg class="imdb-logo" viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="6" fill="#F5C518"/><text x="24" y="17.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="900" font-style="italic" fill="#000">IMDb</text></svg>`;
@@ -1211,7 +1241,7 @@ function goToSlide(idx) {
   const r = currentRecs[idx];
   if (!r) return;
   const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
-  const canChain = Object.prototype.hasOwnProperty.call(DB, r.title);
+  const canChain = TITLES.includes(r.title);
   coverflowInfo.innerHTML = `
     <div class="coverflow-title${canChain ? ' chainable' : ''}">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
@@ -1322,6 +1352,10 @@ coverflowEl.addEventListener('dblclick', (e) => {
   }
 });
 
+coverflowEl.addEventListener('click', (e) => {
+  if (e.target.closest('.yt-heart')) e.stopPropagation();
+});
+
 overlay.addEventListener('click', () => collapsePoster(false));
 
 document.addEventListener('keydown', (e) => {
@@ -1429,34 +1463,60 @@ function showSkeletons() {
   ).join('');
 }
 
-function selectMovie(title) {
+async function selectMovie(title) {
   input.value = title;
   suggestionsEl.classList.remove('visible');
   clearBtn.classList.add('visible');
   emptyState.style.display = 'none';
   addToHistory(title);
 
-  if (!Object.prototype.hasOwnProperty.call(DB, title)) return;
-  const recs = DB[title];
-  if (!Array.isArray(recs)) return;
-  currentRecs = recs;
-
   selectedMovieEl.textContent = title;
   resultsEl.classList.add('visible');
   showSkeletons();
 
-  requestAnimationFrame(() => {
+  let recs;
+  if (useSupabase) {
+    try {
+      const [movie] = await sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=id&limit=1`);
+      if (!movie) return;
+      const rows = await sbFetch(
+        `recommendations?movie_id=eq.${movie.id}&select=rank,rec:rec_movie_id(title,year,vote_average,poster_path,trailer_key)&order=rank`
+      );
+      recs = rows.map(r => ({
+        title: r.rec.title,
+        year: r.rec.year,
+        imdb: r.rec.vote_average,
+        poster_path: r.rec.poster_path,
+        trailer_key: r.rec.trailer_key,
+      }));
+    } catch (e) {
+      console.warn('Supabase rec fetch failed:', e);
+    }
+  }
+  if (!recs) {
+    if (!Object.prototype.hasOwnProperty.call(DB, title)) return;
+    const dbRecs = DB[title];
+    if (!Array.isArray(dbRecs)) return;
+    recs = dbRecs.map(r => ({
+      ...r,
+      poster_path: POSTERS[r.title] || null,
+      trailer_key: null,
+    }));
+  }
+  currentRecs = recs;
+
+  setTimeout(() => {
     coverflowEl.innerHTML = recs.map((r, i) => {
-      const poster = POSTERS[r.title];
       const safeTitle = escapeHtml(r.title);
-      const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+      const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
       const posterEl = safePath
         ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
         : `<div class="coverflow-poster-fallback">&#127916;</div>`;
       const reflectEl = safePath
         ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
         : '';
-      const ytHeart = `<svg class="yt-heart" viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg><div class="yt-bulge"></div>`;
+      const trailerUrl = r.trailer_key ? `https://www.youtube.com/watch?v=${encodeURIComponent(r.trailer_key)}` : '';
+      const ytHeart = `<a class="yt-heart" ${trailerUrl ? `href="${trailerUrl}" target="_blank" rel="noopener"` : ''}><svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg></a><div class="yt-bulge"></div>`;
       return `<div class="coverflow-slide" data-idx="${i}">
         ${posterEl}
         ${ytHeart}
@@ -1465,10 +1525,9 @@ function selectMovie(title) {
     }).join('');
 
     mobileRecList.innerHTML = recs.map(r => {
-      const poster = POSTERS[r.title];
       const safeTitle = escapeHtml(r.title);
-      const safePath = poster ? poster.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
-      const canChain = Object.prototype.hasOwnProperty.call(DB, r.title);
+      const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+      const canChain = TITLES.includes(r.title);
       const imgEl = safePath
         ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="44px" alt="${safeTitle}" loading="lazy">`
         : `<div class="mobile-rec-poster-fallback">&#127916;</div>`;
@@ -1497,7 +1556,7 @@ coverflowInfo.addEventListener('click', (e) => {
   const titleEl = e.target.closest('.coverflow-title.chainable');
   if (!titleEl) return;
   const r = currentRecs[currentSlide];
-  if (r && Object.prototype.hasOwnProperty.call(DB, r.title)) {
+  if (r && TITLES.includes(r.title)) {
     if (isExpanded) collapsePoster(false);
     selectMovie(r.title);
     window.scrollTo({top: 0, behavior: 'smooth'});
@@ -1508,7 +1567,7 @@ mobileRecList.addEventListener('click', (e) => {
   const card = e.target.closest('.mobile-rec-card.chainable');
   if (!card) return;
   const chainTitle = card.dataset.chain;
-  if (chainTitle && Object.prototype.hasOwnProperty.call(DB, chainTitle)) {
+  if (chainTitle && TITLES.includes(chainTitle)) {
     selectMovie(chainTitle);
     window.scrollTo({top: 0, behavior: 'smooth'});
   }
