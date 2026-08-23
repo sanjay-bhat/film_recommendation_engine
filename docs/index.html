@@ -151,23 +151,6 @@
     .results { display: none; }
     .results.visible { display: block; }
 
-    .results-header {
-      margin-bottom: 16px;
-    }
-    .results-header .label {
-      font-size: 11px;
-      color: #726b5e;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-    .results-header .movie-name {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 22px;
-      font-weight: 700;
-      color: #c4a35a;
-      margin-top: 4px;
-    }
 
     .coverflow {
       position: relative;
@@ -402,6 +385,21 @@
       padding: 16px 0 4px;
       position: relative;
     }
+
+    .coverflow-source {
+      font-size: 11px;
+      color: #726b5e;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .coverflow-source .imdb-logo { height: 12px; }
+    .coverflow-source .src-score { color: #c4a35a; font-weight: 600; letter-spacing: 0; text-transform: none; }
 
     .coverflow-title {
       font-family: 'Playfair Display', Georgia, serif;
@@ -950,10 +948,6 @@
   <div class="suggestions" id="suggestions"></div>
 
   <div class="results" id="results">
-    <div class="results-header">
-      <div class="label">Because you liked</div>
-      <div class="movie-name" id="selectedMovie"></div>
-    </div>
     <div class="coverflow-overlay" id="coverflowOverlay"></div>
     <div class="coverflow" id="coverflow"></div>
     <div class="coverflow-divider"></div>
@@ -1336,7 +1330,6 @@ const input = document.getElementById('searchInput');
 const clearBtn = document.getElementById('clearBtn');
 const suggestionsEl = document.getElementById('suggestions');
 const resultsEl = document.getElementById('results');
-const selectedMovieEl = document.getElementById('selectedMovie');
 const coverflowEl = document.getElementById('coverflow');
 const coverflowInfo = document.getElementById('coverflowInfo');
 const carouselCounter = document.getElementById('carouselCounter');
@@ -1345,6 +1338,7 @@ const mobileRecList = document.getElementById('mobileRecList');
 let currentSlide = 0;
 let slideCount = 0;
 let currentRecs = [];
+let sourceMovie = { title: '', rating: 0 };
 
 let searchTimer = 0;
 input.addEventListener('input', () => {
@@ -1429,7 +1423,12 @@ function goToSlide(idx) {
   if (!r) return;
   const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
   const canChain = TITLES.includes(r.title);
+  const srcSlug = encodeURIComponent(sourceMovie.title.toLowerCase().replace(/\s+/g, '_'));
+  const srcLine = sourceMovie.rating
+    ? `<div class="coverflow-source"><a href="https://www.imdb.com/find/?q=${encodeURIComponent(sourceMovie.title)}" target="_blank" rel="noopener">${IMDB_LOGO}</a> <span class="src-score">${Number(sourceMovie.rating).toFixed(1)}</span> ${escapeHtml(sourceMovie.title)}</div>`
+    : `<div class="coverflow-source">${escapeHtml(sourceMovie.title)}</div>`;
   coverflowInfo.innerHTML = `
+    ${srcLine}
     <div class="coverflow-title${canChain ? ' chainable' : ''}">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
       <span class="coverflow-year">${Number(r.year)}</span>
@@ -1657,15 +1656,16 @@ async function selectMovie(title) {
   emptyState.style.display = 'none';
   addToHistory(title);
 
-  selectedMovieEl.textContent = title;
+  sourceMovie = { title, rating: 0 };
   resultsEl.classList.add('visible');
   showSkeletons();
 
   let recs;
   if (useSupabase) {
     try {
-      const [movie] = await sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=id&limit=1`);
+      const [movie] = await sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=id,vote_average&limit=1`);
       if (!movie) return;
+      sourceMovie.rating = movie.vote_average || 0;
       const rows = await sbFetch(
         `recommendations?movie_id=eq.${movie.id}&select=rank,rec:rec_movie_id(title,year,vote_average,poster_path,trailer_key)&order=rank`
       );

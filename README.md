@@ -7,10 +7,10 @@
 [![CI](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![release](https://img.shields.io/badge/release-v0.8.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
+[![release](https://img.shields.io/badge/release-v0.9.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
 [![go report](https://img.shields.io/badge/go%20report-retired-lightgrey.svg)](https://goreportcard.com/report/github.com/sanjay-bhat/film_recommendation_engine)
 
-A hybrid movie recommendation system built on **TMDb 5000** and **MovieLens 25M**. Give it a movie you love, and it returns 7 films you'll probably love too — using a 9-signal weighted hybrid scoring formula that blends content similarity, collaborative filtering, genre Jaccard overlap, plot embeddings, genome tags, actor/director overlap, popularity, and release-year proximity.
+A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a title you love, and it returns 7 you'll probably love too — powered by sentence-transformer embeddings (all-MiniLM-L6-v2) and FAISS nearest-neighbor search across TMDb's top-rated catalog, backed by Supabase Postgres.
 
 ## Preview
 
