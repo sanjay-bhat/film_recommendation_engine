@@ -1663,18 +1663,16 @@ async function selectMovie(title) {
   let recs;
   if (useSupabase) {
     try {
-      const [movie] = await sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=id,vote_average&limit=1`);
+      const [movie] = await sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=vote_average&limit=1`);
       if (!movie) return;
       sourceMovie.rating = movie.vote_average || 0;
-      const rows = await sbFetch(
-        `recommendations?movie_id=eq.${movie.id}&select=rank,rec:rec_movie_id(title,year,vote_average,poster_path,trailer_key)&order=rank`
-      );
+      const rows = await sbRpc('get_recommendations', { query_title: title });
       recs = rows.map(r => ({
-        title: r.rec.title,
-        year: r.rec.year,
-        imdb: r.rec.vote_average,
-        poster_path: r.rec.poster_path,
-        trailer_key: r.rec.trailer_key,
+        title: r.title,
+        year: r.year,
+        imdb: r.vote_average,
+        poster_path: r.poster_path,
+        trailer_key: r.trailer_key,
       }));
     } catch (e) {
       console.warn('Supabase rec fetch failed:', e);
