@@ -1,4 +1,4 @@
-const CACHE = 'filmrec-v2';
+const CACHE = 'filmrec-v3';
 const POSTER_CACHE = 'filmrec-posters-v1';
 const ASSETS = [
   './',
@@ -34,15 +34,7 @@ self.addEventListener('fetch', e => {
   }
 
   if (url.origin === location.origin) {
-    e.respondWith(
-      caches.match(e.request).then(cached =>
-        cached || fetch(e.request).then(resp => {
-          const clone = resp.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-          return resp;
-        })
-      )
-    );
+    e.respondWith(staleWhileRevalidate(e.request, CACHE));
   }
 });
 
