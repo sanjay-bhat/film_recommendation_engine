@@ -176,6 +176,27 @@
       will-change: transform, opacity;
     }
 
+    .poster-rating {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      z-index: 2;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .poster-rating.high { color: #c4a35a; background: rgba(20,18,14,0.8); }
+    .poster-rating.mid { color: #8a9e8a; background: rgba(20,18,14,0.8); }
+    .poster-rating.low { color: #8a7e6e; background: rgba(20,18,14,0.8); }
+    .poster-rating .imdb-logo { height: 12px; }
+
     .coverflow-slide.pos-center {
       transform: translateX(0) rotateY(0deg) scale(1);
       opacity: 1;
@@ -1413,9 +1434,12 @@ function renderRecs(recs) {
     const reflectEl = safePath
       ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
       : '';
+    const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+    const ratingBadge = `<span class="poster-rating ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb).toFixed(1)}</span>`;
     const trailerUrl = r.trailer_key ? `https://www.youtube.com/watch?v=${encodeURIComponent(r.trailer_key)}` : '';
     const ytHeart = `<a class="yt-heart" ${trailerUrl ? `href="${trailerUrl}" target="_blank" rel="noopener"` : ''}><svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg></a><div class="yt-bulge"></div>`;
     return `<div class="coverflow-slide" data-idx="${i}">
+      ${ratingBadge}
       ${posterEl}
       ${ytHeart}
       ${reflectEl}
@@ -1568,9 +1592,7 @@ function goToSlide(idx) {
 
   const r = currentRecs[idx];
   if (!r) return;
-  const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
   const canChain = TITLES.includes(r.title);
-  const srcSlug = encodeURIComponent(sourceMovie.title.toLowerCase().replace(/\s+/g, '_'));
   const srcLine = sourceMovie.rating
     ? `<div class="coverflow-source"><a href="https://www.imdb.com/find/?q=${encodeURIComponent(sourceMovie.title)}" target="_blank" rel="noopener">${IMDB_LOGO}</a> <span class="src-score">${Number(sourceMovie.rating).toFixed(1)}</span> ${escapeHtml(sourceMovie.title)}</div>`
     : `<div class="coverflow-source">${escapeHtml(sourceMovie.title)}</div>`;
@@ -1579,7 +1601,6 @@ function goToSlide(idx) {
     <div class="coverflow-title${canChain ? ' chainable' : ''}">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
       <span class="coverflow-year">${Number(r.year)}</span>
-      <span class="coverflow-score ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb).toFixed(1)}</span>
     </div>`;
   carouselCounter.textContent = `${idx + 1} / ${slideCount}`;
 }
