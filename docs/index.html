@@ -1663,10 +1663,13 @@ async function selectMovie(title) {
   let recs;
   if (useSupabase) {
     try {
-      const [movie] = await sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=vote_average&limit=1`);
+      const [movieResult, rows] = await Promise.all([
+        sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=vote_average&limit=1`),
+        sbRpc('get_recommendations', { query_title: title }),
+      ]);
+      const [movie] = movieResult;
       if (!movie) return;
       sourceMovie.rating = movie.vote_average || 0;
-      const rows = await sbRpc('get_recommendations', { query_title: title });
       recs = rows.map(r => ({
         title: r.title,
         year: r.year,
