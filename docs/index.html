@@ -484,6 +484,111 @@
       border-color: rgba(196,163,90,0.35);
     }
 
+    /* On This Day ticker */
+    .otd-wrap {
+      position: relative;
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .otd-wrap.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .otd-wrap.hiding {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    .otd-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .otd-label {
+      font-size: 10px;
+      color: rgba(196,163,90,0.5);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .otd-close {
+      background: none;
+      border: none;
+      color: #4a453e;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+    .otd-close:hover { opacity: 1; }
+    .otd-track {
+      overflow: hidden;
+      mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    }
+    .otd-scroll {
+      display: flex;
+      gap: 16px;
+      width: max-content;
+      animation: otdMarquee var(--otd-duration, 40s) linear infinite;
+    }
+    .otd-track:hover .otd-scroll {
+      animation-play-state: paused;
+    }
+    @keyframes otdMarquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .otd-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 6px;
+      background: rgba(196,163,90,0.06);
+      border: 1px solid rgba(196,163,90,0.12);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .otd-item:hover {
+      background: rgba(196,163,90,0.14);
+      border-color: rgba(196,163,90,0.3);
+    }
+    .otd-poster {
+      width: 28px;
+      height: 42px;
+      border-radius: 3px;
+      background: #141418;
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+    .otd-poster-fallback {
+      width: 28px;
+      height: 42px;
+      border-radius: 3px;
+      background: #141418;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .otd-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #e8e2d8;
+      white-space: nowrap;
+    }
+    .otd-year {
+      font-size: 11px;
+      color: #6a6560;
+      white-space: nowrap;
+    }
+
     /* Skeleton shimmer */
     .skeleton-poster {
       width: 220px;
@@ -835,6 +940,13 @@
   </div>
 
   <div class="search-history" id="searchHistory"></div>
+  <div class="otd-wrap" id="otdWrap">
+    <div class="otd-header">
+      <span class="otd-label">&#127902; On this day</span>
+      <button class="otd-close" id="otdClose" title="Dismiss">&#10005;</button>
+    </div>
+    <div class="otd-track"><div class="otd-scroll" id="otdScroll"></div></div>
+  </div>
   <div class="suggestions" id="suggestions"></div>
 
   <div class="results" id="results">
@@ -1053,6 +1165,14 @@ function sbFetch(path) {
   }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 }
 
+function sbRpc(fn, params) {
+  return fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+
 const CACHE_KEY = 'filmrec_db';
 const CACHE_VERSION = 'v6';
 
@@ -1143,7 +1263,74 @@ function buildPrefixIndex() {
   }
 }
 
-loadDatabase();
+loadDatabase().then(() => loadOnThisDay());
+
+const otdWrap = document.getElementById('otdWrap');
+const otdScroll = document.getElementById('otdScroll');
+const otdClose = document.getElementById('otdClose');
+
+async function loadOnThisDay() {
+  const now = new Date();
+  const mm = now.getMonth() + 1;
+  const dd = now.getDate();
+
+  let otdMovies = [];
+  try {
+    if (useSupabase) {
+      const rows = await sbRpc('movies_on_this_day', { mm, dd });
+      otdMovies = rows.map(r => ({
+        title: r.title,
+        year: r.release_date ? r.release_date.split('-')[0] : '',
+        poster_path: r.poster_path,
+      }));
+    }
+  } catch (e) {
+    console.warn('On This Day fetch failed:', e);
+  }
+
+  if (!otdMovies.length) { otdWrap.style.display = 'none'; return; }
+
+  function buildItems(movies) {
+    return movies.map(m => {
+      const safeTitle = escapeHtml(m.title);
+      const safePath = m.poster_path ? m.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+      const posterEl = safePath
+        ? `<img class="otd-poster" src="${TMDB_IMG}w92${safePath}" alt="${safeTitle}" loading="lazy">`
+        : `<div class="otd-poster-fallback">&#127916;</div>`;
+      return `<div class="otd-item" data-title="${escapeAttr(m.title)}">${posterEl}<div><div class="otd-title">${safeTitle}</div><div class="otd-year">${m.year}</div></div></div>`;
+    }).join('');
+  }
+
+  const itemsHtml = buildItems(otdMovies);
+  otdScroll.innerHTML = itemsHtml + itemsHtml;
+
+  const speed = 60;
+  const totalWidth = otdScroll.scrollWidth / 2;
+  const duration = totalWidth / speed;
+  otdScroll.style.setProperty('--otd-duration', duration + 's');
+
+  setTimeout(() => otdWrap.classList.add('visible'), 100);
+
+  otdScroll.addEventListener('click', (e) => {
+    const item = e.target.closest('.otd-item');
+    if (!item) return;
+    const title = item.dataset.title;
+    if (TITLES.includes(title)) {
+      dismissOtd();
+      selectMovie(title);
+    }
+  });
+}
+
+function dismissOtd() {
+  otdWrap.classList.add('hiding');
+  otdWrap.addEventListener('transitionend', () => {
+    otdWrap.style.display = 'none';
+  }, { once: true });
+  setTimeout(() => { otdWrap.style.display = 'none'; }, 600);
+}
+
+otdClose.addEventListener('click', () => dismissOtd());
 
 const input = document.getElementById('searchInput');
 const clearBtn = document.getElementById('clearBtn');
