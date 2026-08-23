@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://labwvnsunfhswkmlvisl.supabase.co" crossorigin>
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1219,6 +1220,10 @@ const SUPABASE_URL = 'https://labwvnsunfhswkmlvisl.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhYnd2bnN1bmZoc3drbWx2aXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjk5NDksImV4cCI6MjEwMjk0NTk0OX0.bmaEevB0AP-GgSy3LPX2eorNLxSzTLHWQpD4Veuyg9U';
 let useSupabase = false;
 
+fetch(`${SUPABASE_URL}/rest/v1/movies?select=id&limit=1`, {
+  headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+}).catch(() => {});
+
 function sbFetch(path) {
   return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
@@ -1863,6 +1868,13 @@ async function selectMovie(title) {
   }
   allRecs = recs;
   selectedIndustries = new Set(recs.map(r => getIndustryName(r.original_language)));
+
+  recs.slice(0, 5).forEach(r => {
+    if (r.poster_path) {
+      const safePath = r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '');
+      new Image().src = `${TMDB_IMG}w342${safePath}`;
+    }
+  });
 
   setTimeout(() => {
     renderIndustryBubbles();
