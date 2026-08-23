@@ -1,267 +1,143 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" font-family="Inter, -apple-system, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420">
   <defs>
-    <style>
-      .bg { fill: #0d0d12; }
-      .title { fill: #c4a35a; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
-      .subtitle { fill: #726b5e; font-size: 11px; letter-spacing: 2px; }
-      .box { rx: 10; ry: 10; stroke-width: 1.5; }
-      .box-data { fill: #141420; stroke: #2a2a3a; }
-      .box-pipeline { fill: #141420; stroke: #c4a35a; stroke-opacity: 0.4; }
-      .box-engine { fill: #1a1a28; stroke: #c4a35a; stroke-opacity: 0.6; }
-      .box-client { fill: #141420; stroke: #2a6b4a; }
-      .box-infra { fill: #141420; stroke: #4a3a6b; }
-      .box-label { fill: #e8e4dc; font-size: 13px; font-weight: 600; }
-      .box-detail { fill: #726b5e; font-size: 10px; }
-      .box-badge { font-size: 9px; font-weight: 600; letter-spacing: 1px; }
-      .section-label { fill: #4a453e; font-size: 9px; font-weight: 700; letter-spacing: 3px; }
-      .arrow { stroke: #3a3a4a; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
-      .arrow-gold { stroke: #c4a35a; stroke-opacity: 0.5; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-gold); }
-      .signal-row { fill: #726b5e; font-size: 9px; }
-      .signal-pct { fill: #c4a35a; font-size: 9px; font-weight: 600; }
-    </style>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#3a3a4a"/>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888"/>
     </marker>
-    <marker id="arrowhead-gold" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#c4a35a" opacity="0.5"/>
+    <marker id="arrowOrange" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#FF6D01"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3ECF8E"/>
     </marker>
   </defs>
 
   <!-- Background -->
-  <rect width="1200" height="820" class="bg"/>
+  <rect width="900" height="420" fill="#f7f8fa" rx="6"/>
 
-  <!-- Title -->
-  <text x="600" y="40" text-anchor="middle" class="title">Film Recommendation Engine</text>
-  <text x="600" y="58" text-anchor="middle" class="subtitle">SYSTEM ARCHITECTURE — V0.8.0</text>
+  <!-- ═══════════════ OFFLINE PIPELINE SECTION ═══════════════ -->
+  <rect x="30" y="40" width="840" height="150" rx="8" fill="#EDF2FA" stroke="#B8CCE4" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="450" y="62" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="11" fill="#5B7BA5" letter-spacing="2.5" font-weight="600">OFFLINE PIPELINE</text>
 
-  <!-- ═══════════════ DATA SOURCES (left column) ═══════════════ -->
-  <text x="38" y="95" class="section-label">DATA SOURCES</text>
+  <!-- Box 1: TMDb API -->
+  <rect x="65" y="78" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="65" y="78" width="4" height="95" rx="2" fill="#4285F4"/>
+  <circle cx="142" cy="105" r="13" fill="#EBF2FF" stroke="#4285F4" stroke-width="1.2"/>
+  <text x="142" y="110" text-anchor="middle" font-size="13" fill="#4285F4" font-weight="bold">&#x2601;</text>
+  <text x="142" y="132" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="13" font-weight="600" fill="#1a1a1a">TMDb API</text>
+  <text x="142" y="148" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">4,800 movies</text>
+  <text x="142" y="161" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">1,907 TV shows</text>
 
-  <!-- TMDb 5000 -->
-  <rect x="28" y="108" width="200" height="68" class="box box-data"/>
-  <text x="48" y="132" class="box-label">TMDb 5000</text>
-  <text x="48" y="147" class="box-detail">4,803 movies + credits</text>
-  <text x="48" y="161" class="box-detail">Genres, keywords, cast, crew</text>
-  <rect x="168" y="115" width="50" height="16" rx="3" fill="#2a2a3a"/>
-  <text x="193" y="126" text-anchor="middle" class="box-badge" fill="#726b5e">CSV</text>
+  <!-- Arrow 1-2 -->
+  <line x1="224" y1="125" x2="268" y2="125" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="246" y="118" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#888">fetch</text>
 
-  <!-- MovieLens 25M -->
-  <rect x="28" y="188" width="200" height="82" class="box box-data"/>
-  <text x="48" y="212" class="box-label">MovieLens 25M</text>
-  <text x="48" y="227" class="box-detail">25M ratings · 162K users</text>
-  <text x="48" y="241" class="box-detail">58,945 collab movies</text>
-  <text x="48" y="255" class="box-detail">13,803 genome-tagged movies</text>
-  <rect x="168" y="195" width="50" height="16" rx="3" fill="#2a2a3a"/>
-  <text x="193" y="206" text-anchor="middle" class="box-badge" fill="#726b5e">CSV</text>
+  <!-- Box 2: Python ETL -->
+  <rect x="275" y="78" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="275" y="78" width="4" height="95" rx="2" fill="#34A853"/>
+  <circle cx="352" cy="105" r="13" fill="#E8F5E9" stroke="#34A853" stroke-width="1.2"/>
+  <text x="352" y="110" text-anchor="middle" font-size="13" fill="#34A853" font-weight="bold">&#x2699;</text>
+  <text x="352" y="132" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="13" font-weight="600" fill="#1a1a1a">Python ETL</text>
+  <text x="352" y="148" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">fetch &#xB7; clean &#xB7; merge</text>
+  <text x="352" y="161" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">6,707 title catalog</text>
 
-  <!-- TMDb API -->
-  <rect x="28" y="282" width="200" height="54" class="box box-data"/>
-  <text x="48" y="306" class="box-label">TMDb API</text>
-  <text x="48" y="320" class="box-detail">Plot overviews · Poster CDN</text>
-  <rect x="168" y="289" width="50" height="16" rx="3" fill="#2a2a3a"/>
-  <text x="193" y="300" text-anchor="middle" class="box-badge" fill="#726b5e">REST</text>
+  <!-- Arrow 2-3 -->
+  <line x1="434" y1="125" x2="478" y2="125" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="456" y="118" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#888">embed</text>
 
-  <!-- ═══════════════ OFFLINE PIPELINES (center-left) ═══════════════ -->
-  <text x="290" y="95" class="section-label">OFFLINE PIPELINES</text>
+  <!-- Box 3: ML Engine -->
+  <rect x="485" y="78" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="485" y="78" width="4" height="95" rx="2" fill="#7B61FF"/>
+  <circle cx="562" cy="105" r="13" fill="#F0EBFF" stroke="#7B61FF" stroke-width="1.2"/>
+  <text x="562" y="110" text-anchor="middle" font-size="12" fill="#7B61FF" font-weight="bold">&#x25C8;</text>
+  <text x="562" y="132" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="13" font-weight="600" fill="#1a1a1a">ML Engine</text>
+  <text x="562" y="148" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">MiniLM-L6-v2</text>
+  <text x="562" y="161" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">384-dim embeddings</text>
 
-  <!-- Collab SVD -->
-  <rect x="280" y="108" width="195" height="54" class="box box-pipeline"/>
-  <text x="300" y="132" class="box-label">Collaborative SVD</text>
-  <text x="300" y="147" class="box-detail">Truncated SVD k=50 on ratings</text>
-  <rect x="415" y="115" width="50" height="16" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="440" y="126" text-anchor="middle" class="box-badge" fill="#c4a35a">PY</text>
+  <!-- Arrow 3-4 -->
+  <line x1="644" y1="125" x2="688" y2="125" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="666" y="118" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#888">k-NN</text>
 
-  <!-- Genome SVD -->
-  <rect x="280" y="174" width="195" height="54" class="box box-pipeline"/>
-  <text x="300" y="198" class="box-label">Genome Tag SVD</text>
-  <text x="300" y="213" class="box-detail">1,128 tags → 50d via SVD</text>
-  <rect x="415" y="181" width="50" height="16" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="440" y="192" text-anchor="middle" class="box-badge" fill="#c4a35a">PY</text>
+  <!-- Box 4: Recommendations -->
+  <rect x="695" y="78" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="695" y="78" width="4" height="95" rx="2" fill="#FF6D01"/>
+  <circle cx="772" cy="105" r="13" fill="#FFF3E0" stroke="#FF6D01" stroke-width="1.2"/>
+  <text x="772" y="110" text-anchor="middle" font-size="12" fill="#FF6D01" font-weight="bold">&#x2605;</text>
+  <text x="772" y="132" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="12" font-weight="600" fill="#1a1a1a">Recommendations</text>
+  <text x="772" y="148" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">FAISS nearest-neighbor</text>
+  <text x="772" y="161" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">46,949 pairs</text>
 
-  <!-- Plot Embeddings -->
-  <rect x="280" y="240" width="195" height="54" class="box box-pipeline"/>
-  <text x="300" y="264" class="box-label">Plot Embeddings</text>
-  <text x="300" y="279" class="box-detail">MiniLM-L6 384d → PCA 50d</text>
-  <rect x="415" y="247" width="50" height="16" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="440" y="258" text-anchor="middle" class="box-badge" fill="#c4a35a">PY</text>
+  <!-- ═══════════════ VERTICAL MIGRATION ARROW ═══════════════ -->
+  <line x1="772" y1="177" x2="772" y2="243" stroke="#FF6D01" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowOrange)"/>
+  <text x="790" y="215" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#FF6D01">migrate</text>
 
-  <!-- TF-IDF -->
-  <rect x="280" y="306" width="195" height="54" class="box box-pipeline"/>
-  <text x="300" y="330" class="box-label">Content TF-IDF</text>
-  <text x="300" y="345" class="box-detail">Director + cast + keywords + genres</text>
-  <rect x="415" y="313" width="50" height="16" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="440" y="324" text-anchor="middle" class="box-badge" fill="#c4a35a">PY</text>
+  <!-- ═══════════════ LIVE SERVING SECTION ═══════════════ -->
+  <rect x="30" y="250" width="840" height="150" rx="8" fill="#E8F8F1" stroke="#A8D8C0" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="450" y="272" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="11" fill="#4E937A" letter-spacing="2.5" font-weight="600">LIVE SERVING</text>
 
-  <!-- Arrows: data → pipelines -->
-  <path d="M228,142 L275,135" class="arrow"/>
-  <path d="M228,220 L275,195" class="arrow"/>
-  <path d="M228,230 L275,261" class="arrow"/>
-  <path d="M228,142 L275,330" class="arrow"/>
-  <path d="M228,309 L275,267" class="arrow"/>
+  <!-- Box 5: Browser -->
+  <rect x="65" y="288" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="65" y="288" width="4" height="95" rx="2" fill="#00ACC1"/>
+  <circle cx="142" cy="315" r="13" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.2"/>
+  <text x="142" y="320" text-anchor="middle" font-size="12" fill="#00ACC1" font-weight="bold">&#x25A3;</text>
+  <text x="142" y="342" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="13" font-weight="600" fill="#1a1a1a">Browser</text>
+  <text x="142" y="358" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">Search &amp; Cover Flow</text>
+  <text x="142" y="371" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">WebGL bokeh particles</text>
 
-  <!-- ═══════════════ PRE-COMPUTED FACTORS (center) ═══════════════ -->
-  <text x="290" y="395" class="section-label">PRE-COMPUTED FACTORS</text>
+  <!-- Arrow 5-6 -->
+  <line x1="224" y1="335" x2="268" y2="335" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="246" y="328" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#888">visit</text>
 
-  <rect x="280" y="408" width="195" height="86" class="box box-data"/>
-  <text x="300" y="432" class="box-label">Factor Files</text>
-  <text x="300" y="449" class="box-detail">item_factors.csv (27 MB)</text>
-  <text x="300" y="463" class="box-detail">genome_factors.csv (6.5 MB)</text>
-  <text x="300" y="477" class="box-detail">plot_factors.csv (2 MB)</text>
+  <!-- Box 6: GitHub Pages -->
+  <rect x="275" y="288" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="275" y="288" width="4" height="95" rx="2" fill="#333"/>
+  <circle cx="352" cy="315" r="13" fill="#F5F5F5" stroke="#333" stroke-width="1.2"/>
+  <text x="352" y="320" text-anchor="middle" font-size="12" fill="#333" font-weight="bold">&#x29BE;</text>
+  <text x="352" y="342" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="13" font-weight="600" fill="#1a1a1a">GitHub Pages</text>
+  <text x="352" y="358" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">SPA &#xB7; PWA</text>
+  <text x="352" y="371" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">offline-capable</text>
 
-  <!-- Arrows: pipelines → factors -->
-  <path d="M377,162 L377,403" class="arrow-gold"/>
+  <!-- Arrow 6-7 -->
+  <line x1="434" y1="335" x2="478" y2="335" stroke="#3ECF8E" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="456" y="328" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#3ECF8E">query</text>
 
-  <!-- ═══════════════ RECOMMENDATION ENGINE (center-right) ═══════════════ -->
-  <text x="530" y="95" class="section-label">RECOMMENDATION ENGINE</text>
+  <!-- Box 7: PostgREST API -->
+  <rect x="485" y="288" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="485" y="288" width="4" height="95" rx="2" fill="#3ECF8E"/>
+  <circle cx="562" cy="315" r="13" fill="#E3FCEF" stroke="#3ECF8E" stroke-width="1.2"/>
+  <text x="562" y="320" text-anchor="middle" font-size="13" fill="#3ECF8E" font-weight="bold">&#x26A1;</text>
+  <text x="562" y="342" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="13" font-weight="600" fill="#1a1a1a">PostgREST</text>
+  <text x="562" y="358" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">REST + RPC</text>
+  <text x="562" y="371" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">auto-generated API</text>
 
-  <!-- 4-Way Retrieval -->
-  <rect x="530" y="108" width="220" height="104" class="box box-engine"/>
-  <text x="550" y="132" class="box-label">4-Way Retrieval</text>
-  <text x="550" y="150" class="box-detail">Content neighbors (TF-IDF Euclidean)</text>
-  <text x="550" y="164" class="box-detail">Collaborative neighbors (cosine sim)</text>
-  <text x="550" y="178" class="box-detail">Genome neighbors (cosine sim)</text>
-  <text x="550" y="192" class="box-detail">Plot neighbors (cosine sim)</text>
-  <rect x="690" y="115" width="50" height="16" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="715" y="126" text-anchor="middle" class="box-badge" fill="#c4a35a">~120</text>
+  <!-- Arrow 7-8 -->
+  <line x1="644" y1="335" x2="688" y2="335" stroke="#3ECF8E" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="666" y="328" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8.5" fill="#3ECF8E">SQL</text>
 
-  <!-- 9-Signal Scoring -->
-  <rect x="530" y="228" width="220" height="180" class="box box-engine"/>
-  <text x="550" y="252" class="box-label">9-Signal Weighted Hybrid</text>
-  <text x="550" y="272" class="signal-row">Content Similarity</text>
-  <text x="720" y="272" class="signal-pct" text-anchor="end">25%</text>
-  <text x="550" y="286" class="signal-row">Collaborative Filtering</text>
-  <text x="720" y="286" class="signal-pct" text-anchor="end">15%</text>
-  <text x="550" y="300" class="signal-row">Genre Jaccard</text>
-  <text x="720" y="300" class="signal-pct" text-anchor="end">15%</text>
-  <text x="550" y="314" class="signal-row">Plot Embeddings</text>
-  <text x="720" y="314" class="signal-pct" text-anchor="end">10%</text>
-  <text x="550" y="328" class="signal-row">Genome Tags</text>
-  <text x="720" y="328" class="signal-pct" text-anchor="end">8%</text>
-  <text x="550" y="342" class="signal-row">Actor Overlap</text>
-  <text x="720" y="342" class="signal-pct" text-anchor="end">8%</text>
-  <text x="550" y="356" class="signal-row">Director Match</text>
-  <text x="720" y="356" class="signal-pct" text-anchor="end">7%</text>
-  <text x="550" y="370" class="signal-row">Log Popularity</text>
-  <text x="720" y="370" class="signal-pct" text-anchor="end">7%</text>
-  <text x="550" y="384" class="signal-row">Year Proximity</text>
-  <text x="720" y="384" class="signal-pct" text-anchor="end">5%</text>
-  <rect x="690" y="235" width="50" height="16" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="715" y="246" text-anchor="middle" class="box-badge" fill="#c4a35a">TOP 7</text>
+  <!-- Box 8: Supabase Postgres -->
+  <rect x="695" y="288" width="155" height="95" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="695" y="288" width="4" height="95" rx="2" fill="#3ECF8E"/>
+  <circle cx="772" cy="315" r="13" fill="#E3FCEF" stroke="#3ECF8E" stroke-width="1.2"/>
+  <text x="772" y="320" text-anchor="middle" font-size="12" fill="#3ECF8E" font-weight="bold">&#x2395;</text>
+  <text x="772" y="342" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="12" font-weight="600" fill="#1a1a1a">Supabase Postgres</text>
+  <text x="772" y="358" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">6,707 titles</text>
+  <text x="772" y="371" text-anchor="middle" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="9.5" fill="#888">+ recommendations</text>
 
-  <!-- Sequel Dedup -->
-  <rect x="530" y="424" width="220" height="42" class="box box-engine"/>
-  <text x="550" y="448" class="box-label">Sequel Deduplication</text>
-  <text x="550" y="460" class="box-detail">Fuzzy string matching</text>
-
-  <!-- Arrows: retrieval → scoring → dedup -->
-  <path d="M640,212 L640,223" class="arrow-gold"/>
-  <path d="M640,408 L640,419" class="arrow-gold"/>
-
-  <!-- Arrow: factors → engine -->
-  <path d="M475,450 L525,316" class="arrow-gold"/>
-
-  <!-- ═══════════════ CLI IMPLEMENTATIONS (bottom-left) ═══════════════ -->
-  <text x="530" y="500" class="section-label">CLI IMPLEMENTATIONS</text>
-
-  <rect x="530" y="513" width="105" height="40" class="box box-engine"/>
-  <text x="547" y="535" class="box-label" font-size="11">Python</text>
-  <rect x="589" y="519" width="38" height="14" rx="3" fill="rgba(196,163,90,0.15)"/>
-  <text x="608" y="529" text-anchor="middle" class="box-badge" fill="#c4a35a" font-size="8">REF</text>
-
-  <rect x="645" y="513" width="105" height="40" class="box box-engine"/>
-  <text x="662" y="535" class="box-label" font-size="11">Rust</text>
-
-  <rect x="530" y="563" width="105" height="40" class="box box-engine"/>
-  <text x="547" y="585" class="box-label" font-size="11">C# (.NET 8)</text>
-
-  <rect x="645" y="563" width="105" height="40" class="box box-engine"/>
-  <text x="662" y="585" class="box-label" font-size="11">Go</text>
-
-  <!-- ═══════════════ CLIENT APPS (right column) ═══════════════ -->
-  <text x="810" y="95" class="section-label">CLIENT APPLICATIONS</text>
-
-  <!-- Website / PWA -->
-  <rect x="800" y="108" width="210" height="140" class="box box-client"/>
-  <text x="820" y="132" class="box-label">Website (PWA)</text>
-  <rect x="945" y="115" width="55" height="16" rx="3" fill="rgba(42,107,74,0.2)"/>
-  <text x="972" y="126" text-anchor="middle" class="box-badge" fill="#2a6b4a">HTML/JS</text>
-  <text x="820" y="150" class="box-detail">WebGL bokeh particles (GLSL)</text>
-  <text x="820" y="164" class="box-detail">Cover Flow carousel (7 positions)</text>
-  <text x="820" y="178" class="box-detail">4,800 movies · localStorage cache</text>
-  <text x="820" y="192" class="box-detail">Service worker (cache-first)</text>
-  <text x="820" y="206" class="box-detail">Responsive: Cover Flow / card list</text>
-  <text x="820" y="220" class="box-detail">TMDb CDN posters (w342 / w154)</text>
-  <text x="820" y="236" class="box-detail">GitHub Pages</text>
-
-  <!-- Android -->
-  <rect x="800" y="264" width="210" height="82" class="box box-client"/>
-  <text x="820" y="288" class="box-label">Android</text>
-  <rect x="945" y="271" width="55" height="16" rx="3" fill="rgba(42,107,74,0.2)"/>
-  <text x="972" y="282" text-anchor="middle" class="box-badge" fill="#2a6b4a">KOTLIN</text>
-  <text x="820" y="306" class="box-detail">Jetpack Compose · Material 3</text>
-  <text x="820" y="320" class="box-detail">Cover Flow carousel</text>
-  <text x="820" y="334" class="box-detail">Fully offline</text>
-
-  <!-- iOS -->
-  <rect x="800" y="358" width="210" height="82" class="box box-client"/>
-  <text x="820" y="382" class="box-label">iOS</text>
-  <rect x="945" y="365" width="55" height="16" rx="3" fill="rgba(42,107,74,0.2)"/>
-  <text x="972" y="376" text-anchor="middle" class="box-badge" fill="#2a6b4a">SWIFT</text>
-  <text x="820" y="400" class="box-detail">SwiftUI · async/await</text>
-  <text x="820" y="414" class="box-detail">Cover Flow carousel</text>
-  <text x="820" y="428" class="box-detail">Fully offline</text>
-
-  <!-- Arrows: engine → clients -->
-  <path d="M750,160 L795,170" class="arrow"/>
-  <path d="M750,340 L795,310" class="arrow"/>
-  <path d="M750,400 L795,400" class="arrow"/>
-
-  <!-- ═══════════════ INFRASTRUCTURE (bottom) ═══════════════ -->
-  <text x="38" y="500" class="section-label">INFRASTRUCTURE</text>
-
-  <!-- Docker -->
-  <rect x="28" y="513" width="200" height="54" class="box box-infra"/>
-  <text x="48" y="537" class="box-label">Docker</text>
-  <text x="48" y="552" class="box-detail">Containerized Python engine</text>
-  <rect x="168" y="520" width="50" height="16" rx="3" fill="rgba(74,58,107,0.2)"/>
-  <text x="193" y="531" text-anchor="middle" class="box-badge" fill="#6b5a9a">IMG</text>
-
-  <!-- Terraform -->
-  <rect x="28" y="579" width="200" height="54" class="box box-infra"/>
-  <text x="48" y="603" class="box-label">Terraform</text>
-  <text x="48" y="618" class="box-detail">Local Docker deployment config</text>
-  <rect x="168" y="586" width="50" height="16" rx="3" fill="rgba(74,58,107,0.2)"/>
-  <text x="193" y="597" text-anchor="middle" class="box-badge" fill="#6b5a9a">HCL</text>
-
-  <!-- CI/CD -->
-  <rect x="28" y="645" width="200" height="68" class="box box-infra"/>
-  <text x="48" y="669" class="box-label">GitHub Actions</text>
-  <text x="48" y="684" class="box-detail">CI: lint + test (Python, Rust, C#, Go)</text>
-  <text x="48" y="698" class="box-detail">CodeQL: security scanning</text>
-  <rect x="168" y="652" width="50" height="16" rx="3" fill="rgba(74,58,107,0.2)"/>
-  <text x="193" y="663" text-anchor="middle" class="box-badge" fill="#6b5a9a">YAML</text>
-
-  <!-- ═══════════════ DATA FLOW LEGEND ═══════════════ -->
-  <text x="38" y="758" class="section-label">LEGEND</text>
-
-  <rect x="28" y="770" width="14" height="14" rx="2" fill="#141420" stroke="#2a2a3a" stroke-width="1.5"/>
-  <text x="50" y="782" class="box-detail">Data Source</text>
-
-  <rect x="140" y="770" width="14" height="14" rx="2" fill="#141420" stroke="#c4a35a" stroke-opacity="0.4" stroke-width="1.5"/>
-  <text x="162" y="782" class="box-detail">Pipeline / Engine</text>
-
-  <rect x="280" y="770" width="14" height="14" rx="2" fill="#141420" stroke="#2a6b4a" stroke-width="1.5"/>
-  <text x="302" y="782" class="box-detail">Client App</text>
-
-  <rect x="390" y="770" width="14" height="14" rx="2" fill="#141420" stroke="#4a3a6b" stroke-width="1.5"/>
-  <text x="412" y="782" class="box-detail">Infrastructure</text>
-
-  <line x1="510" y1="777" x2="550" y2="777" class="arrow"/>
-  <text x="560" y="782" class="box-detail">Data flow</text>
-
-  <line x1="640" y1="777" x2="680" y2="777" class="arrow-gold"/>
-  <text x="690" y="782" class="box-detail">Scoring pipeline</text>
-
-  <!-- Version stamp -->
-  <text x="1170" y="805" text-anchor="end" class="box-detail" font-size="9">v0.8.0 · 2026-08-21</text>
+  <!-- ═══════════════ LEGEND ═══════════════ -->
+  <g transform="translate(35, 408)">
+    <rect x="0" y="0" width="8" height="3" fill="#4285F4" rx="1"/>
+    <text x="12" y="4" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8" fill="#999">Data Source</text>
+    <rect x="80" y="0" width="8" height="3" fill="#34A853" rx="1"/>
+    <text x="92" y="4" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8" fill="#999">Processing</text>
+    <rect x="155" y="0" width="8" height="3" fill="#7B61FF" rx="1"/>
+    <text x="167" y="4" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8" fill="#999">Machine Learning</text>
+    <rect x="262" y="0" width="8" height="3" fill="#FF6D01" rx="1"/>
+    <text x="274" y="4" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8" fill="#999">Output</text>
+    <rect x="315" y="0" width="8" height="3" fill="#3ECF8E" rx="1"/>
+    <text x="327" y="4" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8" fill="#999">Supabase</text>
+    <rect x="380" y="0" width="8" height="3" fill="#00ACC1" rx="1"/>
+    <text x="392" y="4" font-family="-apple-system,'Segoe UI',Roboto,sans-serif" font-size="8" fill="#999">Client</text>
+  </g>
 </svg>
