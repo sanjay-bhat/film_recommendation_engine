@@ -1468,21 +1468,7 @@ function renderIndustryBubbles() {
 
 function applyIndustryFilter() {
   const filtered = allRecs.filter(r => selectedIndustries.has(getIndustryName(r.original_language)));
-  const uniqueIndustries = new Set(filtered.map(r => getIndustryName(r.original_language)));
-
-  let display;
-  if (uniqueIndustries.size >= 3) {
-    const counts = {};
-    display = filtered.filter(r => {
-      const name = getIndustryName(r.original_language);
-      counts[name] = (counts[name] || 0) + 1;
-      return counts[name] <= 4;
-    });
-  } else {
-    display = filtered.slice(0, 7);
-  }
-
-  currentRecs = display.length > 0 ? display : allRecs.slice(0, 7);
+  currentRecs = filtered.length > 0 ? filtered : allRecs;
   renderRecs(currentRecs);
 }
 
