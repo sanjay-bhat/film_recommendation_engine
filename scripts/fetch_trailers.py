@@ -96,7 +96,7 @@ def main():
             batch_count += 1
             done_count = len(done) + i + 1
             if batch_count % 50 == 0:
-                print(f"  [{done_count}/{total}] {title}: {'✓ ' + key if key else '✗ none'}")
+                print(f"  [{done_count}/{total}] {title}: {'✓ found' if key else '✗ none'}")
                 with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
                     json.dump(trailers, f, separators=(",", ":"))
                     f.write("\n")
