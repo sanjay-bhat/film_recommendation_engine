@@ -1432,7 +1432,7 @@ function goToSlide(idx) {
     <div class="coverflow-title${canChain ? ' chainable' : ''}">${escapeHtml(r.title)}</div>
     <div class="coverflow-meta">
       <span class="coverflow-year">${Number(r.year)}</span>
-      <span class="coverflow-score ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb)}</span>
+      <span class="coverflow-score ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb).toFixed(1)}</span>
     </div>`;
   carouselCounter.textContent = `${idx + 1} / ${slideCount}`;
 }
@@ -1725,7 +1725,7 @@ async function selectMovie(title) {
         </div>
         <div class="mobile-rec-score">
           ${IMDB_LOGO}
-          <span class="val">${Number(r.imdb)}</span>
+          <span class="val">${Number(r.imdb).toFixed(1)}</span>
         </div>
       </div>`;
     }).join('');
