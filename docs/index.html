@@ -455,6 +455,50 @@
       margin-top: 4px;
     }
 
+    .industry-filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 0 6px;
+    }
+
+    .industry-bubble {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: opacity 0.25s, transform 0.15s;
+      border: 1.5px solid;
+      user-select: none;
+    }
+    .industry-bubble:hover { transform: scale(1.08); }
+
+    .industry-bubble.deselected { opacity: 0.3; }
+
+    .industry-bubble.all {
+      background: rgba(46,160,67,0.15);
+      border-color: rgba(46,160,67,0.4);
+      color: #3fb950;
+    }
+    .industry-bubble.gold {
+      background: rgba(196,163,90,0.18);
+      border-color: rgba(196,163,90,0.45);
+      color: #c4a35a;
+    }
+    .industry-bubble.silver {
+      background: rgba(180,180,190,0.12);
+      border-color: rgba(180,180,190,0.3);
+      color: #b4b4be;
+    }
+    .industry-bubble.bronze {
+      background: rgba(176,122,80,0.12);
+      border-color: rgba(176,122,80,0.3);
+      color: #b07a50;
+    }
+
     /* Search history chips */
     .search-history {
       display: flex;
@@ -949,6 +993,7 @@
 
   <div class="results" id="results">
     <div class="coverflow-overlay" id="coverflowOverlay"></div>
+    <div class="industry-filters" id="industryFilters"></div>
     <div class="coverflow" id="coverflow"></div>
     <div class="coverflow-divider"></div>
     <div class="coverflow-info" id="coverflowInfo"></div>
@@ -1335,10 +1380,125 @@ const coverflowInfo = document.getElementById('coverflowInfo');
 const carouselCounter = document.getElementById('carouselCounter');
 const emptyState = document.getElementById('emptyState');
 const mobileRecList = document.getElementById('mobileRecList');
+const industryFiltersEl = document.getElementById('industryFilters');
 let currentSlide = 0;
 let slideCount = 0;
 let currentRecs = [];
+let allRecs = [];
+let selectedIndustries = new Set();
 let sourceMovie = { title: '', rating: 0 };
+
+const INDUSTRY_MAP = {
+  en:'Hollywood',hi:'Bollywood',ta:'Kollywood',te:'Tollywood',
+  ja:'Japanese',ko:'Korean',fr:'French',de:'German',
+  es:'Spanish',zh:'Chinese',it:'Italian',pt:'Portuguese',
+  ml:'Malayalam',bn:'Bengali',ru:'Russian',th:'Thai',
+  tr:'Turkish',pl:'Polish',nl:'Dutch',sv:'Swedish',
+  da:'Danish',no:'Norwegian',fi:'Finnish',id:'Indonesian',
+  ar:'Arabic',he:'Hebrew',uk:'Ukrainian',cs:'Czech',
+  ro:'Romanian',hu:'Hungarian',cn:'Chinese',
+};
+function getIndustryName(lang) {
+  return INDUSTRY_MAP[lang] || (lang ? lang.charAt(0).toUpperCase() + lang.slice(1) : 'Other');
+}
+
+function renderRecs(recs) {
+  coverflowEl.innerHTML = recs.map((r, i) => {
+    const safeTitle = escapeHtml(r.title);
+    const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+    const posterEl = safePath
+      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
+      : `<div class="coverflow-poster-fallback">&#127916;</div>`;
+    const reflectEl = safePath
+      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
+      : '';
+    const trailerUrl = r.trailer_key ? `https://www.youtube.com/watch?v=${encodeURIComponent(r.trailer_key)}` : '';
+    const ytHeart = `<a class="yt-heart" ${trailerUrl ? `href="${trailerUrl}" target="_blank" rel="noopener"` : ''}><svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg></a><div class="yt-bulge"></div>`;
+    return `<div class="coverflow-slide" data-idx="${i}">
+      ${posterEl}
+      ${ytHeart}
+      ${reflectEl}
+    </div>`;
+  }).join('');
+
+  mobileRecList.innerHTML = recs.map(r => {
+    const safeTitle = escapeHtml(r.title);
+    const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+    const canChain = TITLES.includes(r.title);
+    const imgEl = safePath
+      ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="44px" alt="${safeTitle}" loading="lazy">`
+      : `<div class="mobile-rec-poster-fallback">&#127916;</div>`;
+    const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+    return `<div class="mobile-rec-card${canChain ? ' chainable' : ''}" data-chain="${escapeAttr(r.title)}">
+      ${imgEl}
+      <div class="mobile-rec-info">
+        <div class="mobile-rec-title">${safeTitle}</div>
+        <div class="mobile-rec-year">${Number(r.year)}</div>
+      </div>
+      <div class="mobile-rec-score">
+        ${IMDB_LOGO}
+        <span class="val">${Number(r.imdb).toFixed(1)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  slideCount = recs.length;
+  currentSlide = 0;
+  goToSlide(0);
+}
+
+function renderIndustryBubbles() {
+  const counts = {};
+  allRecs.forEach(r => {
+    const name = getIndustryName(r.original_language);
+    counts[name] = (counts[name] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const allSelected = sorted.every(([name]) => selectedIndustries.has(name));
+
+  let html = `<span class="industry-bubble all${allSelected ? '' : ' deselected'}" data-industry="__all__">All</span>`;
+  sorted.forEach(([name, count], i) => {
+    const tier = i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze';
+    const sel = selectedIndustries.has(name) ? '' : ' deselected';
+    html += `<span class="industry-bubble ${tier}${sel}" data-industry="${escapeAttr(name)}">${escapeHtml(name)}</span>`;
+  });
+  industryFiltersEl.innerHTML = html;
+}
+
+function applyIndustryFilter() {
+  const filtered = allRecs.filter(r => selectedIndustries.has(getIndustryName(r.original_language)));
+  const uniqueIndustries = new Set(filtered.map(r => getIndustryName(r.original_language)));
+
+  let display;
+  if (uniqueIndustries.size >= 3) {
+    const counts = {};
+    display = filtered.filter(r => {
+      const name = getIndustryName(r.original_language);
+      counts[name] = (counts[name] || 0) + 1;
+      return counts[name] <= 4;
+    });
+  } else {
+    display = filtered.slice(0, 7);
+  }
+
+  currentRecs = display.length > 0 ? display : allRecs.slice(0, 7);
+  renderRecs(currentRecs);
+}
+
+industryFiltersEl.addEventListener('click', (e) => {
+  const bubble = e.target.closest('.industry-bubble');
+  if (!bubble) return;
+  const key = bubble.dataset.industry;
+  if (key === '__all__') {
+    const names = new Set(allRecs.map(r => getIndustryName(r.original_language)));
+    selectedIndustries = names;
+  } else {
+    if (selectedIndustries.has(key)) selectedIndustries.delete(key);
+    else selectedIndustries.add(key);
+  }
+  renderIndustryBubbles();
+  applyIndustryFilter();
+});
 
 let searchTimer = 0;
 input.addEventListener('input', () => {
@@ -1676,6 +1836,7 @@ async function selectMovie(title) {
         imdb: r.vote_average,
         poster_path: r.poster_path,
         trailer_key: r.trailer_key,
+        original_language: r.original_language || 'en',
       }));
     } catch (e) {
       console.warn('Supabase rec fetch failed:', e);
@@ -1689,53 +1850,15 @@ async function selectMovie(title) {
       ...r,
       poster_path: POSTERS[r.title] || null,
       trailer_key: null,
+      original_language: r.original_language || 'en',
     }));
   }
-  currentRecs = recs;
+  allRecs = recs;
+  selectedIndustries = new Set(recs.map(r => getIndustryName(r.original_language)));
 
   setTimeout(() => {
-    coverflowEl.innerHTML = recs.map((r, i) => {
-      const safeTitle = escapeHtml(r.title);
-      const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
-      const posterEl = safePath
-        ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
-        : `<div class="coverflow-poster-fallback">&#127916;</div>`;
-      const reflectEl = safePath
-        ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
-        : '';
-      const trailerUrl = r.trailer_key ? `https://www.youtube.com/watch?v=${encodeURIComponent(r.trailer_key)}` : '';
-      const ytHeart = `<a class="yt-heart" ${trailerUrl ? `href="${trailerUrl}" target="_blank" rel="noopener"` : ''}><svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg></a><div class="yt-bulge"></div>`;
-      return `<div class="coverflow-slide" data-idx="${i}">
-        ${posterEl}
-        ${ytHeart}
-        ${reflectEl}
-      </div>`;
-    }).join('');
-
-    mobileRecList.innerHTML = recs.map(r => {
-      const safeTitle = escapeHtml(r.title);
-      const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
-      const canChain = TITLES.includes(r.title);
-      const imgEl = safePath
-        ? `<img class="mobile-rec-poster" src="${TMDB_IMG}w154${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="44px" alt="${safeTitle}" loading="lazy">`
-        : `<div class="mobile-rec-poster-fallback">&#127916;</div>`;
-      const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
-      return `<div class="mobile-rec-card${canChain ? ' chainable' : ''}" data-chain="${escapeAttr(r.title)}">
-        ${imgEl}
-        <div class="mobile-rec-info">
-          <div class="mobile-rec-title">${safeTitle}</div>
-          <div class="mobile-rec-year">${Number(r.year)}</div>
-        </div>
-        <div class="mobile-rec-score">
-          ${IMDB_LOGO}
-          <span class="val">${Number(r.imdb).toFixed(1)}</span>
-        </div>
-      </div>`;
-    }).join('');
-
-    slideCount = recs.length;
-    currentSlide = 0;
-    goToSlide(0);
+    renderIndustryBubbles();
+    applyIndustryFilter();
   });
 }
 
