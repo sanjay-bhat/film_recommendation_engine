@@ -460,7 +460,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 8px;
-      padding: 14px 0 6px;
+      padding: 14px 20px 6px;
     }
 
     .industry-bubble {
@@ -1396,7 +1396,8 @@ const INDUSTRY_MAP = {
   tr:'Turkish',pl:'Polish',nl:'Dutch',sv:'Swedish',
   da:'Danish',no:'Norwegian',fi:'Finnish',id:'Indonesian',
   ar:'Arabic',he:'Hebrew',uk:'Ukrainian',cs:'Czech',
-  ro:'Romanian',hu:'Hungarian',cn:'Chinese',
+  ro:'Romanian',hu:'Hungarian',cn:'Chinese',is:'Icelandic',
+  af:'Afrikaans',ca:'Catalan',el:'Greek',
 };
 function getIndustryName(lang) {
   return INDUSTRY_MAP[lang] || (lang ? lang.charAt(0).toUpperCase() + lang.slice(1) : 'Other');
