@@ -7,9 +7,9 @@
 [![CI](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml/badge.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/actions/workflows/codeql.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![release](https://img.shields.io/badge/release-v0.9.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
+[![release](https://img.shields.io/badge/release-v0.10.0-orange.svg)](https://github.com/sanjay-bhat/film_recommendation_engine/releases)
 
-A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a title you love, and it returns 7 you'll probably love too — powered by sentence-transformer embeddings (all-MiniLM-L6-v2) and FAISS nearest-neighbor search across TMDb's top-rated catalog, backed by Supabase Postgres.
+A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a title you love, and it returns 20 you'll probably love too — powered by sentence-transformer embeddings (all-MiniLM-L6-v2) and pgvector HNSW search across TMDb's top-rated catalog, backed by Supabase Postgres. Double-click any recommendation to drill into a recursive sub-tree of similar titles, each level rendered in the same 3D Cover Flow carousel.
 
 ## Preview
 
@@ -43,16 +43,17 @@ A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a
 
 ## How It Works
 
-Every title in the catalog is encoded into a 384-dimensional vector using **all-MiniLM-L6-v2**, a sentence-transformer model that captures semantic meaning from plot overviews, genres, cast, and keywords. These vectors are indexed with **FAISS** for sub-millisecond nearest-neighbor lookups.
+Every title in the catalog is encoded into a 384-dimensional vector using **all-MiniLM-L6-v2**, a sentence-transformer model that captures semantic meaning from plot overviews, genres, cast, and keywords. These vectors are indexed with **pgvector HNSW** for sub-10ms approximate nearest-neighbor lookups.
 
 | Step | What happens |
 |:---|:---|
 | **1. Embed** | Each title's metadata (overview, genres, cast, keywords) is encoded into a 384-dim vector |
-| **2. Index** | FAISS builds an optimized search index over all 6,707 vectors |
-| **3. Search** | Given a title, FAISS finds the 7 nearest neighbors by cosine similarity |
-| **4. Serve** | Pre-computed recommendations are stored in Supabase Postgres and served via PostgREST |
+| **2. Index** | pgvector builds an HNSW index over all 6,707 vectors in Supabase Postgres |
+| **3. Search** | Given a title, pgvector finds the 20 nearest neighbors by cosine similarity |
+| **4. Serve** | Recommendations are computed at query time via PostgREST RPC — no pre-computed pairs |
+| **5. Cache** | In-memory memoization Map + speculative pre-fetch for instant sub-level loading |
 
-The frontend is a single-page app on GitHub Pages with a **Cover Flow** carousel, **WebGL bokeh** particles, and full **PWA** offline support.
+The frontend is a single-page app on GitHub Pages with a **3D Cover Flow** carousel, **recursive sub-tree recommendations** (double-click to drill deeper), **industry filter bubbles**, **WebGL bokeh** particles, and full **PWA** offline support.
 
 ## Quick Start
 
@@ -95,13 +96,13 @@ The catalog spans 20+ genres across 4,800 movies and 1,907 TV shows. Drama and C
 
 ## Dataset
 
-**6,707 titles** sourced from [TMDb](https://www.themoviedb.org/) — the top-rated movies and TV shows by vote count. Each title carries its overview, genres, cast, keywords, poster, trailer, and release date. Recommendations are pre-computed offline using sentence-transformer embeddings and stored as **46,949 recommendation pairs** in Supabase Postgres.
+**6,707 titles** sourced from [TMDb](https://www.themoviedb.org/) — the top-rated movies and TV shows by vote count. Each title carries its overview, genres, cast, keywords, poster, trailer, release date, and original language. Recommendations are computed at query time using pgvector HNSW nearest-neighbor search over 384-dimensional sentence-transformer embeddings stored in Supabase Postgres.
 
 ## Implementations
 
 | Platform | Language | Directory | Notes |
 |:---|:---|:---|:---|
-| Web | HTML/CSS/JS | `docs/` | GitHub Pages, WebGL bokeh particles, Cover Flow UI, PWA |
+| Web | HTML/CSS/JS | `docs/` | GitHub Pages, WebGL bokeh, 3D Cover Flow, recursive sub-tree, PWA |
 | Android | Kotlin | `android/` | Jetpack Compose, Material 3, fully offline |
 | iOS | Swift | `ios/` | SwiftUI, async/await, fully offline |
 | CLI | Python | `src/recommend.py` | Reference implementation |
