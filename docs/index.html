@@ -2081,7 +2081,7 @@ async function selectMovie(title) {
       poster_path: POSTERS[r.title] || null,
       trailer_key: null,
       original_language: r.original_language || 'en',
-    }));
+    })).filter(r => r.poster_path);
   }
   allRecs = recs;
   selectedIndustries = new Set(recs.map(r => getIndustryName(r.original_language)));
@@ -2149,7 +2149,7 @@ function getCachedRecs(title) {
       title: r.title, year: r.year, imdb: r.vote_average,
       poster_path: r.poster_path, trailer_key: r.trailer_key,
       original_language: r.original_language || 'en',
-    }));
+    })).filter(r => r.poster_path);
     recCache.set(title, recs);
     return recs;
   }).catch(e => { console.warn('Rec fetch failed:', e); return null; });
@@ -2170,7 +2170,7 @@ async function createSubLevel(movieTitle) {
       recs = dbRecs.map(r => ({
         ...r, poster_path: POSTERS[r.title] || null,
         trailer_key: null, original_language: r.original_language || 'en',
-      }));
+      })).filter(r => r.poster_path);
     }
   }
   if (!recs || !recs.length) return;
