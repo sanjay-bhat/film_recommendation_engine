@@ -521,6 +521,209 @@
       color: #b07a50;
     }
 
+    /* ── Sub-tree recursive levels ── */
+    #subtreeWrap {
+      position: relative;
+      z-index: 95;
+    }
+
+    .subtree-level {
+      padding: 20px 20px;
+      position: relative;
+      max-width: 640px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: subtreeFadeIn 0.5s ease forwards;
+    }
+    @keyframes subtreeFadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .subtree-exit {
+      background: rgba(180,30,30,0.15);
+      border: 1.5px solid rgba(220,40,40,0.5);
+      color: #e04040;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .subtree-exit:hover {
+      background: rgba(180,30,30,0.25);
+      border-color: rgba(220,40,40,0.7);
+    }
+
+    .subtree-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .subtree-level-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #c4a35a;
+      opacity: 0.6;
+      text-transform: uppercase;
+    }
+
+    .subtree-from {
+      font-size: 11px;
+      color: #726b5e;
+    }
+    .subtree-from span { color: #c4a35a; font-weight: 600; }
+
+    .subtree-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 0 0 6px;
+    }
+
+    .subtree-coverflow {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      perspective: 800px;
+      overflow: hidden;
+    }
+
+    .subtree-level .coverflow-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8,8,12,0.85);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .subtree-level .coverflow-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .subtree-coverflow .coverflow-slide {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 220px;
+      margin-left: -110px;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
+      transform-style: preserve-3d;
+      cursor: pointer;
+      opacity: 0;
+      z-index: 0;
+      pointer-events: none;
+      will-change: transform, opacity;
+    }
+
+    .subtree-coverflow .coverflow-slide.pos-center { transform: translateX(0) rotateY(0deg) scale(1); opacity: 1; z-index: 5; pointer-events: auto; cursor: default; }
+    .subtree-coverflow .coverflow-slide.pos-left-1 { transform: translateX(-200px) rotateY(65deg) scale(0.82); opacity: 0.9; z-index: 3; pointer-events: auto; }
+    .subtree-coverflow .coverflow-slide.pos-right-1 { transform: translateX(200px) rotateY(-65deg) scale(0.82); opacity: 0.9; z-index: 3; pointer-events: auto; }
+    .subtree-coverflow .coverflow-slide.pos-left-2 { transform: translateX(-300px) rotateY(65deg) scale(0.78); opacity: 0.8; z-index: 2; pointer-events: auto; }
+    .subtree-coverflow .coverflow-slide.pos-right-2 { transform: translateX(300px) rotateY(-65deg) scale(0.78); opacity: 0.8; z-index: 2; pointer-events: auto; }
+    .subtree-coverflow .coverflow-slide.pos-left-3 { transform: translateX(-380px) rotateY(65deg) scale(0.72); opacity: 0.6; z-index: 1; pointer-events: auto; }
+    .subtree-coverflow .coverflow-slide.pos-right-3 { transform: translateX(380px) rotateY(-65deg) scale(0.72); opacity: 0.6; z-index: 1; pointer-events: auto; }
+
+    .subtree-coverflow.expanded { overflow: visible; z-index: 100; }
+    .subtree-coverflow.expanded .coverflow-slide.pos-center {
+      transform: translateX(0) rotateY(0deg) scale(1.55);
+      z-index: 100;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    }
+    .subtree-coverflow.expanded .coverflow-slide.pos-center .coverflow-reflect { opacity: 0; }
+    .subtree-coverflow.expanded .coverflow-slide.pos-left-1 { transform: translateX(-420px) rotateY(65deg) scale(0.6); opacity: 0.3; }
+    .subtree-coverflow.expanded .coverflow-slide.pos-right-1 { transform: translateX(420px) rotateY(-65deg) scale(0.6); opacity: 0.3; }
+    .subtree-coverflow.expanded .coverflow-slide.pos-left-2,
+    .subtree-coverflow.expanded .coverflow-slide.pos-left-3 { transform: translateX(-520px) rotateY(65deg) scale(0.5); opacity: 0; }
+    .subtree-coverflow.expanded .coverflow-slide.pos-right-2,
+    .subtree-coverflow.expanded .coverflow-slide.pos-right-3 { transform: translateX(520px) rotateY(-65deg) scale(0.5); opacity: 0; }
+
+    .subtree-coverflow.expanded .pos-center .yt-heart {
+      opacity: 0.55;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .subtree-coverflow.expanded .pos-center .yt-heart.beating {
+      animation: heartPush 0.833s ease-in-out forwards;
+    }
+    .subtree-coverflow.expanded .pos-center .yt-bulge.beating {
+      animation: bulgePush 0.833s ease-in-out forwards;
+    }
+    .subtree-coverflow.expanded .pos-center .yt-heart:hover {
+      opacity: 1;
+      filter: drop-shadow(0 6px 24px rgba(255,0,0,0.7));
+    }
+
+    .subtree-exit {
+      z-index: 110;
+    }
+
+    .subtree-divider {
+      width: 60%;
+      max-width: 400px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(196,163,90,0.2), transparent);
+      margin: 8px auto;
+    }
+
+    .subtree-info {
+      text-align: center;
+      padding: 16px 0 4px;
+      position: relative;
+    }
+
+    .subtree-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #e8e2d8;
+    }
+
+    .subtree-year {
+      font-size: 12px;
+      color: #726b5e;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .subtree-counter {
+      font-size: 10px;
+      color: #4a453e;
+      letter-spacing: 2px;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .dna-container {
+      position: fixed;
+      right: 8px;
+      top: 0;
+      bottom: 0;
+      width: 44px;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      will-change: opacity;
+      contain: layout style paint;
+    }
+    .dna-container.visible { opacity: 1; }
+
     /* Search history chips */
     .search-history {
       display: flex;
@@ -1023,6 +1226,8 @@
     <div class="mobile-rec-list" id="mobileRecList"></div>
   </div>
 
+  <div id="subtreeWrap"></div>
+
   <div class="empty-state" id="emptyState">
     <div class="icon">&#127916;</div>
     <p>Search for a movie you love.<br>We'll find films you'll probably love too.</p>
@@ -1047,6 +1252,10 @@
     <div class="signal-card"><div class="weight">5%</div><div class="name">Year</div></div>
   </div>
   <p><a href="https://github.com/sanjay-bhat/film_recommendation_engine">View on GitHub &rarr;</a></p>
+</div>
+
+<div class="dna-container" id="dnaContainer">
+  <svg id="dnaSvg" viewBox="0 0 44 800" preserveAspectRatio="none" style="width:44px;height:100%"></svg>
 </div>
 
 <div class="footer">
@@ -1567,6 +1776,7 @@ function resetToHome() {
   mobileRecList.innerHTML = '';
   emptyState.style.display = '';
   if (isExpanded) collapsePoster(false);
+  clearSubTree();
   window.scrollTo({top: 0, behavior: 'smooth'});
   input.focus();
 }
@@ -1608,6 +1818,7 @@ function goToSlide(idx) {
       <span class="coverflow-year">${Number(r.year)}</span>
     </div>`;
   carouselCounter.textContent = `${idx + 1} / ${slideCount}`;
+  prefetchRecs(r.title);
 }
 
 coverflowEl.addEventListener('click', (e) => {
@@ -1623,13 +1834,15 @@ const overlay = document.getElementById('coverflowOverlay');
 let isExpanded = false;
 let lastClickTime = 0;
 let heartbeatTimer = null;
+let heartbeatTarget = null;
 
-function startHeartbeat() {
+function startHeartbeatOn(targetEl) {
   stopHeartbeat();
+  heartbeatTarget = targetEl;
   function beat() {
-    const heart = coverflowEl.querySelector('.pos-center .yt-heart');
-    const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
-    if (!heart || !isExpanded) return;
+    const heart = targetEl.querySelector('.pos-center .yt-heart');
+    const bulge = targetEl.querySelector('.pos-center .yt-bulge');
+    if (!heart) return;
     heart.classList.remove('beating');
     if (bulge) bulge.classList.remove('beating');
     void heart.offsetWidth;
@@ -1659,19 +1872,22 @@ function startHeartbeat() {
         setTimeout(() => flake.remove(), (flakeDelay + 0.85) * 1000);
       }
     }
-    const delay = 1990 + Math.random() * 2110;
-    heartbeatTimer = setTimeout(beat, delay);
+    heartbeatTimer = setTimeout(beat, 1250);
   }
   beat();
 }
 
+function startHeartbeat() { startHeartbeatOn(coverflowEl); }
+
 function stopHeartbeat() {
   if (heartbeatTimer) { clearTimeout(heartbeatTimer); heartbeatTimer = null; }
-  const heart = coverflowEl.querySelector('.pos-center .yt-heart');
-  const bulge = coverflowEl.querySelector('.pos-center .yt-bulge');
+  const target = heartbeatTarget || coverflowEl;
+  const heart = target.querySelector('.pos-center .yt-heart');
+  const bulge = target.querySelector('.pos-center .yt-bulge');
   if (heart) heart.classList.remove('beating');
   if (bulge) bulge.classList.remove('beating');
-  coverflowEl.querySelectorAll('.yt-flake').forEach(f => f.remove());
+  target.querySelectorAll('.yt-flake').forEach(f => f.remove());
+  heartbeatTarget = null;
 }
 
 function expandPoster() {
@@ -1680,6 +1896,11 @@ function expandPoster() {
   coverflowEl.classList.add('expanded');
   overlay.classList.add('visible');
   startHeartbeat();
+  const rec = currentRecs[currentSlide];
+  if (rec && TITLES.includes(rec.title)) {
+    clearSubTree();
+    createSubLevel(rec.title);
+  }
 }
 
 function collapsePoster(useFlip) {
@@ -1718,9 +1939,11 @@ coverflowEl.addEventListener('click', (e) => {
 overlay.addEventListener('click', () => collapsePoster(false));
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && isExpanded) {
-    collapsePoster(false);
-    return;
+  if (e.key === 'Escape') {
+    for (let i = subTreeLevels.length - 1; i >= 0; i--) {
+      if (subTreeLevels[i].expanded) { collapseSubPoster(i); return; }
+    }
+    if (isExpanded) { collapsePoster(false); return; }
   }
   if (isExpanded) return;
   if (!resultsEl.classList.contains('visible')) return;
@@ -1829,6 +2052,7 @@ async function selectMovie(title) {
   emptyState.style.display = 'none';
   addToHistory(title);
 
+  clearSubTree();
   sourceMovie = { title, rating: 0 };
   resultsEl.classList.add('visible');
   showSkeletons();
@@ -1836,21 +2060,14 @@ async function selectMovie(title) {
   let recs;
   if (useSupabase) {
     try {
-      const [movieResult, rows] = await Promise.all([
+      const [movieResult, cachedRecs] = await Promise.all([
         sbFetch(`movies?title=eq.${encodeURIComponent(title)}&select=vote_average&limit=1`),
-        sbRpc('get_recommendations', { query_title: title }),
+        getCachedRecs(title),
       ]);
       const [movie] = movieResult;
       if (!movie) return;
       sourceMovie.rating = movie.vote_average || 0;
-      recs = rows.map(r => ({
-        title: r.title,
-        year: r.year,
-        imdb: r.vote_average,
-        poster_path: r.poster_path,
-        trailer_key: r.trailer_key,
-        original_language: r.original_language || 'en',
-      }));
+      recs = cachedRecs;
     } catch (e) {
       console.warn('Supabase rec fetch failed:', e);
     }
@@ -1915,6 +2132,371 @@ document.getElementById('surpriseBtn').addEventListener('click', function() {
   const pick = TITLES[Math.floor(Math.random() * TITLES.length)];
   selectMovie(pick);
 });
+
+// ── Sub-tree recursive recommendations ──
+const subtreeWrap = document.getElementById('subtreeWrap');
+const dnaContainer = document.getElementById('dnaContainer');
+const dnaSvg = document.getElementById('dnaSvg');
+const subTreeLevels = [];
+
+const recCache = new Map();
+
+function getCachedRecs(title) {
+  if (recCache.has(title)) return Promise.resolve(recCache.get(title));
+  if (!useSupabase) return Promise.resolve(null);
+  return sbRpc('get_recommendations', { query_title: title }).then(rows => {
+    const recs = rows.map(r => ({
+      title: r.title, year: r.year, imdb: r.vote_average,
+      poster_path: r.poster_path, trailer_key: r.trailer_key,
+      original_language: r.original_language || 'en',
+    }));
+    recCache.set(title, recs);
+    return recs;
+  }).catch(e => { console.warn('Rec fetch failed:', e); return null; });
+}
+
+function prefetchRecs(title) {
+  if (!title || recCache.has(title) || !TITLES.includes(title)) return;
+  getCachedRecs(title);
+}
+
+async function createSubLevel(movieTitle) {
+  const levelNum = subTreeLevels.length + 2;
+
+  let recs = await getCachedRecs(movieTitle);
+  if (!recs && Object.prototype.hasOwnProperty.call(DB, movieTitle)) {
+    const dbRecs = DB[movieTitle];
+    if (Array.isArray(dbRecs)) {
+      recs = dbRecs.map(r => ({
+        ...r, poster_path: POSTERS[r.title] || null,
+        trailer_key: null, original_language: r.original_language || 'en',
+      }));
+    }
+  }
+  if (!recs || !recs.length) return;
+
+  const si = new Set(recs.map(r => getIndustryName(r.original_language)));
+  const level = { title: movieTitle, allRecs: recs, filteredRecs: recs, selectedIndustries: si, selectedIdx: 0, expanded: false, el: null };
+
+  const counts = {};
+  recs.forEach(r => { const n = getIndustryName(r.original_language); counts[n] = (counts[n] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  let bubblesHtml = `<span class="industry-bubble all" data-industry="__all__">All</span>`;
+  sorted.forEach(([name], i) => {
+    const tier = i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze';
+    bubblesHtml += `<span class="industry-bubble ${tier}" data-industry="${escapeAttr(name)}">${escapeHtml(name)}</span>`;
+  });
+
+  const el = document.createElement('div');
+  el.className = 'subtree-level';
+  el.dataset.levelIdx = subTreeLevels.length;
+  el.innerHTML = `
+    <button class="subtree-exit" data-level="${subTreeLevels.length}">&#x2B05; EXIT</button>
+    <div class="subtree-header">
+      <span class="subtree-level-label">Level ${levelNum}</span>
+      <span class="subtree-from">from <span>${escapeHtml(movieTitle)}</span></span>
+    </div>
+    <div class="subtree-filters">${bubblesHtml}</div>
+    <div class="coverflow-overlay"></div>
+    <div class="subtree-coverflow"></div>
+    <div class="subtree-divider"></div>
+    <div class="subtree-info"></div>
+    <div class="subtree-counter"></div>`;
+
+  level.el = el;
+  subTreeLevels.push(level);
+  subtreeWrap.appendChild(el);
+  renderSubCarousel(subTreeLevels.length - 1);
+  updateDNA();
+
+  const lvlIdx = subTreeLevels.length - 1;
+
+  el.querySelector('.subtree-exit').addEventListener('click', () => {
+    resetToHome();
+  });
+
+  el.querySelector('.subtree-filters').addEventListener('click', (e) => {
+    const bubble = e.target.closest('.industry-bubble');
+    if (!bubble) return;
+    const key = bubble.dataset.industry;
+    const lvl = subTreeLevels[parseInt(el.dataset.levelIdx)];
+    if (!lvl) return;
+    if (key === '__all__') {
+      lvl.selectedIndustries = new Set(lvl.allRecs.map(r => getIndustryName(r.original_language)));
+    } else {
+      if (lvl.selectedIndustries.has(key)) lvl.selectedIndustries.delete(key);
+      else lvl.selectedIndustries.add(key);
+    }
+    updateSubBubbles(parseInt(el.dataset.levelIdx));
+    applySubFilter(parseInt(el.dataset.levelIdx));
+  });
+
+  const cfEl = el.querySelector('.subtree-coverflow');
+  const subOverlay = el.querySelector('.coverflow-overlay');
+
+  cfEl.addEventListener('click', (e) => {
+    if (e.target.closest('.yt-heart')) { e.stopPropagation(); return; }
+    const slide = e.target.closest('.coverflow-slide');
+    if (!slide) return;
+    const idx = parseInt(slide.dataset.idx);
+    const li = parseInt(el.dataset.levelIdx);
+    const lvl = subTreeLevels[li];
+    if (!lvl || lvl.expanded) return;
+    if (idx !== lvl.selectedIdx) goToSubSlide(li, idx);
+  });
+
+  cfEl.addEventListener('dblclick', (e) => {
+    const slide = e.target.closest('.coverflow-slide');
+    if (!slide) return;
+    const li = parseInt(el.dataset.levelIdx);
+    const lvl = subTreeLevels[li];
+    if (!lvl) return;
+    const idx = parseInt(slide.dataset.idx);
+    if (idx === lvl.selectedIdx) {
+      if (lvl.expanded) collapseSubPoster(li);
+      else expandSubPoster(li);
+    }
+  });
+
+  subOverlay.addEventListener('click', () => {
+    collapseSubPoster(parseInt(el.dataset.levelIdx));
+  });
+
+  let subTouchStartX = 0, subTouchStartTime = 0, subDragging = false;
+  let subLastTap = 0;
+
+  cfEl.addEventListener('touchstart', (e) => {
+    const li = parseInt(el.dataset.levelIdx);
+    const lvl = subTreeLevels[li];
+    if (lvl && lvl.expanded) return;
+    subTouchStartX = e.touches[0].clientX;
+    subTouchStartTime = Date.now();
+    subDragging = true;
+  }, { passive: true });
+
+  cfEl.addEventListener('touchend', (e) => {
+    const li = parseInt(el.dataset.levelIdx);
+    const lvl = subTreeLevels[li];
+    if (!lvl) return;
+
+    if (lvl.expanded) return;
+
+    const slide = e.target.closest('.coverflow-slide');
+    if (slide) {
+      const now = Date.now();
+      if (now - subLastTap < 350) {
+        const idx = parseInt(slide.dataset.idx);
+        if (idx === lvl.selectedIdx) expandSubPoster(li);
+        subLastTap = 0;
+      } else { subLastTap = now; }
+    }
+
+    if (subDragging) {
+      subDragging = false;
+      const dx = e.changedTouches[0].clientX - subTouchStartX;
+      const dt = Date.now() - subTouchStartTime;
+      if (Math.abs(dx) > 30 && dt < 500) {
+        if (dx < 0) goToSubSlide(li, lvl.selectedIdx + 1);
+        else goToSubSlide(li, lvl.selectedIdx - 1);
+      }
+    }
+  }, { passive: true });
+}
+
+function goToSubSlide(lvlIdx, idx) {
+  const lvl = subTreeLevels[lvlIdx];
+  if (!lvl || lvl.expanded) return;
+  if (idx < 0 || idx >= lvl.filteredRecs.length) return;
+  lvl.selectedIdx = idx;
+  const slides = lvl.el.querySelectorAll('.subtree-coverflow .coverflow-slide');
+  slides.forEach((s, i) => {
+    POS_CLASSES.forEach(c => s.classList.remove(c));
+    const offset = i - idx;
+    if (offset === 0) s.classList.add('pos-center');
+    else if (offset === -1) s.classList.add('pos-left-1');
+    else if (offset === 1) s.classList.add('pos-right-1');
+    else if (offset === -2) s.classList.add('pos-left-2');
+    else if (offset === 2) s.classList.add('pos-right-2');
+    else if (offset === -3) s.classList.add('pos-left-3');
+    else if (offset === 3) s.classList.add('pos-right-3');
+    s.style.opacity = Math.abs(offset) > 3 ? '0' : '';
+    s.style.pointerEvents = Math.abs(offset) > 3 ? 'none' : '';
+  });
+  const r = lvl.filteredRecs[idx];
+  if (!r) return;
+  const canChain = TITLES.includes(r.title);
+  lvl.el.querySelector('.subtree-info').innerHTML = `
+    <div class="subtree-title${canChain ? ' chainable' : ''}">${escapeHtml(r.title)}</div>
+    <div class="subtree-year">${Number(r.year)}</div>`;
+  lvl.el.querySelector('.subtree-counter').textContent = `${idx + 1} / ${lvl.filteredRecs.length}`;
+  prefetchRecs(r.title);
+}
+
+function expandSubPoster(lvlIdx) {
+  const lvl = subTreeLevels[lvlIdx];
+  if (!lvl || lvl.expanded) return;
+  lvl.expanded = true;
+  const cfEl = lvl.el.querySelector('.subtree-coverflow');
+  cfEl.classList.add('expanded');
+  lvl.el.querySelector('.coverflow-overlay').classList.add('visible');
+  startHeartbeatOn(cfEl);
+  const rec = lvl.filteredRecs[lvl.selectedIdx];
+  if (rec && TITLES.includes(rec.title)) {
+    removeSubLevelsFrom(lvlIdx + 1, false);
+    createSubLevel(rec.title);
+  }
+}
+
+function collapseSubPoster(lvlIdx) {
+  const lvl = subTreeLevels[lvlIdx];
+  if (!lvl || !lvl.expanded) return;
+  lvl.expanded = false;
+  stopHeartbeat();
+  lvl.el.querySelector('.subtree-coverflow').classList.remove('expanded');
+  lvl.el.querySelector('.coverflow-overlay').classList.remove('visible');
+}
+
+function renderSubCarousel(lvlIdx) {
+  const lvl = subTreeLevels[lvlIdx];
+  if (!lvl) return;
+  const cfEl = lvl.el.querySelector('.subtree-coverflow');
+  cfEl.innerHTML = lvl.filteredRecs.map((r, i) => {
+    const safeTitle = escapeHtml(r.title);
+    const safePath = r.poster_path ? r.poster_path.replace(/[^a-zA-Z0-9\/._-]/g, '') : '';
+    const posterEl = safePath
+      ? `<img class="coverflow-poster" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="${safeTitle}" loading="lazy" decoding="async">`
+      : `<div class="coverflow-poster-fallback">&#127916;</div>`;
+    const reflectEl = safePath
+      ? `<img class="coverflow-reflect" src="${TMDB_IMG}w342${safePath}" srcset="${TMDB_IMG}w154${safePath} 154w, ${TMDB_IMG}w342${safePath} 342w" sizes="220px" alt="" loading="lazy" decoding="async">`
+      : '';
+    const scoreClass = r.imdb >= 8.0 ? 'high' : r.imdb >= 7.0 ? 'mid' : 'low';
+    const ratingBadge = `<span class="poster-rating ${scoreClass}">${IMDB_LOGO} ${Number(r.imdb).toFixed(1)}</span>`;
+    const trailerUrl = r.trailer_key ? `https://www.youtube.com/watch?v=${encodeURIComponent(r.trailer_key)}` : '';
+    const ytHeart = `<a class="yt-heart" ${trailerUrl ? `href="${trailerUrl}" target="_blank" rel="noopener"` : ''}><svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg"><path d="M66.5 7.7c-.8-2.9-3-5.2-5.9-6C55.3 0 34 0 34 0S12.7 0 7.4 1.7c-2.9.8-5.2 3-5.9 6C0 13 0 24 0 24s0 11 1.5 16.3c.8 2.9 3 5.2 5.9 6C12.7 48 34 48 34 48s21.3 0 26.6-1.7c2.9-.8 5.2-3 5.9-6C68 35 68 24 68 24s0-11-1.5-16.3z" fill="#FF0000"/><path d="M27 34l18-10-18-10z" fill="#FFF"/></svg></a><div class="yt-bulge"></div>`;
+    return `<div class="coverflow-slide" data-idx="${i}">
+      ${ratingBadge}
+      ${posterEl}
+      ${ytHeart}
+      ${reflectEl}
+    </div>`;
+  }).join('');
+  lvl.selectedIdx = 0;
+  goToSubSlide(lvlIdx, 0);
+}
+
+function updateSubBubbles(lvlIdx) {
+  const lvl = subTreeLevels[lvlIdx];
+  if (!lvl) return;
+  const counts = {};
+  lvl.allRecs.forEach(r => { const n = getIndustryName(r.original_language); counts[n] = (counts[n] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const allSel = sorted.every(([n]) => lvl.selectedIndustries.has(n));
+  let html = `<span class="industry-bubble all${allSel ? '' : ' deselected'}" data-industry="__all__">All</span>`;
+  sorted.forEach(([name], i) => {
+    const tier = i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze';
+    html += `<span class="industry-bubble ${tier}${lvl.selectedIndustries.has(name) ? '' : ' deselected'}" data-industry="${escapeAttr(name)}">${escapeHtml(name)}</span>`;
+  });
+  lvl.el.querySelector('.subtree-filters').innerHTML = html;
+}
+
+function applySubFilter(lvlIdx) {
+  const lvl = subTreeLevels[lvlIdx];
+  if (!lvl) return;
+  const filtered = lvl.allRecs.filter(r => lvl.selectedIndustries.has(getIndustryName(r.original_language)));
+  lvl.filteredRecs = filtered.length > 0 ? filtered : lvl.allRecs;
+  lvl.selectedIdx = 0;
+  renderSubCarousel(lvlIdx);
+}
+
+function removeSubLevelsFrom(fromIdx, scroll) {
+  while (subTreeLevels.length > fromIdx) {
+    const lvl = subTreeLevels.pop();
+    lvl.el.remove();
+  }
+  updateDNA();
+  if (scroll !== false) {
+    if (fromIdx > 0 && subTreeLevels[fromIdx - 1]) {
+      subTreeLevels[fromIdx - 1].el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+}
+
+function clearSubTree() {
+  removeSubLevelsFrom(0, false);
+}
+
+function updateDNA() {
+  const n = subTreeLevels.length;
+  if (n === 0) { dnaContainer.classList.remove('visible'); return; }
+  dnaContainer.classList.add('visible');
+
+  const H = window.innerHeight || 800;
+  const litFrac = Math.min(n / 8, 1);
+  dnaSvg.setAttribute('viewBox', `0 0 44 ${H}`);
+
+  const cx = 22, rx = 14, STEP = 18, TURNS = Math.ceil(H / STEP), litEnd = H * litFrac;
+  const colors = [[255,48,48],[255,140,32],[255,215,0],[64,224,64],[48,200,255],[96,96,255],[192,64,255],[255,64,160]];
+
+  function lerp(t) {
+    t = Math.max(0, Math.min(1, t));
+    const idx = t * (colors.length - 1), i = Math.floor(idx), f = idx - i;
+    const a = colors[Math.min(i, colors.length-1)], b = colors[Math.min(i+1, colors.length-1)];
+    return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+  }
+  function rgb(c,a) { return `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${a})`; }
+  function hi(c) { return [Math.min(255,c[0]*1.5),Math.min(255,c[1]*1.5),Math.min(255,c[2]*1.5)]; }
+  function lo(c) { return [c[0]*0.4,c[1]*0.4,c[2]*0.4]; }
+
+  let defs = `<defs><radialGradient id="gB" cx="35%" cy="30%"><stop offset="0%" stop-color="#3a3a42"/><stop offset="60%" stop-color="#24242a"/><stop offset="100%" stop-color="#18181e"/></radialGradient>`;
+  const gids = new Set();
+  for (let i = 0; i <= TURNS; i++) {
+    const y = i * STEP; if (y > litEnd) break;
+    const t = y / H, id = `dL${Math.round(t*100)}`;
+    if (gids.has(id)) continue; gids.add(id);
+    const c = lerp(t);
+    defs += `<radialGradient id="${id}" cx="35%" cy="30%"><stop offset="0%" stop-color="${rgb(hi(c),1)}"/><stop offset="50%" stop-color="${rgb(c,1)}"/><stop offset="100%" stop-color="${rgb(lo(c),1)}"/></radialGradient>`;
+  }
+  defs += '</defs>';
+
+  let bg = '', back = '', rn = '', front = '', pt = '';
+  for (let i = 0; i <= TURNS; i++) {
+    const y = i * STEP, ang = (i / TURNS) * Math.PI * 8;
+    const x1 = cx + Math.sin(ang) * rx, x2 = cx + Math.sin(ang + Math.PI) * rx;
+    const z1 = Math.cos(ang), z2 = Math.cos(ang + Math.PI);
+    const t = y / H, lit = y <= litEnd, col = lit ? lerp(t) : null;
+    if (i < TURNS) {
+      const ny = (i+1)*STEP, na = ((i+1)/TURNS)*Math.PI*8;
+      const nx1 = cx+Math.sin(na)*rx, nx2 = cx+Math.sin(na+Math.PI)*rx;
+      const w1 = 2+Math.max(0,z1)*2, w2 = 2+Math.max(0,z2)*2;
+      const c1 = lit ? rgb(col,0.7+z1*0.3) : 'rgba(42,42,48,0.5)', c2 = lit ? rgb(col,0.7+z2*0.3) : 'rgba(42,42,48,0.5)';
+      const s1 = `<line x1="${x1}" y1="${y}" x2="${nx1}" y2="${ny}" stroke="${c1}" stroke-width="${w1}" stroke-linecap="round"/>`;
+      const s2 = `<line x1="${x2}" y1="${y}" x2="${nx2}" y2="${ny}" stroke="${c2}" stroke-width="${w2}" stroke-linecap="round"/>`;
+      if (z1>z2) { back+=s2; front+=s1; } else { back+=s1; front+=s2; }
+      if (lit && i%2===0) {
+        bg += `<line x1="${x1}" y1="${y}" x2="${nx1}" y2="${ny}" stroke="${rgb(col,0.15)}" stroke-width="6" stroke-linecap="round"/>`;
+      }
+    }
+    const r1 = 3+Math.max(0,z1)*1.5, r2 = 3+Math.max(0,z2)*1.5;
+    const gid = lit ? `dL${Math.round(t*100)}` : 'gB';
+    const o1 = lit ? 0.7+z1*0.3 : 0.4, o2 = lit ? 0.7+z2*0.3 : 0.4;
+    const b1 = `<circle cx="${x1}" cy="${y}" r="${r1}" fill="url(#${gid})" opacity="${o1}"/>`;
+    const b2 = `<circle cx="${x2}" cy="${y}" r="${r2}" fill="url(#${gid})" opacity="${o2}"/>`;
+    const sp1 = lit ? `<circle cx="${x1-r1*0.25}" cy="${y-r1*0.3}" r="${r1*0.3}" fill="rgba(255,255,255,0.3)"/>` : '';
+    const sp2 = lit ? `<circle cx="${x2-r2*0.25}" cy="${y-r2*0.3}" r="${r2*0.3}" fill="rgba(255,255,255,0.3)"/>` : '';
+    if (z1>z2) { back+=b2+sp2; front+=b1+sp1; } else { back+=b1+sp1; front+=b2+sp2; }
+    if (i%4===2) {
+      const rc = lit ? rgb(col,0.35) : 'rgba(42,42,48,0.25)';
+      rn += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${rc}" stroke-width="${lit?1.6:1}"/>`;
+    }
+  }
+  for (let i = 0; i < 6 && litEnd > 10; i++) {
+    const py = Math.random()*litEnd, px = cx+(Math.random()-0.5)*(rx*2+12), pr = 0.8+Math.random()*1.2;
+    pt += `<circle cx="${px}" cy="${py}" r="${pr}" fill="${rgb(lerp(py/H),0.3)}" opacity="0.6"/>`;
+  }
+  dnaSvg.innerHTML = defs + bg + back + rn + front + pt;
+}
 
 input.focus();
 
