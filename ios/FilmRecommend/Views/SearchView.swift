@@ -36,7 +36,7 @@ struct SearchView: View {
                 .font(.system(size: 28, weight: .bold, design: .default))
                 .foregroundColor(neonCyan)
 
-            Text("Content-Based • TMDb 5000")
+            Text("Semantic Search • TMDb 5000")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(neonPink)
                 .tracking(2)

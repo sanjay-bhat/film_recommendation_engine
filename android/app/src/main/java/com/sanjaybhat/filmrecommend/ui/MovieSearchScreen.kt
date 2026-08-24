@@ -68,7 +68,7 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
             )
 
             Text(
-                text = "Content-Based • TMDb 5000",
+                text = "Semantic Search • TMDb 5000",
                 fontSize = 12.sp,
                 color = NeonPink,
                 textAlign = TextAlign.Center,
