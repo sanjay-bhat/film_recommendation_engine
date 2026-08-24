@@ -104,7 +104,7 @@ struct CoverFlowView: View {
 
     @ViewBuilder
     private func posterCard(for rec: Recommendation) -> some View {
-        if let posterPath = PosterData.posters[rec.title] {
+        if let posterPath = rec.posterPath ?? PosterData.posters[rec.title] {
             AsyncImage(url: URL(string: "\(PosterData.tmdbImgBase)w342\(posterPath)")) { phase in
                 switch phase {
                 case .success(let image):

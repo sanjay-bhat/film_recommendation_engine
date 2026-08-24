@@ -18,5 +18,8 @@ data class Recommendation(
     val title: String,
     val year: Int,
     val imdbScore: Double,
-    val score: Double
+    val score: Double,
+    val posterPath: String? = null,
+    val trailerKey: String? = null,
+    val originalLanguage: String = "en"
 )

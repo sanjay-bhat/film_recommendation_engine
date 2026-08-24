@@ -25,6 +25,11 @@ class RecommendationEngine {
             .map { ($0.index, $0.title) }
     }
 
+    func recommendByTitle(_ title: String, dedup: Bool = true) -> [Recommendation] {
+        guard let movie = movies.first(where: { $0.title == title }) else { return [] }
+        return recommend(movieIndex: movie.index, dedup: dedup)
+    }
+
     func recommend(movieIndex: Int, dedup: Bool = true) -> [Recommendation] {
         let entry = movies[movieIndex]
         let neighbors = findNeighbors(entry: entry)

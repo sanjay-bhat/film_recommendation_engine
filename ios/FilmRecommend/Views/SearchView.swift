@@ -51,7 +51,7 @@ struct SearchView: View {
             ProgressView()
                 .tint(neonCyan)
                 .scaleEffect(1.5)
-            Text("Loading 4,803 movies...")
+            Text("Loading movies...")
                 .font(.subheadline)
                 .foregroundColor(neonPink)
             Spacer()

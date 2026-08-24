@@ -86,7 +86,7 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(color = NeonCyan)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Loading 4,803 movies...", color = NeonPink, fontSize = 14.sp)
+                        Text(state.loadingMessage, color = NeonPink, fontSize = 14.sp)
                     }
                 }
             } else {
@@ -269,7 +269,7 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                     }
 
                     val rec = recommendations[index]
-                    val posterPath = PosterData.posters[rec.title]
+                    val posterPath = rec.posterPath ?: PosterData.posters[rec.title]
 
                     Box(
                         modifier = Modifier
