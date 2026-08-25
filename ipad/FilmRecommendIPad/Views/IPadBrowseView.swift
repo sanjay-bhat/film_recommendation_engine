@@ -17,6 +17,7 @@ private func ratingColor(_ score: Double) -> Color {
 
 struct IPadBrowseView: View {
     @ObservedObject var viewModel: MovieViewModel
+    @StateObject private var speechManager = SpeechManager()
 
     var body: some View {
         NavigationSplitView {
@@ -133,13 +134,29 @@ struct IPadBrowseView: View {
                         .foregroundColor(goldMuted)
                 }
             }
+
+            Button(action: {
+                if speechManager.isListening {
+                    speechManager.stopListening()
+                } else {
+                    speechManager.requestPermission { granted in
+                        guard granted else { return }
+                        speechManager.startListening { text in
+                            viewModel.onQueryChanged(text)
+                        }
+                    }
+                }
+            }) {
+                Image(systemName: speechManager.isListening ? "mic.fill" : "mic")
+                    .foregroundColor(speechManager.isListening ? .red : goldAccent)
+            }
         }
         .padding(12)
         .background(cardBg)
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(surfaceBg, lineWidth: 1)
+                .stroke(speechManager.isListening ? Color.red.opacity(0.5) : surfaceBg, lineWidth: 1)
         )
     }
 

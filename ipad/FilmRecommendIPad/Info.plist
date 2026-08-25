@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Film Recommend uses on-device speech recognition to let you search for movies by voice.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Film Recommend needs microphone access for voice search. Audio is processed on-device and never stored.</string>
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>

@@ -40,6 +40,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Mic
 import coil.compose.AsyncImage
 import com.sanjaybhat.filmrecommend.model.PosterData
 import com.sanjaybhat.filmrecommend.model.Recommendation
@@ -67,6 +72,15 @@ private fun ratingColor(score: Double): Color = when {
 @Composable
 fun MovieSearchScreen(viewModel: MainViewModel) {
     val state by viewModel.state.collectAsState()
+
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val text = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if (!text.isNullOrEmpty()) {
+            viewModel.onQueryChanged(text)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -187,9 +201,23 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                     label = { Text("Search for a movie", color = TextSecondary) },
                     leadingIcon = { Icon(Icons.Default.Search, "Search", tint = GoldAccent) },
                     trailingIcon = {
-                        if (state.query.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.clearSelection() }) {
-                                Icon(Icons.Default.Clear, "Clear", tint = GoldMuted)
+                        Row {
+                            if (state.query.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.clearSelection() }) {
+                                    Icon(Icons.Default.Clear, "Clear", tint = GoldMuted)
+                                }
+                            }
+                            IconButton(onClick = {
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say a movie name")
+                                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L)
+                                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                                }
+                                speechLauncher.launch(intent)
+                            }) {
+                                Icon(Icons.Filled.Mic, "Voice search", tint = GoldAccent)
                             }
                         }
                     },
