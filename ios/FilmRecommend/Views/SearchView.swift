@@ -1,10 +1,18 @@
 import SwiftUI
 
-private let neonCyan = Color(red: 0, green: 0.898, blue: 1)
-private let neonPink = Color(red: 1, green: 0.176, blue: 0.584)
-private let neonPurple = Color(red: 0.482, green: 0.38, blue: 1)
-private let darkBg = Color(red: 0.039, green: 0, blue: 0.082)
-private let cardBg = Color(red: 0.102, green: 0.039, blue: 0.18)
+private let goldAccent = Color(red: 0.769, green: 0.639, blue: 0.353)
+private let goldMuted = Color(red: 0.627, green: 0.502, blue: 0.314)
+private let textPrimary = Color(red: 0.831, green: 0.812, blue: 0.784)
+private let textSecondary = Color(red: 0.533, green: 0.533, blue: 0.533)
+private let darkBg = Color(red: 0.031, green: 0.031, blue: 0.047)
+private let cardBg = Color(red: 0.067, green: 0.067, blue: 0.094)
+private let surfaceBg = Color(red: 0.102, green: 0.102, blue: 0.133)
+
+private func ratingColor(_ score: Double) -> Color {
+    if score >= 8.0 { return goldAccent }
+    if score >= 7.0 { return Color(red: 0.541, green: 0.620, blue: 0.541) }
+    return Color(red: 0.541, green: 0.494, blue: 0.431)
+}
 
 struct SearchView: View {
     @ObservedObject var viewModel: MovieViewModel
@@ -33,12 +41,12 @@ struct SearchView: View {
     private var headerSection: some View {
         VStack(spacing: 4) {
             Text("FILM RECOMMEND")
-                .font(.system(size: 28, weight: .bold, design: .default))
-                .foregroundColor(neonCyan)
+                .font(.system(size: 28, weight: .bold, design: .serif))
+                .foregroundColor(goldAccent)
 
-            Text("Semantic Search • TMDb 5000")
+            Text("Semantic Search \u{2022} TMDb 5000")
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(neonPink)
+                .foregroundColor(goldMuted)
                 .tracking(2)
         }
         .padding(.top, 20)
@@ -49,11 +57,11 @@ struct SearchView: View {
         VStack(spacing: 16) {
             Spacer(minLength: 100)
             ProgressView()
-                .tint(neonCyan)
+                .tint(goldAccent)
                 .scaleEffect(1.5)
             Text("Loading movies...")
                 .font(.subheadline)
-                .foregroundColor(neonPink)
+                .foregroundColor(goldMuted)
             Spacer()
         }
     }
@@ -61,19 +69,19 @@ struct SearchView: View {
     private var searchSection: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(neonCyan)
+                .foregroundColor(goldAccent)
 
             TextField("Search for a movie", text: Binding(
                 get: { viewModel.query },
                 set: { viewModel.onQueryChanged($0) }
             ))
-            .foregroundColor(.white)
+            .foregroundColor(textPrimary)
             .autocorrectionDisabled()
 
             if !viewModel.query.isEmpty {
                 Button(action: { viewModel.clearSelection() }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(neonPink)
+                        .foregroundColor(goldMuted)
                 }
             }
         }
@@ -82,7 +90,7 @@ struct SearchView: View {
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(neonPurple.opacity(0.5), lineWidth: 1)
+                .stroke(surfaceBg, lineWidth: 1)
         )
     }
 
@@ -93,13 +101,13 @@ struct SearchView: View {
                 ForEach(viewModel.suggestions, id: \.0) { index, title in
                     Button(action: { viewModel.onMovieSelected(index: index, title: title) }) {
                         Text(title)
-                            .foregroundColor(.white)
+                            .foregroundColor(textPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                     }
                     if index != viewModel.suggestions.last?.0 {
-                        Divider().background(neonPurple.opacity(0.2))
+                        Divider().background(surfaceBg)
                     }
                 }
             }
@@ -114,13 +122,13 @@ struct SearchView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Because you liked")
                     .font(.caption)
-                    .foregroundColor(neonPink.opacity(0.7))
+                    .foregroundColor(textSecondary)
                     .tracking(1)
 
                 Text(viewModel.selectedMovie)
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(neonCyan)
+                    .foregroundColor(goldAccent)
                     .padding(.bottom, 4)
 
                 CoverFlowView(recommendations: viewModel.recommendations)
@@ -137,29 +145,27 @@ struct RecommendationCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(recommendation.title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(textPrimary)
 
                 Text(recommendation.year > 0 ? "\(recommendation.year)" : "Unknown year")
                     .font(.caption)
-                    .foregroundColor(neonPurple.opacity(0.7))
+                    .foregroundColor(textSecondary)
             }
 
             Spacer()
 
-            Text("★ \(recommendation.imdbScore, specifier: "%.1f")")
+            Text("\u{2605} \(recommendation.imdbScore, specifier: "%.1f")")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(recommendation.imdbScore >= 7.0 ? neonCyan : neonPurple)
+                .foregroundColor(ratingColor(recommendation.imdbScore))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(
-                    (recommendation.imdbScore >= 7.0 ? neonCyan : neonPurple).opacity(0.2)
-                )
+                .background(ratingColor(recommendation.imdbScore).opacity(0.2))
                 .cornerRadius(8)
         }
         .padding(16)
         .background(
             LinearGradient(
-                colors: [neonPurple.opacity(0.1), neonCyan.opacity(0.05)],
+                colors: [surfaceBg.opacity(0.3), goldAccent.opacity(0.05)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
