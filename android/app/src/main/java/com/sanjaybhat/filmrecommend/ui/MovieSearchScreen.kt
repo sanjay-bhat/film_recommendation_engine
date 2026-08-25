@@ -6,12 +6,17 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,10 +28,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -149,6 +156,71 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                                     HorizontalDivider(color = SurfaceBg)
                                 }
                             }
+                        }
+                    }
+                }
+
+                // Search history chips
+                AnimatedVisibility(visible = state.searchHistory.isNotEmpty() && state.selectedMovie.isEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        state.searchHistory.forEach { title ->
+                            Text(
+                                text = title,
+                                fontSize = 12.sp,
+                                color = GoldAccent,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(GoldAccent.copy(alpha = 0.08f))
+                                    .border(1.dp, GoldAccent.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                                    .clickable {
+                                        val index = -1
+                                        viewModel.onMovieSelected(index, title)
+                                    }
+                                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                                    .widthIn(max = 180.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Surprise Me button
+                AnimatedVisibility(visible = state.selectedMovie.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Button(
+                            onClick = { viewModel.surpriseMe() },
+                            modifier = Modifier
+                                .size(140.dp),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFCC0000)
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 8.dp,
+                                pressedElevation = 2.dp
+                            )
+                        ) {
+                            Text(
+                                text = "SURPRISE\nME",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                letterSpacing = 1.5.sp,
+                                lineHeight = 20.sp
+                            )
                         }
                     }
                 }
@@ -367,7 +439,36 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Trailer button
+            if (rec.trailerKey != null) {
+                val context = LocalContext.current
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://www.youtube.com/watch?v=${rec.trailerKey}")
+                        )
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Watch Trailer",
+                        tint = Color(0xFFCC0000),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Watch Trailer",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFCC0000)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "${currentIndex + 1} / ${recommendations.size}",

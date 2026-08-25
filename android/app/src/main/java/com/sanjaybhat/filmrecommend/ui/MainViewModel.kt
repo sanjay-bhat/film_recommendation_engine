@@ -8,6 +8,8 @@ import com.sanjaybhat.filmrecommend.RecommendationEngine
 import com.sanjaybhat.filmrecommend.model.Recommendation
 import com.sanjaybhat.filmrecommend.network.SupabaseClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,6 +21,7 @@ data class UiState(
     val suggestions: List<Pair<Int, String>> = emptyList(),
     val selectedMovie: String = "",
     val recommendations: List<Recommendation> = emptyList(),
+    val searchHistory: List<String> = emptyList(),
     val error: String? = null
 )
 
@@ -33,6 +36,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** All movie titles, sourced from either Supabase or the on-device engine. */
     private var allTitles: List<String> = emptyList()
+
+    private var searchJob: Job? = null
+    private val _searchHistory = mutableListOf<String>()
 
     companion object {
         private const val TAG = "MainViewModel"
@@ -78,14 +84,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onQueryChanged(query: String) {
         val clean = sanitizeQuery(query)
         _state.value = _state.value.copy(query = clean)
+        searchJob?.cancel()
         if (clean.length >= 2) {
-            viewModelScope.launch(Dispatchers.IO) {
+            searchJob = viewModelScope.launch(Dispatchers.IO) {
+                delay(300)
                 val lower = clean.lowercase()
                 val results = allTitles
                     .filter { it.lowercase().contains(lower) }
                     .take(20)
                     .map { title ->
-                        // Use -1 as index for Supabase titles (index is not needed for RPC calls)
                         val index = if (useSupabase) -1
                             else allTitles.indexOf(title)
                         index to title
@@ -97,12 +104,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun surpriseMe() {
+        if (allTitles.isEmpty()) return
+        val pick = allTitles.random()
+        val index = if (useSupabase) -1 else allTitles.indexOf(pick)
+        onMovieSelected(index, pick)
+    }
+
     fun onMovieSelected(index: Int, title: String) {
+        _searchHistory.remove(title)
+        _searchHistory.add(0, title)
+        if (_searchHistory.size > 8) _searchHistory.removeAt(_searchHistory.lastIndex)
+
         _state.value = _state.value.copy(
             query = title,
             selectedMovie = title,
             suggestions = emptyList(),
-            recommendations = emptyList()
+            recommendations = emptyList(),
+            searchHistory = _searchHistory.toList()
         )
         viewModelScope.launch(Dispatchers.IO) {
             try {

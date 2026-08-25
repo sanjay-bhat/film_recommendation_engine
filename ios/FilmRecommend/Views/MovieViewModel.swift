@@ -10,6 +10,7 @@ class MovieViewModel: ObservableObject {
     @Published var recommendations: [Recommendation] = []
     @Published var isLoading = true
     @Published var error: String?
+    @Published var searchHistory: [String] = []
 
     /// When true, search and recommendations go through Supabase.
     /// Falls back to the on-device engine when false.
@@ -65,17 +66,18 @@ class MovieViewModel: ObservableObject {
             return
         }
 
-        if useSupabase {
-            // Search the Supabase-loaded title list on the main thread (fast in-memory filter)
-            let lower = query.lowercased()
-            suggestions = supabaseTitles
-                .enumerated()
-                .filter { $0.element.lowercased().contains(lower) }
-                .prefix(20)
-                .map { ($0.offset, $0.element) }
-        } else {
-            // Delegate to the on-device engine on a background thread
-            searchTask = Task {
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+
+            if useSupabase {
+                let lower = query.lowercased()
+                suggestions = supabaseTitles
+                    .enumerated()
+                    .filter { $0.element.lowercased().contains(lower) }
+                    .prefix(20)
+                    .map { ($0.offset, $0.element) }
+            } else {
                 let results = await Task.detached { [engine, q = self.query] in
                     engine.searchTitles(query: q)
                 }.value
@@ -89,7 +91,18 @@ class MovieViewModel: ObservableObject {
 
     // MARK: - Selection
 
+    func surpriseMe() {
+        let titles = useSupabase ? supabaseTitles : engine.allTitles()
+        guard let pick = titles.randomElement() else { return }
+        let index = useSupabase ? -1 : (titles.firstIndex(of: pick) ?? 0)
+        onMovieSelected(index: index, title: pick)
+    }
+
     func onMovieSelected(index: Int, title: String) {
+        searchHistory.removeAll { $0 == title }
+        searchHistory.insert(title, at: 0)
+        if searchHistory.count > 8 { searchHistory = Array(searchHistory.prefix(8)) }
+
         query = title
         selectedMovie = title
         suggestions = []

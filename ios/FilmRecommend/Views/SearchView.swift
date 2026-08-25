@@ -29,6 +29,8 @@ struct SearchView: View {
                     } else {
                         searchSection
                         suggestionsSection
+                        historySection
+                        surpriseMeSection
                         recommendationsSection
                     }
                 }
@@ -113,6 +115,61 @@ struct SearchView: View {
             }
             .background(cardBg)
             .cornerRadius(12)
+        }
+    }
+
+    @ViewBuilder
+    private var historySection: some View {
+        if !viewModel.searchHistory.isEmpty && viewModel.selectedMovie.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(viewModel.searchHistory, id: \.self) { title in
+                        Button(action: { viewModel.onMovieSelected(index: -1, title: title) }) {
+                            Text(title)
+                                .font(.system(size: 12))
+                                .foregroundColor(goldAccent)
+                                .lineLimit(1)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 6)
+                                .background(goldAccent.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(goldAccent.opacity(0.15), lineWidth: 1)
+                                )
+                                .cornerRadius(20)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var surpriseMeSection: some View {
+        if viewModel.selectedMovie.isEmpty {
+            HStack {
+                Spacer()
+                Button(action: { viewModel.surpriseMe() }) {
+                    Text("SURPRISE\nME")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .tracking(1.5)
+                        .frame(width: 140, height: 140)
+                        .background(
+                            RadialGradient(
+                                colors: [Color(red: 1, green: 0.27, blue: 0.27), Color(red: 0.8, green: 0, blue: 0), Color(red: 0.55, green: 0, blue: 0)],
+                                center: UnitPoint(x: 0.35, y: 0.3),
+                                startRadius: 0,
+                                endRadius: 90
+                            )
+                        )
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 6)
+                }
+                .padding(.top, 28)
+                Spacer()
+            }
         }
     }
 

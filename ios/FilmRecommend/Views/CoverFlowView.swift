@@ -96,6 +96,20 @@ struct CoverFlowView: View {
                             .cornerRadius(6)
                     }
 
+                    if let trailerKey = rec.trailerKey,
+                       let url = URL(string: "https://www.youtube.com/watch?v=\(trailerKey)") {
+                        Button(action: { UIApplication.shared.open(url) }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 12))
+                                Text("Watch Trailer")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundColor(Color(red: 0.8, green: 0, blue: 0))
+                        }
+                        .padding(.top, 4)
+                    }
+
                     Text("\(currentIndex + 1) / \(recommendations.count)")
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundColor(textSecondary)
