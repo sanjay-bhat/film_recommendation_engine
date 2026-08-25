@@ -33,6 +33,22 @@ A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a
   <a href="ios/">
     <img src="https://img.shields.io/badge/View_source-iOS-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="iOS source">
   </a>
+  &nbsp;
+  <a href="ipad/">
+    <img src="https://img.shields.io/badge/View_source-iPad-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="iPad source">
+  </a>
+  &nbsp;
+  <a href="tablet/">
+    <img src="https://img.shields.io/badge/View_source-Tablet-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Tablet source">
+  </a>
+  &nbsp;
+  <a href="googletv/">
+    <img src="https://img.shields.io/badge/View_source-Google_TV-4285F4?style=for-the-badge&logo=googletv&logoColor=white" alt="Google TV source">
+  </a>
+  &nbsp;
+  <a href="appletv/">
+    <img src="https://img.shields.io/badge/View_source-Apple_TV-000000?style=for-the-badge&logo=appletv&logoColor=white" alt="Apple TV source">
+  </a>
 </p>
 
 ## Architecture
@@ -105,6 +121,10 @@ The catalog spans 20+ genres across 4,800 movies and 1,907 TV shows. Drama and C
 | Web | HTML/CSS/JS | `docs/` | GitHub Pages, WebGL bokeh, 3D Cover Flow, recursive sub-tree, PWA |
 | Android | Kotlin | `android/` | Jetpack Compose, Material 3, fully offline |
 | iOS | Swift | `ios/` | SwiftUI, async/await, fully offline |
+| iPad | Swift | `ipad/` | SwiftUI, NavigationSplitView two-pane layout |
+| Android Tablet | Kotlin | `tablet/` | Jetpack Compose, two-pane master-detail layout |
+| Google TV | Kotlin | `googletv/` | Compose for TV, D-pad/Siri Remote focus navigation |
+| Apple TV | Swift | `appletv/` | tvOS SwiftUI, focus-based Siri Remote navigation |
 | CLI | Python | `src/recommend.py` | Reference implementation |
 | CLI | Rust | `src/recommend.rs` | Zero-dependency, fast CLI binary |
 | CLI | C# | `src/Recommend.cs` | .NET 8, clean OOP structure |
