@@ -8,6 +8,15 @@ struct OtdItem: Identifiable {
     let posterPath: String?
 }
 
+struct SubLevel: Identifiable {
+    let id = UUID()
+    let fromTitle: String
+    var allRecs: [Recommendation]
+    var filteredRecs: [Recommendation]
+    var industries: [String]
+    var selectedIndustries: Set<String>
+}
+
 private let industryMap: [String: String] = [
     "en": "Hollywood", "hi": "Bollywood", "ta": "Kollywood", "te": "Tollywood",
     "ja": "Japanese", "ko": "Korean", "fr": "French", "de": "German",
@@ -37,6 +46,7 @@ class MovieViewModel: ObservableObject {
     @Published var searchHistory: [String] = []
     @Published var industries: [String] = []
     @Published var selectedIndustries: Set<String> = []
+    @Published var subLevels: [SubLevel] = []
     @Published var otdMovies: [OtdItem] = []
     @Published var otdDismissed = false
 
@@ -152,6 +162,7 @@ class MovieViewModel: ObservableObject {
         filteredRecommendations = []
         industries = []
         selectedIndustries = []
+        subLevels = []
 
         if useSupabase {
             Task {
@@ -209,6 +220,71 @@ class MovieViewModel: ObservableObject {
         filteredRecommendations = allRecs
     }
 
+    // MARK: - Recursive Sub-levels
+
+    func drillInto(title: String) {
+        Task {
+            var recs: [Recommendation] = []
+            if useSupabase {
+                do {
+                    let sbRecs = try await supabase.getRecommendations(title: title)
+                    recs = sbRecs
+                } catch {}
+            }
+            if recs.isEmpty {
+                if !engine.isLoaded {
+                    await Task.detached { [engine] in engine.load() }.value
+                }
+                recs = await Task.detached { [engine, title] in
+                    engine.recommendByTitle(title)
+                }.value
+            }
+            guard !recs.isEmpty else { return }
+
+            let industryNames = recs.map { getIndustryName($0.originalLanguage) }
+            var seen = Set<String>()
+            var unique = [String]()
+            for name in industryNames {
+                if seen.insert(name).inserted { unique.append(name) }
+            }
+
+            let level = SubLevel(
+                fromTitle: title,
+                allRecs: recs,
+                filteredRecs: recs,
+                industries: unique,
+                selectedIndustries: Set(unique)
+            )
+            subLevels.append(level)
+        }
+    }
+
+    func toggleSubIndustry(levelIndex: Int, industry: String) {
+        guard levelIndex < subLevels.count else { return }
+        if subLevels[levelIndex].selectedIndustries.contains(industry) {
+            subLevels[levelIndex].selectedIndustries.remove(industry)
+        } else {
+            subLevels[levelIndex].selectedIndustries.insert(industry)
+        }
+        if subLevels[levelIndex].selectedIndustries.isEmpty {
+            subLevels[levelIndex].selectedIndustries = Set(subLevels[levelIndex].industries)
+        }
+        let filtered = subLevels[levelIndex].allRecs.filter {
+            subLevels[levelIndex].selectedIndustries.contains(getIndustryName($0.originalLanguage))
+        }
+        subLevels[levelIndex].filteredRecs = filtered.isEmpty ? subLevels[levelIndex].allRecs : filtered
+    }
+
+    func selectAllSubIndustries(levelIndex: Int) {
+        guard levelIndex < subLevels.count else { return }
+        subLevels[levelIndex].selectedIndustries = Set(subLevels[levelIndex].industries)
+        subLevels[levelIndex].filteredRecs = subLevels[levelIndex].allRecs
+    }
+
+    func exitSubLevels() {
+        subLevels = []
+    }
+
     private func fallbackRecommend(title: String) async {
         if !engine.isLoaded {
             await Task.detached { [engine] in
@@ -231,5 +307,6 @@ class MovieViewModel: ObservableObject {
         filteredRecommendations = []
         industries = []
         selectedIndustries = []
+        subLevels = []
     }
 }

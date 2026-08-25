@@ -17,6 +17,14 @@ import java.util.Calendar
 
 data class OtdItem(val title: String, val year: String, val posterPath: String?)
 
+data class SubLevel(
+    val fromTitle: String,
+    val allRecs: List<Recommendation>,
+    val filteredRecs: List<Recommendation>,
+    val industries: List<String>,
+    val selectedIndustries: Set<String>
+)
+
 data class UiState(
     val loading: Boolean = true,
     val loadingMessage: String = "Connecting...",
@@ -28,6 +36,7 @@ data class UiState(
     val searchHistory: List<String> = emptyList(),
     val industries: List<String> = emptyList(),
     val selectedIndustries: Set<String> = emptySet(),
+    val subLevels: List<SubLevel> = emptyList(),
     val otdMovies: List<OtdItem> = emptyList(),
     val otdDismissed: Boolean = false,
     val error: String? = null
@@ -166,7 +175,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             filteredRecommendations = emptyList(),
             searchHistory = _searchHistory.toList(),
             industries = emptyList(),
-            selectedIndustries = emptySet()
+            selectedIndustries = emptySet(),
+            subLevels = emptyList()
         )
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -214,6 +224,66 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedIndustries = allSet,
             filteredRecommendations = allRecs
         )
+    }
+
+    fun drillInto(title: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val recs = if (useSupabase) {
+                    getSupabaseRecommendations(title) ?: getOfflineRecommendations(-1, title)
+                } else {
+                    getOfflineRecommendations(-1, title)
+                }
+                if (recs.isEmpty()) return@launch
+
+                val industries = recs.map { getIndustryName(it.originalLanguage) }
+                    .distinct()
+                    .sortedByDescending { name -> recs.count { getIndustryName(it.originalLanguage) == name } }
+
+                val level = SubLevel(
+                    fromTitle = title,
+                    allRecs = recs,
+                    filteredRecs = recs,
+                    industries = industries,
+                    selectedIndustries = industries.toSet()
+                )
+                _state.value = _state.value.copy(
+                    subLevels = _state.value.subLevels + level
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "Drill-in failed for '$title': ${e.message}")
+            }
+        }
+    }
+
+    fun toggleSubIndustry(levelIndex: Int, industry: String) {
+        val levels = _state.value.subLevels.toMutableList()
+        if (levelIndex !in levels.indices) return
+        val level = levels[levelIndex]
+        val current = level.selectedIndustries.toMutableSet()
+        if (current.contains(industry)) current.remove(industry) else current.add(industry)
+        if (current.isEmpty()) return
+        val filtered = level.allRecs.filter { current.contains(getIndustryName(it.originalLanguage)) }
+        levels[levelIndex] = level.copy(
+            selectedIndustries = current,
+            filteredRecs = filtered.ifEmpty { level.allRecs }
+        )
+        _state.value = _state.value.copy(subLevels = levels)
+    }
+
+    fun selectAllSubIndustries(levelIndex: Int) {
+        val levels = _state.value.subLevels.toMutableList()
+        if (levelIndex !in levels.indices) return
+        val level = levels[levelIndex]
+        levels[levelIndex] = level.copy(
+            selectedIndustries = level.industries.toSet(),
+            filteredRecs = level.allRecs
+        )
+        _state.value = _state.value.copy(subLevels = levels)
+    }
+
+    fun exitSubLevels() {
+        _state.value = _state.value.copy(subLevels = emptyList())
     }
 
     private fun getSupabaseRecommendations(title: String): List<Recommendation>? {

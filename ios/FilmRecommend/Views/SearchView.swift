@@ -287,7 +287,84 @@ struct SearchView: View {
                     .padding(.bottom, 4)
                 }
 
-                CoverFlowView(recommendations: viewModel.filteredRecommendations)
+                CoverFlowView(
+                    recommendations: viewModel.filteredRecommendations,
+                    onDrillIn: { title in viewModel.drillInto(title: title) }
+                )
+
+                // Sub-levels
+                ForEach(Array(viewModel.subLevels.enumerated()), id: \.element.id) { levelIdx, level in
+                    Divider().background(surfaceBg).padding(.vertical, 12)
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("LEVEL \(levelIdx + 2)")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(goldAccent.opacity(0.6))
+                                .tracking(2)
+                            HStack(spacing: 0) {
+                                Text("from ")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(textSecondary)
+                                Text(level.fromTitle)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(goldAccent)
+                            }
+                        }
+                        Spacer()
+                        Button(action: { viewModel.exitSubLevels() }) {
+                            Text("\u{2B05} EXIT")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color(red: 0.878, green: 0.251, blue: 0.251))
+                                .tracking(2)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 6)
+                                .background(Color(red: 0.878, green: 0.251, blue: 0.251).opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(Color(red: 0.878, green: 0.251, blue: 0.251).opacity(0.5), lineWidth: 1.5)
+                                )
+                                .cornerRadius(4)
+                        }
+                    }
+
+                    // Sub-level industry filters
+                    if level.industries.count > 1 {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                let allSel = level.selectedIndustries.count == level.industries.count
+                                Button(action: { viewModel.selectAllSubIndustries(levelIndex: levelIdx) }) {
+                                    Text("All")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(Color(red: 0.247, green: 0.725, blue: 0.416).opacity(allSel ? 1 : 0.3))
+                                        .padding(.horizontal, 14).padding(.vertical, 5)
+                                        .background(allSel ? Color(red: 0.247, green: 0.725, blue: 0.416).opacity(0.15) : .clear)
+                                        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(red: 0.247, green: 0.725, blue: 0.416).opacity(0.4), lineWidth: 1.5))
+                                        .cornerRadius(20)
+                                }
+                                ForEach(Array(level.industries.enumerated()), id: \.element) { i, name in
+                                    let sel = level.selectedIndustries.contains(name)
+                                    let col: Color = i == 0 ? goldAccent : i == 1 ? Color(red: 0.706, green: 0.706, blue: 0.745) : Color(red: 0.690, green: 0.478, blue: 0.314)
+                                    Button(action: { viewModel.toggleSubIndustry(levelIndex: levelIdx, industry: name) }) {
+                                        Text(name)
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(col.opacity(sel ? 1 : 0.3))
+                                            .padding(.horizontal, 14).padding(.vertical, 5)
+                                            .background(sel ? col.opacity(0.15) : .clear)
+                                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(col.opacity(0.4), lineWidth: 1.5))
+                                            .cornerRadius(20)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
+
+                    CoverFlowView(
+                        recommendations: level.filteredRecs,
+                        onDrillIn: { title in viewModel.drillInto(title: title) }
+                    )
+                }
             }
         }
     }

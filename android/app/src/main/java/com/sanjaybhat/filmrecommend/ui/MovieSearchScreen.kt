@@ -362,7 +362,98 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                             }
                         }
 
-                        CoverFlowCarousel(recommendations = state.filteredRecommendations)
+                        CoverFlowCarousel(
+                            recommendations = state.filteredRecommendations,
+                            onDrillIn = { title -> viewModel.drillInto(title) }
+                        )
+
+                        // Sub-levels
+                        state.subLevels.forEachIndexed { levelIdx, level ->
+                            Spacer(modifier = Modifier.height(24.dp))
+                            HorizontalDivider(color = SurfaceBg)
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "LEVEL ${levelIdx + 2}",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GoldAccent.copy(alpha = 0.6f),
+                                        letterSpacing = 2.sp
+                                    )
+                                    Row {
+                                        Text("from ", fontSize = 11.sp, color = TextSecondary)
+                                        Text(level.fromTitle, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = GoldAccent)
+                                    }
+                                }
+                                Text(
+                                    text = "EXIT",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE04040),
+                                    letterSpacing = 2.sp,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFE04040).copy(alpha = 0.15f))
+                                        .border(1.5.dp, Color(0xFFE04040).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                        .clickable { viewModel.exitSubLevels() }
+                                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Sub-level industry filters
+                            if (level.industries.size > 1) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val allSel = level.selectedIndustries.size == level.industries.size
+                                    Text(
+                                        text = "All",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (allSel) Color(0xFF3FB950) else Color(0xFF3FB950).copy(alpha = 0.3f),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(if (allSel) Color(0xFF3FB950).copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.5.dp, Color(0xFF3FB950).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                            .clickable { viewModel.selectAllSubIndustries(levelIdx) }
+                                            .padding(horizontal = 14.dp, vertical = 5.dp)
+                                    )
+                                    level.industries.forEachIndexed { i, name ->
+                                        val sel = level.selectedIndustries.contains(name)
+                                        val col = when (i) { 0 -> GoldAccent; 1 -> Color(0xFFB4B4BE); else -> Color(0xFFB07A50) }
+                                        Text(
+                                            text = name,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (sel) col else col.copy(alpha = 0.3f),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(20.dp))
+                                                .background(if (sel) col.copy(alpha = 0.15f) else Color.Transparent)
+                                                .border(1.5.dp, col.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                                .clickable { viewModel.toggleSubIndustry(levelIdx, name) }
+                                                .padding(horizontal = 14.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            CoverFlowCarousel(
+                                recommendations = level.filteredRecs,
+                                onDrillIn = { title -> viewModel.drillInto(title) }
+                            )
+                        }
                     }
                 }
 
@@ -379,7 +470,7 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
+private fun CoverFlowCarousel(recommendations: List<Recommendation>, onDrillIn: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val animatable = remember { Animatable(0f) }
     val currentIndex by remember { derivedStateOf { animatable.value.toInt().coerceIn(0, (recommendations.size - 1).coerceAtLeast(0)) } }
@@ -587,7 +678,20 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // See Similar button
+            Spacer(modifier = Modifier.height(6.dp))
+            TextButton(
+                onClick = { onDrillIn(rec.title) }
+            ) {
+                Text(
+                    text = "See Similar →",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = GoldAccent
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = "${currentIndex + 1} / ${recommendations.size}",

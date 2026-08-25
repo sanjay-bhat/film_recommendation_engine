@@ -16,6 +16,7 @@ private func ratingColor(_ score: Double) -> Color {
 
 struct CoverFlowView: View {
     let recommendations: [Recommendation]
+    var onDrillIn: ((String) -> Void)?
 
     @State private var currentIndex: Int = 0
     @GestureState private var dragOffset: CGFloat = 0
@@ -108,6 +109,15 @@ struct CoverFlowView: View {
                             .foregroundColor(Color(red: 0.8, green: 0, blue: 0))
                         }
                         .padding(.top, 4)
+                    }
+
+                    if let drillIn = onDrillIn {
+                        Button(action: { drillIn(rec.title) }) {
+                            Text("See Similar \u{2192}")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(goldAccent)
+                        }
+                        .padding(.top, 2)
                     }
 
                     Text("\(currentIndex + 1) / \(recommendations.count)")
