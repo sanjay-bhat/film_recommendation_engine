@@ -109,6 +109,74 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                     }
                 }
             } else {
+                // On This Day ticker
+                if (state.otdMovies.isNotEmpty() && !state.otdDismissed && state.selectedMovie.isEmpty()) {
+                    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ON THIS DAY",
+                                fontSize = 10.sp,
+                                color = GoldAccent.copy(alpha = 0.5f),
+                                letterSpacing = 0.8.sp
+                            )
+                            Text(
+                                text = "✕",
+                                fontSize = 12.sp,
+                                color = TextSecondary.copy(alpha = 0.5f),
+                                modifier = Modifier.clickable { viewModel.dismissOtd() }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            state.otdMovies.forEach { movie ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .width(80.dp)
+                                        .clickable { viewModel.onMovieSelected(-1, movie.title) }
+                                ) {
+                                    if (movie.posterPath != null) {
+                                        AsyncImage(
+                                            model = "${TMDB_IMG_BASE}w154${movie.posterPath}",
+                                            contentDescription = movie.title,
+                                            modifier = Modifier
+                                                .width(60.dp)
+                                                .height(90.dp)
+                                                .clip(RoundedCornerShape(6.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    Text(
+                                        text = movie.title,
+                                        fontSize = 10.sp,
+                                        color = TextPrimary,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                    if (movie.year.isNotEmpty()) {
+                                        Text(
+                                            text = movie.year,
+                                            fontSize = 9.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = state.query,
                     onValueChange = { viewModel.onQueryChanged(it) },
@@ -240,10 +308,61 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = GoldAccent,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
 
-                        CoverFlowCarousel(recommendations = state.recommendations)
+                        // Industry filter bubbles
+                        if (state.industries.size > 1) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val allSelected = state.selectedIndustries.size == state.industries.size
+                                Text(
+                                    text = "All",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (allSelected) Color(0xFF3FB950) else Color(0xFF3FB950).copy(alpha = 0.3f),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(
+                                            if (allSelected) Color(0xFF3FB950).copy(alpha = 0.15f)
+                                            else Color.Transparent
+                                        )
+                                        .border(1.5.dp, Color(0xFF3FB950).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                        .clickable { viewModel.selectAllIndustries() }
+                                        .padding(horizontal = 14.dp, vertical = 5.dp)
+                                )
+                                state.industries.forEachIndexed { i, name ->
+                                    val selected = state.selectedIndustries.contains(name)
+                                    val bubbleColor = when (i) {
+                                        0 -> GoldAccent
+                                        1 -> Color(0xFFB4B4BE)
+                                        else -> Color(0xFFB07A50)
+                                    }
+                                    Text(
+                                        text = name,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (selected) bubbleColor else bubbleColor.copy(alpha = 0.3f),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(
+                                                if (selected) bubbleColor.copy(alpha = 0.15f)
+                                                else Color.Transparent
+                                            )
+                                            .border(1.5.dp, bubbleColor.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                            .clickable { viewModel.toggleIndustry(name) }
+                                            .padding(horizontal = 14.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        CoverFlowCarousel(recommendations = state.filteredRecommendations)
                     }
                 }
 

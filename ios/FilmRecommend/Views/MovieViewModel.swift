@@ -1,6 +1,29 @@
 import Foundation
 import Combine
 
+struct OtdItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let year: String
+    let posterPath: String?
+}
+
+private let industryMap: [String: String] = [
+    "en": "Hollywood", "hi": "Bollywood", "ta": "Kollywood", "te": "Tollywood",
+    "ja": "Japanese", "ko": "Korean", "fr": "French", "de": "German",
+    "es": "Spanish", "zh": "Chinese", "it": "Italian", "pt": "Portuguese",
+    "ml": "Malayalam", "bn": "Bengali", "ru": "Russian", "th": "Thai",
+    "tr": "Turkish", "pl": "Polish", "nl": "Dutch", "sv": "Swedish",
+    "da": "Danish", "no": "Norwegian", "fi": "Finnish", "id": "Indonesian",
+    "ar": "Arabic", "he": "Hebrew", "uk": "Ukrainian", "cs": "Czech",
+    "ro": "Romanian", "hu": "Hungarian", "cn": "Chinese", "is": "Icelandic",
+    "af": "Afrikaans", "ca": "Catalan", "el": "Greek"
+]
+
+func getIndustryName(_ lang: String) -> String {
+    industryMap[lang] ?? (lang.isEmpty ? "Other" : lang.prefix(1).uppercased() + lang.dropFirst())
+}
+
 @MainActor
 class MovieViewModel: ObservableObject {
 
@@ -8,19 +31,22 @@ class MovieViewModel: ObservableObject {
     @Published var suggestions: [(Int, String)] = []
     @Published var selectedMovie = ""
     @Published var recommendations: [Recommendation] = []
+    @Published var filteredRecommendations: [Recommendation] = []
     @Published var isLoading = true
     @Published var error: String?
     @Published var searchHistory: [String] = []
+    @Published var industries: [String] = []
+    @Published var selectedIndustries: Set<String> = []
+    @Published var otdMovies: [OtdItem] = []
+    @Published var otdDismissed = false
 
-    /// When true, search and recommendations go through Supabase.
-    /// Falls back to the on-device engine when false.
     private(set) var useSupabase = false
 
     private let engine = RecommendationEngine()
     private let supabase = SupabaseClient()
 
-    /// Titles loaded from Supabase (empty when using the on-device engine).
     private var supabaseTitles: [String] = []
+    private var allRecs: [Recommendation] = []
 
     private var searchTask: Task<Void, Never>?
 
@@ -28,26 +54,42 @@ class MovieViewModel: ObservableObject {
 
     func loadDataset() {
         Task {
-            // Try Supabase first
             do {
                 let titles = try await supabase.fetchAllTitles()
                 supabaseTitles = titles
                 useSupabase = true
                 isLoading = false
+                await loadOnThisDay()
             } catch {
-                // Supabase unavailable — fall back to on-device engine
                 await loadEngineOffline()
             }
         }
     }
 
-    /// Load the bundled CSV dataset through the on-device KNN engine.
     private func loadEngineOffline() async {
         await Task.detached { [engine] in
             engine.load()
         }.value
         useSupabase = false
         isLoading = false
+    }
+
+    private func loadOnThisDay() async {
+        guard useSupabase else { return }
+        do {
+            let cal = Calendar.current
+            let now = Date()
+            let month = cal.component(.month, from: now)
+            let day = cal.component(.day, from: now)
+            let movies = try await supabase.moviesOnThisDay(month: month, day: day)
+            otdMovies = movies.map { OtdItem(title: $0.title, year: $0.year, posterPath: $0.posterPath) }
+        } catch {
+            // Silently ignore OTD errors
+        }
+    }
+
+    func dismissOtd() {
+        otdDismissed = true
     }
 
     // MARK: - Search
@@ -107,6 +149,9 @@ class MovieViewModel: ObservableObject {
         selectedMovie = title
         suggestions = []
         recommendations = []
+        filteredRecommendations = []
+        industries = []
+        selectedIndustries = []
 
         if useSupabase {
             Task {
@@ -115,7 +160,7 @@ class MovieViewModel: ObservableObject {
                     if recs.isEmpty {
                         await fallbackRecommend(title: title)
                     } else {
-                        recommendations = recs
+                        applyRecs(recs)
                     }
                 } catch {
                     await fallbackRecommend(title: title)
@@ -126,9 +171,42 @@ class MovieViewModel: ObservableObject {
                 let recs = await Task.detached { [engine] in
                     engine.recommend(movieIndex: index)
                 }.value
-                recommendations = recs
+                applyRecs(recs)
             }
         }
+    }
+
+    private func applyRecs(_ recs: [Recommendation]) {
+        allRecs = recs
+        recommendations = recs
+        filteredRecommendations = recs
+
+        let industryNames = recs.map { getIndustryName($0.originalLanguage) }
+        var seen = Set<String>()
+        var unique = [String]()
+        for name in industryNames {
+            if seen.insert(name).inserted { unique.append(name) }
+        }
+        industries = unique
+        selectedIndustries = Set(unique)
+    }
+
+    func toggleIndustry(_ industry: String) {
+        if selectedIndustries.contains(industry) {
+            selectedIndustries.remove(industry)
+        } else {
+            selectedIndustries.insert(industry)
+        }
+        if selectedIndustries.isEmpty {
+            selectedIndustries = Set(industries)
+        }
+        let filtered = allRecs.filter { selectedIndustries.contains(getIndustryName($0.originalLanguage)) }
+        filteredRecommendations = filtered.isEmpty ? allRecs : filtered
+    }
+
+    func selectAllIndustries() {
+        selectedIndustries = Set(industries)
+        filteredRecommendations = allRecs
     }
 
     private func fallbackRecommend(title: String) async {
@@ -140,7 +218,7 @@ class MovieViewModel: ObservableObject {
         let recs = await Task.detached { [engine, title] in
             engine.recommendByTitle(title)
         }.value
-        recommendations = recs
+        applyRecs(recs)
     }
 
     // MARK: - Clear
@@ -150,5 +228,8 @@ class MovieViewModel: ObservableObject {
         selectedMovie = ""
         suggestions = []
         recommendations = []
+        filteredRecommendations = []
+        industries = []
+        selectedIndustries = []
     }
 }

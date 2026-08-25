@@ -7,6 +7,7 @@ private let textSecondary = Color(red: 0.533, green: 0.533, blue: 0.533)
 private let darkBg = Color(red: 0.031, green: 0.031, blue: 0.047)
 private let cardBg = Color(red: 0.067, green: 0.067, blue: 0.094)
 private let surfaceBg = Color(red: 0.102, green: 0.102, blue: 0.133)
+private let tmdbImgBase = "https://image.tmdb.org/t/p/"
 
 private func ratingColor(_ score: Double) -> Color {
     if score >= 8.0 { return goldAccent }
@@ -27,6 +28,7 @@ struct SearchView: View {
                     if viewModel.isLoading {
                         loadingSection
                     } else {
+                        otdSection
                         searchSection
                         suggestionsSection
                         historySection
@@ -65,6 +67,61 @@ struct SearchView: View {
                 .font(.subheadline)
                 .foregroundColor(goldMuted)
             Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private var otdSection: some View {
+        if !viewModel.otdMovies.isEmpty && !viewModel.otdDismissed && viewModel.selectedMovie.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("ON THIS DAY")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(goldAccent.opacity(0.5))
+                        .tracking(0.8)
+                    Spacer()
+                    Button(action: { viewModel.dismissOtd() }) {
+                        Text("\u{2715}")
+                            .font(.system(size: 12))
+                            .foregroundColor(textSecondary.opacity(0.5))
+                    }
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(viewModel.otdMovies) { movie in
+                            Button(action: { viewModel.onMovieSelected(index: -1, title: movie.title) }) {
+                                VStack(spacing: 4) {
+                                    if let path = movie.posterPath {
+                                        AsyncImage(url: URL(string: "\(tmdbImgBase)w154\(path)")) { phase in
+                                            if case .success(let img) = phase {
+                                                img.resizable().aspectRatio(contentMode: .fill)
+                                                    .frame(width: 60, height: 90)
+                                                    .clipped().cornerRadius(6)
+                                            } else {
+                                                RoundedRectangle(cornerRadius: 6).fill(cardBg)
+                                                    .frame(width: 60, height: 90)
+                                            }
+                                        }
+                                    }
+                                    Text(movie.title)
+                                        .font(.system(size: 10))
+                                        .foregroundColor(textPrimary)
+                                        .lineLimit(2)
+                                        .multilineTextAlignment(.center)
+                                    if !movie.year.isEmpty {
+                                        Text(movie.year)
+                                            .font(.system(size: 9))
+                                            .foregroundColor(textSecondary)
+                                    }
+                                }
+                                .frame(width: 80)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, 4)
         }
     }
 
@@ -188,7 +245,49 @@ struct SearchView: View {
                     .foregroundColor(goldAccent)
                     .padding(.bottom, 4)
 
-                CoverFlowView(recommendations: viewModel.recommendations)
+                // Industry filter bubbles
+                if viewModel.industries.count > 1 {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            let allSelected = viewModel.selectedIndustries.count == viewModel.industries.count
+                            Button(action: { viewModel.selectAllIndustries() }) {
+                                Text("All")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(Color(red: 0.247, green: 0.725, blue: 0.416).opacity(allSelected ? 1 : 0.3))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 5)
+                                    .background(allSelected ? Color(red: 0.247, green: 0.725, blue: 0.416).opacity(0.15) : .clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color(red: 0.247, green: 0.725, blue: 0.416).opacity(0.4), lineWidth: 1.5)
+                                    )
+                                    .cornerRadius(20)
+                            }
+
+                            ForEach(Array(viewModel.industries.enumerated()), id: \.element) { i, name in
+                                let selected = viewModel.selectedIndustries.contains(name)
+                                let bubbleColor: Color = i == 0 ? goldAccent : i == 1 ? Color(red: 0.706, green: 0.706, blue: 0.745) : Color(red: 0.690, green: 0.478, blue: 0.314)
+
+                                Button(action: { viewModel.toggleIndustry(name) }) {
+                                    Text(name)
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(bubbleColor.opacity(selected ? 1 : 0.3))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 5)
+                                        .background(selected ? bubbleColor.opacity(0.15) : .clear)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(bubbleColor.opacity(0.4), lineWidth: 1.5)
+                                        )
+                                        .cornerRadius(20)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.bottom, 4)
+                }
+
+                CoverFlowView(recommendations: viewModel.filteredRecommendations)
             }
         }
     }
