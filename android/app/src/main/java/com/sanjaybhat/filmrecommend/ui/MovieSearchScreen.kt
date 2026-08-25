@@ -30,11 +30,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.sanjaybhat.filmrecommend.model.PosterData
@@ -211,8 +215,21 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                     ) {
                         LazyColumn(modifier = Modifier.heightIn(max = 240.dp)) {
                             items(state.suggestions) { (index, title) ->
+                                val query = state.query.lowercase()
+                                val matchIdx = title.lowercase().indexOf(query)
+                                val annotated = if (matchIdx >= 0) {
+                                    buildAnnotatedString {
+                                        append(title.substring(0, matchIdx))
+                                        withStyle(SpanStyle(color = GoldAccent, fontWeight = FontWeight.SemiBold)) {
+                                            append(title.substring(matchIdx, matchIdx + query.length))
+                                        }
+                                        append(title.substring(matchIdx + query.length))
+                                    }
+                                } else {
+                                    buildAnnotatedString { append(title) }
+                                }
                                 Text(
-                                    text = title,
+                                    text = annotated,
                                     color = TextPrimary,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -475,9 +492,11 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>, onDrillIn: 
     val animatable = remember { Animatable(0f) }
     val currentIndex by remember { derivedStateOf { animatable.value.toInt().coerceIn(0, (recommendations.size - 1).coerceAtLeast(0)) } }
     val density = LocalDensity.current
+    var expanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(recommendations) {
         animatable.snapTo(0f)
+        expanded = false
     }
 
     Column(
@@ -487,7 +506,7 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>, onDrillIn: 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(340.dp)
+                .height(370.dp)
                 .pointerInput(recommendations.size) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
@@ -558,53 +577,81 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>, onDrillIn: 
 
                     val rec = recommendations[index]
                     val posterPath = rec.posterPath ?: PosterData.posters[rec.title]
+                    val isCurrent = absOffset < 0.5f
+                    val expandScale = if (isCurrent && expanded) 1.8f else 1f
 
                     Box(
                         modifier = Modifier
+                            .zIndex(if (isCurrent && expanded) 100f else 3f - absOffset)
                             .graphicsLayer {
                                 this.rotationY = angle
-                                this.scaleX = scale
-                                this.scaleY = scale
+                                this.scaleX = scale * expandScale
+                                this.scaleY = scale * expandScale
                                 this.translationX = translationXDp * density.density
                                 this.alpha = alpha
                                 this.cameraDistance = 12f * density.density
-                            },
-                        contentAlignment = Alignment.Center
+                            }
+                            .then(
+                                if (isCurrent) Modifier.clickable { expanded = !expanded }
+                                else Modifier
+                            ),
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        if (posterPath != null) {
-                            AsyncImage(
-                                model = "${TMDB_IMG_BASE}w342${posterPath}",
-                                contentDescription = rec.title,
-                                modifier = Modifier
-                                    .width(180.dp)
-                                    .height(270.dp)
-                                    .clip(RoundedCornerShape(12.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .width(180.dp)
-                                    .height(270.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                SurfaceBg,
-                                                CardBg
-                                            )
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "🎬",
-                                    fontSize = 48.sp
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (posterPath != null) {
+                                AsyncImage(
+                                    model = "${TMDB_IMG_BASE}w342${posterPath}",
+                                    contentDescription = rec.title,
+                                    modifier = Modifier
+                                        .width(180.dp)
+                                        .height(270.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
+                                    contentScale = ContentScale.Crop
                                 )
+                                // Reflection
+                                AsyncImage(
+                                    model = "${TMDB_IMG_BASE}w342${posterPath}",
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(180.dp)
+                                        .height(50.dp)
+                                        .graphicsLayer {
+                                            this.scaleY = -1f
+                                            this.alpha = 0.2f
+                                        },
+                                    contentScale = ContentScale.Crop,
+                                    alignment = Alignment.BottomCenter
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .width(180.dp)
+                                        .height(270.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(SurfaceBg, CardBg)
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = "🎬", fontSize = 48.sp)
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            // Expanded overlay
+            if (expanded) {
+                Box(
+                    modifier = Modifier
+                        .zIndex(50f)
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .clickable { expanded = false }
+                )
             }
         }
 
