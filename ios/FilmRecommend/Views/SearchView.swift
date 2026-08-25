@@ -159,8 +159,7 @@ struct SearchView: View {
             VStack(spacing: 0) {
                 ForEach(viewModel.suggestions, id: \.0) { index, title in
                     Button(action: { viewModel.onMovieSelected(index: index, title: title) }) {
-                        Text(title)
-                            .foregroundColor(textPrimary)
+                        highlightedTitle(title, query: viewModel.query)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
@@ -173,6 +172,18 @@ struct SearchView: View {
             .background(cardBg)
             .cornerRadius(12)
         }
+    }
+
+    private func highlightedTitle(_ title: String, query: String) -> Text {
+        guard let range = title.range(of: query, options: .caseInsensitive) else {
+            return Text(title).foregroundColor(textPrimary)
+        }
+        let before = String(title[title.startIndex..<range.lowerBound])
+        let match = String(title[range])
+        let after = String(title[range.upperBound...])
+        return Text(before).foregroundColor(textPrimary)
+            + Text(match).foregroundColor(goldAccent).bold()
+            + Text(after).foregroundColor(textPrimary)
     }
 
     @ViewBuilder

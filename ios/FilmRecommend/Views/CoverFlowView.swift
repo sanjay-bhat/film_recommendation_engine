@@ -19,60 +19,94 @@ struct CoverFlowView: View {
     var onDrillIn: ((String) -> Void)?
 
     @State private var currentIndex: Int = 0
+    @State private var isExpanded: Bool = false
     @GestureState private var dragOffset: CGFloat = 0
 
     private let posterWidth: CGFloat = 180
     private let posterHeight: CGFloat = 270
     private let spacing: CGFloat = 60
 
+    private let reflectionHeight: CGFloat = 50
+
     var body: some View {
         VStack(spacing: 20) {
-            GeometryReader { geometry in
-                let centerX = geometry.size.width / 2
+            ZStack {
+                GeometryReader { geometry in
+                    let centerX = geometry.size.width / 2
 
-                ZStack {
-                    ForEach(Array(recommendations.enumerated()), id: \.element.id) { index, rec in
-                        let offset = CGFloat(index - currentIndex) * spacing + dragOffset
-                        let normalizedOffset = offset / spacing
-                        let isCurrent = index == currentIndex && abs(dragOffset) < spacing / 2
-                        let angle: Double = isCurrent ? 0 : (normalizedOffset < 0 ? 45 : -45)
-                        let xPosition = centerX + offset * (isCurrent ? 1 : 0.8)
-                        let scale: CGFloat = isCurrent ? 1.0 : 0.7
-                        let opacity: Double = abs(normalizedOffset) > 3 ? 0 : 1.0 - abs(normalizedOffset) * 0.15
+                    ZStack {
+                        ForEach(Array(recommendations.enumerated()), id: \.element.id) { index, rec in
+                            let offset = CGFloat(index - currentIndex) * spacing + dragOffset
+                            let normalizedOffset = offset / spacing
+                            let isCurrent = index == currentIndex && abs(dragOffset) < spacing / 2
+                            let angle: Double = isCurrent ? 0 : (normalizedOffset < 0 ? 45 : -45)
+                            let xPosition = centerX + offset * (isCurrent ? 1 : 0.8)
+                            let baseScale: CGFloat = isCurrent ? 1.0 : 0.7
+                            let expandScale: CGFloat = (isCurrent && isExpanded) ? 1.8 : baseScale
+                            let opacity: Double = abs(normalizedOffset) > 3 ? 0 : 1.0 - abs(normalizedOffset) * 0.15
 
-                        posterCard(for: rec)
-                            .frame(width: posterWidth, height: posterHeight)
-                            .scaleEffect(scale)
+                            VStack(spacing: 0) {
+                                posterCard(for: rec)
+                                    .frame(width: posterWidth, height: posterHeight)
+
+                                if rec.posterPath != nil || PosterData.posters[rec.title] != nil {
+                                    reflectionCard(for: rec)
+                                        .frame(width: posterWidth, height: reflectionHeight)
+                                }
+                            }
+                            .scaleEffect(expandScale)
                             .rotation3DEffect(
                                 .degrees(angle),
                                 axis: (x: 0, y: 1, z: 0),
                                 perspective: 0.5
                             )
-                            .position(x: xPosition, y: posterHeight / 2 + 10)
+                            .position(x: xPosition, y: (posterHeight + reflectionHeight) / 2 + 10)
                             .opacity(opacity)
-                            .zIndex(isCurrent ? 10 : 10 - abs(normalizedOffset))
+                            .zIndex(isCurrent ? (isExpanded ? 100 : 10) : 10 - abs(normalizedOffset))
+                            .onTapGesture {
+                                if isCurrent {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                        isExpanded.toggle()
+                                    }
+                                }
+                            }
+                        }
                     }
+                    .gesture(
+                        DragGesture()
+                            .updating($dragOffset) { value, state, _ in
+                                if !isExpanded {
+                                    state = value.translation.width
+                                }
+                            }
+                            .onEnded { value in
+                                guard !isExpanded else { return }
+                                let threshold: CGFloat = spacing / 2
+                                var newIndex = currentIndex
+                                if value.translation.width < -threshold {
+                                    newIndex = min(currentIndex + 1, recommendations.count - 1)
+                                } else if value.translation.width > threshold {
+                                    newIndex = max(currentIndex - 1, 0)
+                                }
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                    currentIndex = newIndex
+                                }
+                            }
+                    )
                 }
-                .gesture(
-                    DragGesture()
-                        .updating($dragOffset) { value, state, _ in
-                            state = value.translation.width
-                        }
-                        .onEnded { value in
-                            let threshold: CGFloat = spacing / 2
-                            var newIndex = currentIndex
-                            if value.translation.width < -threshold {
-                                newIndex = min(currentIndex + 1, recommendations.count - 1)
-                            } else if value.translation.width > threshold {
-                                newIndex = max(currentIndex - 1, 0)
-                            }
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                currentIndex = newIndex
+                .frame(height: posterHeight + reflectionHeight + 20)
+
+                if isExpanded {
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                isExpanded = false
                             }
                         }
-                )
+                        .zIndex(50)
+                }
             }
-            .frame(height: posterHeight + 20)
 
             if recommendations.indices.contains(currentIndex) {
                 let rec = recommendations[currentIndex]
@@ -158,6 +192,25 @@ struct CoverFlowView: View {
             }
         } else {
             placeholderPoster(for: rec)
+        }
+    }
+
+    @ViewBuilder
+    private func reflectionCard(for rec: Recommendation) -> some View {
+        if let posterPath = rec.posterPath ?? PosterData.posters[rec.title] {
+            AsyncImage(url: URL(string: "\(PosterData.tmdbImgBase)w342\(posterPath)")) { phase in
+                if case .success(let image) = phase {
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: posterWidth, height: reflectionHeight)
+                        .clipped()
+                } else {
+                    Color.clear
+                }
+            }
+            .scaleEffect(x: 1, y: -1)
+            .opacity(0.2)
         }
     }
 
