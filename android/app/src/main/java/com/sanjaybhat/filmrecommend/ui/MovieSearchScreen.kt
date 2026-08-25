@@ -6,12 +6,17 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,9 +28,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -34,12 +42,22 @@ import com.sanjaybhat.filmrecommend.model.Recommendation
 import com.sanjaybhat.filmrecommend.model.TMDB_IMG_BASE
 import kotlinx.coroutines.launch
 
-private val NeonCyan = Color(0xFF00E5FF)
-private val NeonPink = Color(0xFFFF2D95)
-private val NeonPurple = Color(0xFF7B61FF)
-private val DarkBg = Color(0xFF0A0015)
-private val CardBg = Color(0xFF1A0A2E)
-private val SurfaceBg = Color(0xFF2D1B4E)
+private val GoldAccent = Color(0xFFC4A35A)
+private val GoldMuted = Color(0xFFA08050)
+private val TextPrimary = Color(0xFFD4CFC8)
+private val TextSecondary = Color(0xFF888888)
+private val DarkBg = Color(0xFF08080C)
+private val CardBg = Color(0xFF111118)
+private val SurfaceBg = Color(0xFF1A1A22)
+private val RatingGold = Color(0xFFC4A35A)
+private val RatingGreen = Color(0xFF8A9E8A)
+private val RatingBrown = Color(0xFF8A7E6E)
+
+private fun ratingColor(score: Double): Color = when {
+    score >= 8.0 -> RatingGold
+    score >= 7.0 -> RatingGreen
+    else -> RatingBrown
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +80,8 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                 text = "FILM RECOMMEND",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = NeonCyan,
+                fontFamily = FontFamily.Serif,
+                color = GoldAccent,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -70,7 +89,7 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
             Text(
                 text = "Semantic Search • TMDb 5000",
                 fontSize = 12.sp,
-                color = NeonPink,
+                color = GoldMuted,
                 textAlign = TextAlign.Center,
                 letterSpacing = 2.sp,
                 modifier = Modifier
@@ -84,31 +103,99 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = NeonCyan)
+                        CircularProgressIndicator(color = GoldAccent)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(state.loadingMessage, color = NeonPink, fontSize = 14.sp)
+                        Text(state.loadingMessage, color = GoldMuted, fontSize = 14.sp)
                     }
                 }
             } else {
+                // On This Day ticker
+                if (state.otdMovies.isNotEmpty() && !state.otdDismissed && state.selectedMovie.isEmpty()) {
+                    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ON THIS DAY",
+                                fontSize = 10.sp,
+                                color = GoldAccent.copy(alpha = 0.5f),
+                                letterSpacing = 0.8.sp
+                            )
+                            Text(
+                                text = "✕",
+                                fontSize = 12.sp,
+                                color = TextSecondary.copy(alpha = 0.5f),
+                                modifier = Modifier.clickable { viewModel.dismissOtd() }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            state.otdMovies.forEach { movie ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .width(80.dp)
+                                        .clickable { viewModel.onMovieSelected(-1, movie.title) }
+                                ) {
+                                    if (movie.posterPath != null) {
+                                        AsyncImage(
+                                            model = "${TMDB_IMG_BASE}w154${movie.posterPath}",
+                                            contentDescription = movie.title,
+                                            modifier = Modifier
+                                                .width(60.dp)
+                                                .height(90.dp)
+                                                .clip(RoundedCornerShape(6.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    Text(
+                                        text = movie.title,
+                                        fontSize = 10.sp,
+                                        color = TextPrimary,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                    if (movie.year.isNotEmpty()) {
+                                        Text(
+                                            text = movie.year,
+                                            fontSize = 9.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = state.query,
                     onValueChange = { viewModel.onQueryChanged(it) },
-                    label = { Text("Search for a movie", color = NeonPurple.copy(alpha = 0.7f)) },
-                    leadingIcon = { Icon(Icons.Default.Search, "Search", tint = NeonCyan) },
+                    label = { Text("Search for a movie", color = TextSecondary) },
+                    leadingIcon = { Icon(Icons.Default.Search, "Search", tint = GoldAccent) },
                     trailingIcon = {
                         if (state.query.isNotEmpty()) {
                             IconButton(onClick = { viewModel.clearSelection() }) {
-                                Icon(Icons.Default.Clear, "Clear", tint = NeonPink)
+                                Icon(Icons.Default.Clear, "Clear", tint = GoldMuted)
                             }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = NeonCyan,
-                        unfocusedBorderColor = NeonPurple.copy(alpha = 0.5f),
-                        cursorColor = NeonCyan
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
+                        focusedBorderColor = GoldAccent,
+                        unfocusedBorderColor = SurfaceBg,
+                        cursorColor = GoldAccent
                     ),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -126,7 +213,7 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                             items(state.suggestions) { (index, title) ->
                                 Text(
                                     text = title,
-                                    color = Color.White,
+                                    color = TextPrimary,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { viewModel.onMovieSelected(index, title) }
@@ -134,9 +221,74 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                                     fontSize = 14.sp
                                 )
                                 if (index != state.suggestions.last().first) {
-                                    HorizontalDivider(color = NeonPurple.copy(alpha = 0.2f))
+                                    HorizontalDivider(color = SurfaceBg)
                                 }
                             }
+                        }
+                    }
+                }
+
+                // Search history chips
+                AnimatedVisibility(visible = state.searchHistory.isNotEmpty() && state.selectedMovie.isEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        state.searchHistory.forEach { title ->
+                            Text(
+                                text = title,
+                                fontSize = 12.sp,
+                                color = GoldAccent,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(GoldAccent.copy(alpha = 0.08f))
+                                    .border(1.dp, GoldAccent.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                                    .clickable {
+                                        val index = -1
+                                        viewModel.onMovieSelected(index, title)
+                                    }
+                                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                                    .widthIn(max = 180.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Surprise Me button
+                AnimatedVisibility(visible = state.selectedMovie.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Button(
+                            onClick = { viewModel.surpriseMe() },
+                            modifier = Modifier
+                                .size(140.dp),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFCC0000)
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 8.dp,
+                                pressedElevation = 2.dp
+                            )
+                        ) {
+                            Text(
+                                text = "SURPRISE\nME",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                letterSpacing = 1.5.sp,
+                                lineHeight = 20.sp
+                            )
                         }
                     }
                 }
@@ -148,18 +300,160 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
                         Text(
                             text = "Because you liked",
                             fontSize = 12.sp,
-                            color = NeonPink.copy(alpha = 0.7f),
+                            color = TextSecondary,
                             letterSpacing = 1.sp
                         )
                         Text(
                             text = state.selectedMovie,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NeonCyan,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            color = GoldAccent,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
 
-                        CoverFlowCarousel(recommendations = state.recommendations)
+                        // Industry filter bubbles
+                        if (state.industries.size > 1) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val allSelected = state.selectedIndustries.size == state.industries.size
+                                Text(
+                                    text = "All",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (allSelected) Color(0xFF3FB950) else Color(0xFF3FB950).copy(alpha = 0.3f),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(
+                                            if (allSelected) Color(0xFF3FB950).copy(alpha = 0.15f)
+                                            else Color.Transparent
+                                        )
+                                        .border(1.5.dp, Color(0xFF3FB950).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                        .clickable { viewModel.selectAllIndustries() }
+                                        .padding(horizontal = 14.dp, vertical = 5.dp)
+                                )
+                                state.industries.forEachIndexed { i, name ->
+                                    val selected = state.selectedIndustries.contains(name)
+                                    val bubbleColor = when (i) {
+                                        0 -> GoldAccent
+                                        1 -> Color(0xFFB4B4BE)
+                                        else -> Color(0xFFB07A50)
+                                    }
+                                    Text(
+                                        text = name,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (selected) bubbleColor else bubbleColor.copy(alpha = 0.3f),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(
+                                                if (selected) bubbleColor.copy(alpha = 0.15f)
+                                                else Color.Transparent
+                                            )
+                                            .border(1.5.dp, bubbleColor.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                            .clickable { viewModel.toggleIndustry(name) }
+                                            .padding(horizontal = 14.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        CoverFlowCarousel(
+                            recommendations = state.filteredRecommendations,
+                            onDrillIn = { title -> viewModel.drillInto(title) }
+                        )
+
+                        // Sub-levels
+                        state.subLevels.forEachIndexed { levelIdx, level ->
+                            Spacer(modifier = Modifier.height(24.dp))
+                            HorizontalDivider(color = SurfaceBg)
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "LEVEL ${levelIdx + 2}",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GoldAccent.copy(alpha = 0.6f),
+                                        letterSpacing = 2.sp
+                                    )
+                                    Row {
+                                        Text("from ", fontSize = 11.sp, color = TextSecondary)
+                                        Text(level.fromTitle, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = GoldAccent)
+                                    }
+                                }
+                                Text(
+                                    text = "EXIT",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE04040),
+                                    letterSpacing = 2.sp,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFE04040).copy(alpha = 0.15f))
+                                        .border(1.5.dp, Color(0xFFE04040).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                        .clickable { viewModel.exitSubLevels() }
+                                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Sub-level industry filters
+                            if (level.industries.size > 1) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val allSel = level.selectedIndustries.size == level.industries.size
+                                    Text(
+                                        text = "All",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (allSel) Color(0xFF3FB950) else Color(0xFF3FB950).copy(alpha = 0.3f),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(if (allSel) Color(0xFF3FB950).copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.5.dp, Color(0xFF3FB950).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                            .clickable { viewModel.selectAllSubIndustries(levelIdx) }
+                                            .padding(horizontal = 14.dp, vertical = 5.dp)
+                                    )
+                                    level.industries.forEachIndexed { i, name ->
+                                        val sel = level.selectedIndustries.contains(name)
+                                        val col = when (i) { 0 -> GoldAccent; 1 -> Color(0xFFB4B4BE); else -> Color(0xFFB07A50) }
+                                        Text(
+                                            text = name,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (sel) col else col.copy(alpha = 0.3f),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(20.dp))
+                                                .background(if (sel) col.copy(alpha = 0.15f) else Color.Transparent)
+                                                .border(1.5.dp, col.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                                .clickable { viewModel.toggleSubIndustry(levelIdx, name) }
+                                                .padding(horizontal = 14.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            CoverFlowCarousel(
+                                recommendations = level.filteredRecs,
+                                onDrillIn = { title -> viewModel.drillInto(title) }
+                            )
+                        }
                     }
                 }
 
@@ -176,13 +470,12 @@ fun MovieSearchScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
+private fun CoverFlowCarousel(recommendations: List<Recommendation>, onDrillIn: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val animatable = remember { Animatable(0f) }
     val currentIndex by remember { derivedStateOf { animatable.value.toInt().coerceIn(0, (recommendations.size - 1).coerceAtLeast(0)) } }
     val density = LocalDensity.current
 
-    // Reset animation when recommendations change
     LaunchedEffect(recommendations) {
         animatable.snapTo(0f)
     }
@@ -191,7 +484,6 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Cover Flow area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -200,7 +492,6 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             scope.launch {
-                                // Snap to nearest index
                                 val target = animatable.value
                                     .toInt()
                                     .coerceIn(0, recommendations.size - 1)
@@ -225,7 +516,6 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                 },
             contentAlignment = Alignment.Center
         ) {
-            // Render posters from back to front for proper z-ordering
             val indices = recommendations.indices.toList()
             val sortedIndices = indices.sortedBy { index ->
                 val offset = index - animatable.value
@@ -235,11 +525,9 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
             sortedIndices.forEach { index ->
                 val offset = index - animatable.value
 
-                // Only render nearby posters for performance
                 if (kotlin.math.abs(offset) <= 3f) {
                     val absOffset = kotlin.math.abs(offset)
 
-                    // Calculate 3D transform parameters
                     val angle = when {
                         absOffset < 0.01f -> 0f
                         offset < 0 -> 45f
@@ -294,7 +582,6 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            // Placeholder when no poster exists
                             Box(
                                 modifier = Modifier
                                     .width(180.dp)
@@ -303,7 +590,7 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                                     .background(
                                         Brush.verticalGradient(
                                             colors = listOf(
-                                                NeonPurple.copy(alpha = 0.4f),
+                                                SurfaceBg,
                                                 CardBg
                                             )
                                         )
@@ -321,7 +608,6 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
             }
         }
 
-        // Movie info below the carousel
         if (recommendations.isNotEmpty()) {
             val rec = recommendations[currentIndex]
             Spacer(modifier = Modifier.height(12.dp))
@@ -330,7 +616,7 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                 text = rec.title,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = TextPrimary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -345,33 +631,72 @@ private fun CoverFlowCarousel(recommendations: List<Recommendation>) {
                 Text(
                     text = if (rec.year > 0) "${rec.year}" else "Unknown",
                     fontSize = 14.sp,
-                    color = NeonPurple.copy(alpha = 0.8f)
+                    color = TextSecondary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (rec.imdbScore >= 7.0) NeonCyan.copy(alpha = 0.2f)
-                            else NeonPurple.copy(alpha = 0.2f)
-                        )
+                        .background(ratingColor(rec.imdbScore).copy(alpha = 0.2f))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "★ ${rec.imdbScore}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (rec.imdbScore >= 7.0) NeonCyan else NeonPurple
+                        color = ratingColor(rec.imdbScore)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Trailer button
+            if (rec.trailerKey != null) {
+                val context = LocalContext.current
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://www.youtube.com/watch?v=${rec.trailerKey}")
+                        )
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Watch Trailer",
+                        tint = Color(0xFFCC0000),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Watch Trailer",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFCC0000)
+                    )
+                }
+            }
+
+            // See Similar button
+            Spacer(modifier = Modifier.height(6.dp))
+            TextButton(
+                onClick = { onDrillIn(rec.title) }
+            ) {
+                Text(
+                    text = "See Similar →",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = GoldAccent
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = "${currentIndex + 1} / ${recommendations.size}",
                 fontSize = 12.sp,
-                color = NeonPink.copy(alpha = 0.6f),
+                color = TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -391,7 +716,7 @@ private fun RecommendationCard(rec: Recommendation) {
                 .fillMaxWidth()
                 .background(
                     Brush.horizontalGradient(
-                        colors = listOf(NeonPurple.copy(alpha = 0.1f), NeonCyan.copy(alpha = 0.05f))
+                        colors = listOf(SurfaceBg.copy(alpha = 0.3f), GoldAccent.copy(alpha = 0.05f))
                     )
                 )
                 .padding(16.dp)
@@ -406,28 +731,25 @@ private fun RecommendationCard(rec: Recommendation) {
                         text = rec.title,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = TextPrimary
                     )
                     Text(
                         text = if (rec.year > 0) "${rec.year}" else "Unknown year",
                         fontSize = 12.sp,
-                        color = NeonPurple.copy(alpha = 0.7f)
+                        color = TextSecondary
                     )
                 }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (rec.imdbScore >= 7.0) NeonCyan.copy(alpha = 0.2f)
-                            else NeonPurple.copy(alpha = 0.2f)
-                        )
+                        .background(ratingColor(rec.imdbScore).copy(alpha = 0.2f))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = "★ ${rec.imdbScore}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (rec.imdbScore >= 7.0) NeonCyan else NeonPurple
+                        color = ratingColor(rec.imdbScore)
                     )
                 }
             }

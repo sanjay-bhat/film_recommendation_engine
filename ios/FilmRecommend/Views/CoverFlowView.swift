@@ -1,13 +1,22 @@
 import SwiftUI
 
-private let neonCyan = Color(red: 0, green: 0.898, blue: 1)
-private let neonPink = Color(red: 1, green: 0.176, blue: 0.584)
-private let neonPurple = Color(red: 0.482, green: 0.38, blue: 1)
-private let darkBg = Color(red: 0.039, green: 0, blue: 0.082)
-private let cardBg = Color(red: 0.102, green: 0.039, blue: 0.18)
+private let goldAccent = Color(red: 0.769, green: 0.639, blue: 0.353)
+private let goldMuted = Color(red: 0.627, green: 0.502, blue: 0.314)
+private let textPrimary = Color(red: 0.831, green: 0.812, blue: 0.784)
+private let textSecondary = Color(red: 0.533, green: 0.533, blue: 0.533)
+private let darkBg = Color(red: 0.031, green: 0.031, blue: 0.047)
+private let cardBg = Color(red: 0.067, green: 0.067, blue: 0.094)
+private let surfaceBg = Color(red: 0.102, green: 0.102, blue: 0.133)
+
+private func ratingColor(_ score: Double) -> Color {
+    if score >= 8.0 { return goldAccent }
+    if score >= 7.0 { return Color(red: 0.541, green: 0.620, blue: 0.541) }
+    return Color(red: 0.541, green: 0.494, blue: 0.431)
+}
 
 struct CoverFlowView: View {
     let recommendations: [Recommendation]
+    var onDrillIn: ((String) -> Void)?
 
     @State private var currentIndex: Int = 0
     @GestureState private var dragOffset: CGFloat = 0
@@ -18,7 +27,6 @@ struct CoverFlowView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Cover Flow carousel
             GeometryReader { geometry in
                 let centerX = geometry.size.width / 2
 
@@ -66,35 +74,55 @@ struct CoverFlowView: View {
             }
             .frame(height: posterHeight + 20)
 
-            // Movie info below the carousel
             if recommendations.indices.contains(currentIndex) {
                 let rec = recommendations[currentIndex]
                 VStack(spacing: 8) {
                     Text(rec.title)
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(textPrimary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
 
                     HStack(spacing: 16) {
                         Text(rec.year > 0 ? "\(rec.year)" : "Unknown")
                             .font(.system(size: 14))
-                            .foregroundColor(neonPurple)
+                            .foregroundColor(textSecondary)
 
-                        Text("★ \(rec.imdbScore, specifier: "%.1f")")
+                        Text("\u{2605} \(rec.imdbScore, specifier: "%.1f")")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(rec.imdbScore >= 7.0 ? neonCyan : neonPurple)
+                            .foregroundColor(ratingColor(rec.imdbScore))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(
-                                (rec.imdbScore >= 7.0 ? neonCyan : neonPurple).opacity(0.2)
-                            )
+                            .background(ratingColor(rec.imdbScore).opacity(0.2))
                             .cornerRadius(6)
+                    }
+
+                    if let trailerKey = rec.trailerKey,
+                       let url = URL(string: "https://www.youtube.com/watch?v=\(trailerKey)") {
+                        Button(action: { UIApplication.shared.open(url) }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 12))
+                                Text("Watch Trailer")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundColor(Color(red: 0.8, green: 0, blue: 0))
+                        }
+                        .padding(.top, 4)
+                    }
+
+                    if let drillIn = onDrillIn {
+                        Button(action: { drillIn(rec.title) }) {
+                            Text("See Similar \u{2192}")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(goldAccent)
+                        }
+                        .padding(.top, 2)
                     }
 
                     Text("\(currentIndex + 1) / \(recommendations.count)")
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(neonPink.opacity(0.6))
+                        .foregroundColor(textSecondary)
                         .padding(.top, 4)
                 }
                 .animation(.easeInOut(duration: 0.2), value: currentIndex)
@@ -114,7 +142,7 @@ struct CoverFlowView: View {
                         .frame(width: posterWidth, height: posterHeight)
                         .clipped()
                         .cornerRadius(12)
-                        .shadow(color: neonCyan.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .shadow(color: goldAccent.opacity(0.2), radius: 8, x: 0, y: 4)
                 case .failure:
                     placeholderPoster(for: rec)
                 case .empty:
@@ -122,7 +150,7 @@ struct CoverFlowView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(cardBg)
                         ProgressView()
-                            .tint(neonCyan)
+                            .tint(goldAccent)
                     }
                 @unknown default:
                     placeholderPoster(for: rec)
@@ -138,12 +166,12 @@ struct CoverFlowView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(
                     LinearGradient(
-                        colors: [neonPurple.opacity(0.3), cardBg],
+                        colors: [surfaceBg, cardBg],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .shadow(color: neonPurple.opacity(0.2), radius: 6, x: 0, y: 3)
+                .shadow(color: goldMuted.opacity(0.15), radius: 6, x: 0, y: 3)
 
             VStack(spacing: 8) {
                 Text("\u{1F3AC}")
@@ -151,7 +179,7 @@ struct CoverFlowView: View {
 
                 Text(rec.title)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(textPrimary.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
                     .padding(.horizontal, 8)

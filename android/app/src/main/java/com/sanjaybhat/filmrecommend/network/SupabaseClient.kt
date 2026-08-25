@@ -126,4 +126,49 @@ object SupabaseClient {
             conn.disconnect()
         }
     }
+
+    data class OtdMovie(val title: String, val year: String, val posterPath: String?)
+
+    fun moviesOnThisDay(month: Int, day: Int): List<OtdMovie> {
+        val url = URL("$BASE_URL/rest/v1/rpc/movies_on_this_day")
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            setRequestProperty("apikey", ANON_KEY)
+            setRequestProperty("Authorization", "Bearer $ANON_KEY")
+            setRequestProperty("Content-Type", "application/json")
+            connectTimeout = 10_000
+            readTimeout = 15_000
+            doOutput = true
+        }
+
+        try {
+            val requestBody = JSONObject().apply {
+                put("mm", month)
+                put("dd", day)
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(requestBody.toString()) }
+
+            val code = conn.responseCode
+            if (code != 200) return emptyList()
+
+            val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+            val arr = JSONArray(body)
+            val results = mutableListOf<OtdMovie>()
+
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val releaseDate = obj.optString("release_date", "")
+                results.add(
+                    OtdMovie(
+                        title = obj.getString("title"),
+                        year = if (releaseDate.length >= 4) releaseDate.substring(0, 4) else "",
+                        posterPath = if (obj.isNull("poster_path")) null else obj.getString("poster_path")
+                    )
+                )
+            }
+            return results
+        } finally {
+            conn.disconnect()
+        }
+    }
 }
