@@ -58,13 +58,19 @@ struct TVBrowseView: View {
     }
 
     private var searchSection: some View {
-        TextField("Search for a movie...", text: Binding(
-            get: { viewModel.query },
-            set: { viewModel.onQueryChanged($0) }
-        ))
-        .textFieldStyle(.plain)
-        .font(.title3)
-        .foregroundColor(textPrimary)
+        HStack(spacing: 12) {
+            TextField("Search for a movie...", text: Binding(
+                get: { viewModel.query },
+                set: { viewModel.onQueryChanged($0) }
+            ))
+            .textFieldStyle(.plain)
+            .font(.title3)
+            .foregroundColor(textPrimary)
+
+            Image(systemName: "mic.fill")
+                .font(.title3)
+                .foregroundColor(goldAccent.opacity(0.5))
+        }
         .padding(16)
         .background(cardBg)
         .cornerRadius(12)

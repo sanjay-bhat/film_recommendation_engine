@@ -35,6 +35,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Mic
 import coil.compose.AsyncImage
 import com.sanjaybhat.filmrecommend.tablet.model.PosterData
 import com.sanjaybhat.filmrecommend.tablet.model.Recommendation
@@ -58,6 +63,15 @@ private fun ratingColor(score: Double): Color = when {
 fun TabletSearchScreen(viewModel: MainViewModel) {
     val state by viewModel.state.collectAsState()
 
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val text = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if (!text.isNullOrEmpty()) {
+            viewModel.onQueryChanged(text)
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +85,7 @@ fun TabletSearchScreen(viewModel: MainViewModel) {
                 .background(DarkBg)
                 .padding(16.dp)
         ) {
-            SidebarContent(state, viewModel)
+            SidebarContent(state, viewModel, speechLauncher)
         }
 
         // Divider
@@ -95,14 +109,14 @@ fun TabletSearchScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun SidebarContent(state: UiState, viewModel: MainViewModel) {
+private fun SidebarContent(state: UiState, viewModel: MainViewModel, speechLauncher: androidx.activity.result.ActivityResultLauncher<Intent>) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { HeaderSection() }
 
         if (state.loading) {
             item { LoadingSection() }
         } else {
-            item { SearchField(state, viewModel) }
+            item { SearchField(state, viewModel, speechLauncher) }
 
             if (state.suggestions.isNotEmpty()) {
                 items(state.suggestions, key = { it.second }) { (index, title) ->
@@ -191,16 +205,30 @@ private fun LoadingSection() {
 }
 
 @Composable
-private fun SearchField(state: UiState, viewModel: MainViewModel) {
+private fun SearchField(state: UiState, viewModel: MainViewModel, speechLauncher: androidx.activity.result.ActivityResultLauncher<Intent>) {
     OutlinedTextField(
         value = state.query,
         onValueChange = { viewModel.onQueryChanged(it) },
         placeholder = { Text("Search for a movie", color = TextSecondary) },
         leadingIcon = { Icon(Icons.Default.Search, null, tint = GoldAccent) },
         trailingIcon = {
-            if (state.query.isNotEmpty()) {
-                IconButton(onClick = { viewModel.clearSelection() }) {
-                    Icon(Icons.Default.Clear, null, tint = GoldMuted)
+            Row {
+                if (state.query.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.clearSelection() }) {
+                        Icon(Icons.Default.Clear, null, tint = GoldMuted)
+                    }
+                }
+                IconButton(onClick = {
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Say a movie name")
+                        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L)
+                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    }
+                    speechLauncher.launch(intent)
+                }) {
+                    Icon(Icons.Filled.Mic, "Voice search", tint = GoldAccent)
                 }
             }
         },
