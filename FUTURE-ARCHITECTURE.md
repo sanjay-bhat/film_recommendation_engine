@@ -149,6 +149,8 @@ Generate 20px-wide base64 thumbnails during ETL, embed inline. Perceived load ti
 
 Target: Oracle Cloud Always Free tier for self-hosted Postgres + ETL pipeline.
 
+> **HARD LIMIT:** Under no circumstance may the app exceed 80% of any Oracle Cloud Always Free tier limit. This applies to compute (OCPU), memory, storage (200 GB block, 10 GB object), egress (10 TB/month), and database (20 GB). All infrastructure scripts, ETL jobs, cron schedules, and Docker resource constraints must enforce this ceiling. If a workload would push any resource past 80%, it must be throttled, deferred, or offloaded locally. This is non-negotiable.
+
 **Instance strategy:**
 - **VM.Standard.A1.Flex** (4 Arm cores, 24 GB RAM) — primary: runs Postgres + pgvector + ETL
 - **VM.Standard.E2.1.Micro** (1/8 OCPU, 1 GB RAM) — fallback/proxy: Nginx + Cloudflare tunnel
