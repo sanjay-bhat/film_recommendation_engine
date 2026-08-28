@@ -143,6 +143,120 @@ Generate 20px-wide base64 thumbnails during ETL, embed inline. Perceived load ti
 
 ---
 
+## Phase 4 — New Features
+
+### 4.1 Hardware-Only Authentication (Passkey/WebAuthn)
+
+**Purpose:** Bot prevention for emoji ratings. A passkey is proof of physical presence — someone touched a real sensor on a real device. Bots cannot forge a Secure Enclave attestation or spoof a BiometricPrompt. This is fundamentally stronger than CAPTCHAs, rate limiting, or email verification.
+
+**Design principles:**
+- Zero personal data collected — no username, no password, no email, no biometric data
+- Biometrics never leave the device hardware (Secure Enclave on Apple, TEE on Android)
+- We store only the credential ID (opaque random string) and public key in Supabase
+- The user is just "credential `abc123`" to our system — truly anonymous verified identity
+- If the user loses/resets their device, their identity is gone — acceptable for casual emoji ratings
+
+**Implementation per platform:**
+- **iOS/iPad:** FaceID or TouchID via `ASAuthorizationPlatformPublicKeyCredentialProvider`. Generates a device-bound keypair in the Secure Enclave. Returns a credential ID, never biometric data.
+- **Android/Tablet:** `BiometricPrompt` + FIDO2 `CredentialManager` API. Fingerprint stays on hardware, we receive a signed assertion.
+- **Google TV / Apple TV:** Delegate auth to the companion phone app (QR code pairing or WatchConnectivity-style handoff). TV remotes don't have biometric sensors.
+- **Web:** WebAuthn API — browser prompts for platform authenticator (TouchID on Mac, Windows Hello, phone biometric via hybrid transport).
+- **Apple Watch / Wear OS:** Inherits auth from paired phone via WatchConnectivity (Apple) or Data Layer API (Wear OS). No separate enrollment needed.
+
+**Supabase schema:**
+```sql
+CREATE TABLE credentials (
+  credential_id TEXT PRIMARY KEY,   -- opaque WebAuthn credential ID
+  public_key BYTEA NOT NULL,        -- for verifying signed assertions
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE emoji_ratings (
+  id BIGSERIAL PRIMARY KEY,
+  credential_id TEXT REFERENCES credentials(credential_id),
+  movie_id INT NOT NULL,
+  emoji TEXT NOT NULL,               -- single emoji character
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(credential_id, movie_id)   -- one rating per user per movie
+);
+```
+
+**Rate limiting on top of hardware auth:** Even verified users get throttled — max 30 ratings per hour per credential. Prevents a real user from scripting rapid-fire ratings.
+
+### 4.2 Emoji Cloud with Apple Watch Honeycomb Animation
+
+**Purpose:** Visual community sentiment under each movie poster. Free-form emoji picker — no curated palette. Human creativity comes out when unrestricted.
+
+**Interaction model:**
+- Each unique emoji for a movie is a bubble in a floating cloud beneath the poster
+- Bubble size scales with vote count (more votes = bigger bubble)
+- On hover (desktop) or touch-hold (mobile), nearby emojis magnify with a fisheye distortion:
+  - Emoji under cursor: 2.5x scale
+  - Adjacent emojis: 1.5x scale
+  - Far emojis: 1.0x (unchanged)
+- The whole cloud gently floats/breathes when idle (subtle CSS animation, respects `prefers-reduced-motion`)
+- Tapping an emoji in the cloud shows its count and who-reacted-first timestamp
+
+**User flow for leaving a rating:**
+1. User taps a "react" button on the movie card
+2. Hardware auth prompt (FaceID/fingerprint) — one tap, instant
+3. Native emoji picker opens (OS-level, not a custom one — full unicode support)
+4. User picks any emoji — it flies into the cloud with a spring animation
+5. If they already rated this movie, the old emoji is replaced (one rating per user per movie)
+
+**Technical approach:**
+- Cloud layout: force-directed simulation (d3-force or a lightweight custom implementation) — emojis repel each other naturally, larger ones claim more space
+- Fisheye effect: on pointermove, calculate distance from cursor to each emoji center, apply scale transform based on inverse distance with easing
+- Idle animation: subtle sinusoidal offset on x/y per emoji, seeded by index for organic feel
+- Mobile: touch position drives the fisheye on touchmove, releases on touchend
+- Performance: limit cloud to top 30 unique emojis per movie (remaining grouped as "+N more"). Use `will-change: transform` on emoji elements.
+
+**Platform-specific rendering:**
+- **Web:** CSS transforms + JS pointermove listener
+- **iOS/iPad:** SwiftUI with `.scaleEffect()` modifier driven by `DragGesture` proximity calculation
+- **Android/Tablet:** Jetpack Compose `Modifier.pointerInput` with `graphicsLayer { scaleX; scaleY }` animated via `spring()`
+- **TV (Google TV / Apple TV):** D-pad focus moves a highlight ring through the cloud; focused emoji magnifies. No hover possible.
+- **Watch:** Compact mode only — show top 3-4 emojis with counts, no fisheye animation (screen too small)
+
+### 4.3 Apple Watch + Wear OS Apps
+
+**Design philosophy:** A watch cannot browse a catalog. The watch is for one thing: serendipity. One tap, one movie.
+
+**Core interaction — Surprise Me:**
+
+A single screen with:
+- Poster background (blurred, full-bleed, edge-to-edge)
+- Title (large, 2 lines max)
+- IMDb rating (gold/green/brown tier coloring)
+- Compact emoji cloud (top 3-4 emojis with counts)
+
+**Navigation:**
+- **Digital Crown scroll (Apple Watch) / bezel rotate (Wear OS):** Each click shuffles to a new recommendation with a haptic tick. Recommendations are pre-fetched in batches of 20.
+- **Tap:** Opens the emoji picker to leave a reaction (hardware auth via paired phone)
+- **Double tap / shake:** "Surprise me again" — pulls from a different genre than the current movie, so it genuinely surprises rather than serving similar titles
+- **Long press:** "Add to watchlist" (future, once Supabase Auth is in place)
+
+**Genre diversity on shuffle:** Maintain a short history (last 5 genres shown). Each crown-tick filters out those genres from the next pick. Resets after cycling through all available genres.
+
+**Complications / Tiles:**
+- **Apple Watch complication:** "On This Day" — shows one movie released on today's date. Uses the existing `movies_on_this_day` Supabase RPC. Tapping opens the full app.
+- **Wear OS Tile:** Same "On This Day" concept via the Tiles API. Single glanceable card.
+
+**Tech stack:**
+- **Apple Watch:** SwiftUI + WatchKit. Depends on the shared `FilmRecommendCore` Swift Package (Phase 1). Uses `WatchConnectivity` to sync auth credentials and cached recommendations from the iPhone app.
+- **Wear OS:** Jetpack Compose for Wear OS. Depends on the `:shared` Kotlin module (Phase 1). Uses `DataClient` / `MessageClient` from the Wearable Data Layer API to sync with the Android phone app.
+- **Offline:** Cache the last 20 recommendations + poster thumbnails (low-res, ~5KB each) on the watch for offline browsing. Sync when phone is nearby.
+
+**What we explicitly don't build for watch:**
+- Search (typing on a watch is painful, voice search is unreliable in noisy environments)
+- Full catalog browsing
+- Plot summaries or detailed movie info
+- Trailer playback
+
+**Platform count after this:** 9 total (web, Android, iOS, iPad, tablet, Google TV, Apple TV, Apple Watch, Wear OS)
+
+---
+
 ## Oracle Cloud Free Tier Deployment
 
 ### Infrastructure Overview
