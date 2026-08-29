@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Film Recommendation Engine — Cinematic Banner" width="100%">
+  <img src="assets/banner.gif" alt="Film Recommendation Engine — Cinematic Banner" width="100%">
 </p>
 
 # Film Recommendation Engine
