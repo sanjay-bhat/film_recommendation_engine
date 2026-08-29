@@ -69,6 +69,71 @@ A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a
   <img src="assets/architecture.svg" alt="System Architecture Diagram" width="100%">
 </p>
 
+## Platform Architectures
+
+<details>
+<summary><strong>Website</strong> — HTML / CSS / JavaScript</summary>
+<p align="center">
+  <img src="assets/architecture_web.svg" alt="Website Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>iOS</strong> — Swift + SwiftUI</summary>
+<p align="center">
+  <img src="assets/architecture_ios.svg" alt="iOS Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>iPad</strong> — Swift + SwiftUI</summary>
+<p align="center">
+  <img src="assets/architecture_ipad.svg" alt="iPad Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>Android</strong> — Kotlin + Jetpack Compose</summary>
+<p align="center">
+  <img src="assets/architecture_android.svg" alt="Android Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>Android Tablet</strong> — Kotlin + Jetpack Compose</summary>
+<p align="center">
+  <img src="assets/architecture_tablet.svg" alt="Android Tablet Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>Apple TV</strong> — Swift + tvOS SwiftUI</summary>
+<p align="center">
+  <img src="assets/architecture_appletv.svg" alt="Apple TV Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>Google TV</strong> — Kotlin + Compose for TV</summary>
+<p align="center">
+  <img src="assets/architecture_googletv.svg" alt="Google TV Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>watchOS</strong> — Swift + SwiftUI</summary>
+<p align="center">
+  <img src="assets/architecture_watchos.svg" alt="watchOS Architecture" width="100%">
+</p>
+</details>
+
+<details>
+<summary><strong>Wear OS</strong> — Kotlin + Compose for Wear</summary>
+<p align="center">
+  <img src="assets/architecture_wearos.svg" alt="Wear OS Architecture" width="100%">
+</p>
+</details>
+
 ## How It Works
 
 Every title in the catalog is encoded into a 384-dimensional vector using **all-MiniLM-L6-v2**, a sentence-transformer model that captures semantic meaning from plot overviews, genres, cast, and keywords. These vectors are indexed with **pgvector HNSW** for sub-10ms approximate nearest-neighbor lookups.
