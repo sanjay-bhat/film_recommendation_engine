@@ -3,10 +3,10 @@
 Migrate combined movie + TV show catalog and recommendations to Supabase.
 
 Steps:
-  1. Add 'type' column to movies table, set existing rows to 'movie'
-  2. Insert TV shows into movies table with type='tv'
-  3. Clear old recommendations
-  4. Insert new recommendations from combined_recommendations.json
+  1. Upsert movies into movies table with type='movie'
+  2. Upsert TV shows into movies table with type='tv'
+  3. Fetch movie ID map
+  4. Upsert recommendations from combined_recommendations.json
 
 Usage:
     python scripts/migrate_combined.py \
@@ -83,12 +83,34 @@ def main():
     except FileNotFoundError:
         pass
 
+    movie_items = {t: c for t, c in catalog.items() if c["type"] == "movie"}
     tv_items = {t: c for t, c in catalog.items() if c["type"] == "tv"}
-    print(f"Loaded {len(catalog)} titles ({len(tv_items)} TV shows)")
+    print(f"Loaded {len(catalog)} titles ({len(movie_items)} movies, {len(tv_items)} TV shows)")
     print(f"Loaded {len(recommendations)} recommendation sets")
     print(f"Trailers: {len(movie_trailers)} movies, {len(tv_trailers)} TV shows")
 
-    print("\n[1/4] Inserting TV shows into movies table...")
+    print("\n[1/4] Upserting movies...")
+    movie_rows = []
+    for title, meta in movie_items.items():
+        year = None
+        if meta.get("release_date") and len(meta["release_date"]) >= 4:
+            try:
+                year = int(meta["release_date"][:4])
+            except ValueError:
+                pass
+        movie_rows.append({
+            "title": title,
+            "year": year,
+            "vote_average": meta.get("vote_average"),
+            "poster_path": meta.get("poster_path") or None,
+            "trailer_key": movie_trailers.get(title),
+            "release_date": meta.get("release_date") or None,
+            "type": "movie",
+        })
+    sb_insert(args.url, args.key, "movies", movie_rows, upsert=True)
+    print(f"  Upserted {len(movie_rows)} movies")
+
+    print("\n[2/4] Upserting TV shows...")
     tv_rows = []
     for title, meta in tv_items.items():
         year = None
@@ -108,14 +130,6 @@ def main():
         })
     sb_insert(args.url, args.key, "movies", tv_rows, upsert=True)
     print(f"  Upserted {len(tv_rows)} TV shows")
-
-    print("\n[2/4] Updating existing movies to type='movie'...")
-    resp = sb_request(
-        "patch", args.url, args.key,
-        "movies?type=is.null",
-        data={"type": "movie"},
-    )
-    print(f"  Status: {resp.status_code}")
 
     print("\n[3/4] Fetching movie ID map...")
     headers = {
@@ -159,7 +173,7 @@ def main():
     print(f"  {len(rec_rows)} recommendation pairs ({skipped} skipped)")
     sb_insert(args.url, args.key, "recommendations", rec_rows, batch_size=1000, upsert=True)
 
-    print(f"\nDone! {len(tv_rows)} TV shows + {len(rec_rows)} recommendations migrated.")
+    print(f"\nDone! {len(movie_rows)} movies + {len(tv_rows)} TV shows + {len(rec_rows)} recommendations migrated.")
 
 
 if __name__ == "__main__":
