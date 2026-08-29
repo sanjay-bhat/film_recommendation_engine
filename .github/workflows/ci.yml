@@ -88,8 +88,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
       - name: Build Android app
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: cd android && gradle assembleDebug --no-daemon
 
   wearos-build:
     name: Wear OS build
@@ -102,8 +106,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
       - name: Build Wear OS app
-        run: cd wearos && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: cd wearos && gradle assembleDebug --no-daemon
 
   deploy-pages:
     name: Deploy GitHub Pages
