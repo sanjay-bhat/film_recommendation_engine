@@ -11,24 +11,6 @@
 
 A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a title you love, and it returns 20 you'll probably love too — powered by sentence-transformer embeddings (all-MiniLM-L6-v2) and pgvector HNSW search across TMDb's top-rated catalog, backed by Supabase Postgres. Double-click any recommendation to drill into a recursive sub-tree of similar titles, each level rendered in the same 3D Cover Flow carousel.
 
-## Preview
-
-<p align="center">
-  <a href="https://sanjay-bhat.github.io/film_recommendation_engine/">
-    <img src="assets/preview_website.gif" alt="Website — Laptop" width="100%">
-  </a>
-</p>
-
-<p align="center">
-  <img src="assets/preview_iphone.gif" alt="iPhone" width="220">
-  &nbsp;&nbsp;
-  <img src="assets/preview_ipad.gif" alt="iPad" width="480">
-</p>
-
-<p align="center">
-  <img src="assets/preview_appletv.gif" alt="Apple TV" width="100%">
-</p>
-
 <p align="center">
   <a href="android/">
     <img src="https://img.shields.io/badge/View_source-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android source">
