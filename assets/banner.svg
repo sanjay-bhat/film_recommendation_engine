@@ -1,125 +1,205 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#08080c"/>
-      <stop offset="100%" stop-color="#0f0f14"/>
+      <stop offset="0%" stop-color="#04050a"/>
+      <stop offset="40%" stop-color="#0a0c14"/>
+      <stop offset="100%" stop-color="#06070d"/>
     </linearGradient>
     <linearGradient id="goldText" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#d4b96a"/>
-      <stop offset="100%" stop-color="#a08040"/>
+      <stop offset="0%" stop-color="#eed98e"/>
+      <stop offset="45%" stop-color="#d4b96a"/>
+      <stop offset="100%" stop-color="#8a6e30"/>
     </linearGradient>
-    <linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#c4a35a" stop-opacity="0"/>
-      <stop offset="30%" stop-color="#c4a35a" stop-opacity="0.4"/>
-      <stop offset="50%" stop-color="#c4a35a" stop-opacity="0.6"/>
-      <stop offset="70%" stop-color="#c4a35a" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#c4a35a" stop-opacity="0"/>
+    <linearGradient id="flare" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#d4b96a" stop-opacity="0"/>
+      <stop offset="35%" stop-color="#d4b96a" stop-opacity="0.04"/>
+      <stop offset="50%" stop-color="#eed98e" stop-opacity="0.12"/>
+      <stop offset="65%" stop-color="#d4b96a" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#d4b96a" stop-opacity="0"/>
     </linearGradient>
-    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+    <linearGradient id="flareV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4b96a" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#d4b96a" stop-opacity="0.06"/>
+      <stop offset="50%" stop-color="#eed98e" stop-opacity="0.1"/>
+      <stop offset="60%" stop-color="#d4b96a" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#d4b96a" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d4b96a" stop-opacity="0.06"/>
+      <stop offset="40%" stop-color="#d4b96a" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#d4b96a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#0a0c14" stop-opacity="0"/>
+      <stop offset="70%" stop-color="#04050a" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#02020a" stop-opacity="0.85"/>
+    </radialGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur2"/>
       <feMerge>
-        <feMergeNode in="blur"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
     </filter>
     <filter id="bokeh" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
     </filter>
-    <filter id="softBokeh" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
+    <filter id="bokehLg" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6"/>
     </filter>
+    <filter id="bokehSm" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/>
+    </filter>
+    <clipPath id="filmHole">
+      <rect x="0" y="0" width="900" height="320"/>
+    </clipPath>
   </defs>
 
-  <!-- Background -->
+  <!-- Deep background -->
   <rect width="900" height="320" fill="url(#bg)"/>
 
-  <!-- Subtle vignette -->
-  <rect width="900" height="320" fill="url(#bg)" opacity="0"/>
-  <ellipse cx="450" cy="160" rx="500" ry="200" fill="none" stroke="#1a1a22" stroke-width="200" opacity="0.3"/>
-
-  <!-- Bokeh particles -->
-  <circle cx="120" cy="80" r="4" fill="#c4a35a" opacity="0.12" filter="url(#bokeh)"/>
-  <circle cx="780" cy="60" r="3" fill="#c4a35a" opacity="0.1" filter="url(#bokeh)"/>
-  <circle cx="650" cy="250" r="5" fill="#c4a35a" opacity="0.08" filter="url(#softBokeh)"/>
-  <circle cx="200" cy="240" r="3.5" fill="#c4a35a" opacity="0.1" filter="url(#bokeh)"/>
-  <circle cx="450" cy="40" r="2.5" fill="#c4a35a" opacity="0.15" filter="url(#bokeh)"/>
-  <circle cx="340" cy="280" r="4" fill="#c4a35a" opacity="0.07" filter="url(#softBokeh)"/>
-  <circle cx="60" cy="180" r="3" fill="#c4a35a" opacity="0.09" filter="url(#bokeh)"/>
-  <circle cx="830" cy="150" r="4.5" fill="#c4a35a" opacity="0.06" filter="url(#softBokeh)"/>
-  <circle cx="500" cy="290" r="2" fill="#c4a35a" opacity="0.12" filter="url(#bokeh)"/>
-  <circle cx="720" cy="100" r="3" fill="#c4a35a" opacity="0.11" filter="url(#bokeh)"/>
-  <circle cx="280" cy="50" r="2" fill="#d4b96a" opacity="0.13" filter="url(#bokeh)"/>
-  <circle cx="580" cy="180" r="3.5" fill="#c4a35a" opacity="0.05" filter="url(#softBokeh)"/>
-  <circle cx="150" cy="290" r="2.5" fill="#c4a35a" opacity="0.1" filter="url(#bokeh)"/>
-  <circle cx="400" cy="130" r="1.5" fill="#d4b96a" opacity="0.18" filter="url(#bokeh)"/>
-  <circle cx="850" cy="270" r="3" fill="#c4a35a" opacity="0.08" filter="url(#bokeh)"/>
-
-  <!-- Small dust particles -->
-  <circle cx="90" cy="120" r="1" fill="#c4a35a" opacity="0.2"/>
-  <circle cx="300" cy="160" r="0.8" fill="#c4a35a" opacity="0.15"/>
-  <circle cx="550" cy="70" r="1" fill="#c4a35a" opacity="0.18"/>
-  <circle cx="700" cy="200" r="0.7" fill="#c4a35a" opacity="0.2"/>
-  <circle cx="180" cy="190" r="0.9" fill="#c4a35a" opacity="0.12"/>
-  <circle cx="620" cy="130" r="1.1" fill="#c4a35a" opacity="0.14"/>
-  <circle cx="420" cy="220" r="0.8" fill="#c4a35a" opacity="0.16"/>
-  <circle cx="760" cy="280" r="1" fill="#c4a35a" opacity="0.1"/>
-
-  <!-- Horizontal gold accent lines -->
-  <line x1="100" y1="115" x2="360" y2="115" stroke="url(#goldLine)" stroke-width="0.5"/>
-  <line x1="540" y1="115" x2="800" y2="115" stroke="url(#goldLine)" stroke-width="0.5"/>
-  <line x1="100" y1="205" x2="360" y2="205" stroke="url(#goldLine)" stroke-width="0.5"/>
-  <line x1="540" y1="205" x2="800" y2="205" stroke="url(#goldLine)" stroke-width="0.5"/>
-
-  <!-- Film strip decoration (left) -->
-  <g opacity="0.06">
-    <rect x="30" y="60" width="28" height="200" rx="2" fill="none" stroke="#c4a35a" stroke-width="0.8"/>
-    <rect x="34" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="34" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="48" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
+  <!-- Subtle grid lines (theater curtain feel) -->
+  <g opacity="0.012">
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(100,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(200,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(300,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(400,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(500,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(600,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(700,0)"/>
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#c4a35a" stroke-width="0.5" transform="translate(800,0)"/>
   </g>
 
-  <!-- Film strip decoration (right) -->
-  <g opacity="0.06">
-    <rect x="842" y="60" width="28" height="200" rx="2" fill="none" stroke="#c4a35a" stroke-width="0.8"/>
-    <rect x="846" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="846" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="68" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="80" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="92" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="104" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="200" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="212" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="224" width="6" height="4" rx="1" fill="#c4a35a"/>
-    <rect x="860" y="236" width="6" height="4" rx="1" fill="#c4a35a"/>
+  <!-- Center warm glow -->
+  <ellipse cx="450" cy="155" rx="350" ry="140" fill="url(#centerGlow)"/>
+
+  <!-- Anamorphic lens flare — horizontal streak -->
+  <rect x="0" y="140" width="900" height="30" fill="url(#flare)"/>
+  <rect x="50" y="148" width="800" height="14" fill="url(#flare)" opacity="0.6"/>
+
+  <!-- Anamorphic lens flare — vertical streak (shorter) -->
+  <rect x="435" y="40" width="30" height="240" fill="url(#flareV)" opacity="0.5"/>
+
+  <!-- Flare hot spot -->
+  <circle cx="450" cy="155" r="20" fill="#eed98e" opacity="0.03" filter="url(#softGlow)"/>
+  <circle cx="450" cy="155" r="6" fill="#eed98e" opacity="0.06" filter="url(#bokeh)"/>
+
+  <!-- Secondary flare artifacts (hexagonal ghosts) -->
+  <circle cx="320" cy="155" r="12" fill="none" stroke="#d4b96a" stroke-width="0.4" opacity="0.04"/>
+  <circle cx="580" cy="155" r="8" fill="none" stroke="#d4b96a" stroke-width="0.3" opacity="0.05"/>
+  <circle cx="250" cy="155" r="5" fill="#c4a35a" opacity="0.02" filter="url(#bokeh)"/>
+  <circle cx="650" cy="155" r="7" fill="#c4a35a" opacity="0.015" filter="url(#bokeh)"/>
+
+  <!-- Bokeh particles — warm gold, scattered at varying depths -->
+  <circle cx="95" cy="65" r="6" fill="#d4b96a" opacity="0.07" filter="url(#bokehLg)"/>
+  <circle cx="790" cy="50" r="4.5" fill="#c4a35a" opacity="0.09" filter="url(#bokeh)"/>
+  <circle cx="680" cy="260" r="7" fill="#c4a35a" opacity="0.05" filter="url(#bokehLg)"/>
+  <circle cx="170" cy="250" r="5" fill="#d4b96a" opacity="0.06" filter="url(#bokeh)"/>
+  <circle cx="450" cy="30" r="3" fill="#eed98e" opacity="0.1" filter="url(#bokehSm)"/>
+  <circle cx="320" cy="285" r="5.5" fill="#c4a35a" opacity="0.04" filter="url(#bokehLg)"/>
+  <circle cx="55" cy="175" r="4" fill="#c4a35a" opacity="0.06" filter="url(#bokeh)"/>
+  <circle cx="845" cy="140" r="6" fill="#c4a35a" opacity="0.04" filter="url(#bokehLg)"/>
+  <circle cx="520" cy="295" r="3" fill="#d4b96a" opacity="0.08" filter="url(#bokehSm)"/>
+  <circle cx="740" cy="90" r="4" fill="#d4b96a" opacity="0.07" filter="url(#bokeh)"/>
+  <circle cx="260" cy="40" r="3.5" fill="#eed98e" opacity="0.08" filter="url(#bokeh)"/>
+  <circle cx="600" cy="200" r="5" fill="#c4a35a" opacity="0.03" filter="url(#bokehLg)"/>
+  <circle cx="130" cy="295" r="3.5" fill="#c4a35a" opacity="0.06" filter="url(#bokeh)"/>
+  <circle cx="390" cy="110" r="2" fill="#eed98e" opacity="0.12" filter="url(#bokehSm)"/>
+  <circle cx="860" cy="275" r="4" fill="#c4a35a" opacity="0.05" filter="url(#bokeh)"/>
+
+  <!-- Tiny sharp dust motes -->
+  <circle cx="110" cy="110" r="0.6" fill="#eed98e" opacity="0.25"/>
+  <circle cx="280" cy="175" r="0.5" fill="#d4b96a" opacity="0.2"/>
+  <circle cx="570" cy="60" r="0.7" fill="#eed98e" opacity="0.22"/>
+  <circle cx="720" cy="210" r="0.5" fill="#d4b96a" opacity="0.18"/>
+  <circle cx="195" cy="200" r="0.6" fill="#c4a35a" opacity="0.15"/>
+  <circle cx="640" cy="125" r="0.7" fill="#eed98e" opacity="0.2"/>
+  <circle cx="430" cy="230" r="0.5" fill="#d4b96a" opacity="0.16"/>
+  <circle cx="775" cy="290" r="0.6" fill="#c4a35a" opacity="0.12"/>
+  <circle cx="350" cy="50" r="0.4" fill="#eed98e" opacity="0.28"/>
+  <circle cx="510" cy="95" r="0.5" fill="#d4b96a" opacity="0.2"/>
+
+  <!-- Film strip — left, taller and more detailed -->
+  <g opacity="0.05" transform="translate(22, 30)">
+    <rect width="32" height="260" rx="1.5" fill="none" stroke="#c4a35a" stroke-width="0.7"/>
+    <g fill="#c4a35a">
+      <rect x="4" y="8" width="7" height="5" rx="1"/>
+      <rect x="4" y="22" width="7" height="5" rx="1"/>
+      <rect x="4" y="36" width="7" height="5" rx="1"/>
+      <rect x="4" y="50" width="7" height="5" rx="1"/>
+      <rect x="4" y="64" width="7" height="5" rx="1"/>
+      <rect x="4" y="192" width="7" height="5" rx="1"/>
+      <rect x="4" y="206" width="7" height="5" rx="1"/>
+      <rect x="4" y="220" width="7" height="5" rx="1"/>
+      <rect x="4" y="234" width="7" height="5" rx="1"/>
+      <rect x="4" y="248" width="7" height="5" rx="1"/>
+      <rect x="21" y="8" width="7" height="5" rx="1"/>
+      <rect x="21" y="22" width="7" height="5" rx="1"/>
+      <rect x="21" y="36" width="7" height="5" rx="1"/>
+      <rect x="21" y="50" width="7" height="5" rx="1"/>
+      <rect x="21" y="64" width="7" height="5" rx="1"/>
+      <rect x="21" y="192" width="7" height="5" rx="1"/>
+      <rect x="21" y="206" width="7" height="5" rx="1"/>
+      <rect x="21" y="220" width="7" height="5" rx="1"/>
+      <rect x="21" y="234" width="7" height="5" rx="1"/>
+      <rect x="21" y="248" width="7" height="5" rx="1"/>
+    </g>
   </g>
 
-  <!-- Title -->
-  <text x="450" y="148" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="700" fill="url(#goldText)" filter="url(#glow)" letter-spacing="2">Film Recommendation</text>
-  <text x="450" y="190" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="700" fill="url(#goldText)" filter="url(#glow)" letter-spacing="2">Engine</text>
+  <!-- Film strip — right -->
+  <g opacity="0.05" transform="translate(846, 30)">
+    <rect width="32" height="260" rx="1.5" fill="none" stroke="#c4a35a" stroke-width="0.7"/>
+    <g fill="#c4a35a">
+      <rect x="4" y="8" width="7" height="5" rx="1"/>
+      <rect x="4" y="22" width="7" height="5" rx="1"/>
+      <rect x="4" y="36" width="7" height="5" rx="1"/>
+      <rect x="4" y="50" width="7" height="5" rx="1"/>
+      <rect x="4" y="64" width="7" height="5" rx="1"/>
+      <rect x="4" y="192" width="7" height="5" rx="1"/>
+      <rect x="4" y="206" width="7" height="5" rx="1"/>
+      <rect x="4" y="220" width="7" height="5" rx="1"/>
+      <rect x="4" y="234" width="7" height="5" rx="1"/>
+      <rect x="4" y="248" width="7" height="5" rx="1"/>
+      <rect x="21" y="8" width="7" height="5" rx="1"/>
+      <rect x="21" y="22" width="7" height="5" rx="1"/>
+      <rect x="21" y="36" width="7" height="5" rx="1"/>
+      <rect x="21" y="50" width="7" height="5" rx="1"/>
+      <rect x="21" y="64" width="7" height="5" rx="1"/>
+      <rect x="21" y="192" width="7" height="5" rx="1"/>
+      <rect x="21" y="206" width="7" height="5" rx="1"/>
+      <rect x="21" y="220" width="7" height="5" rx="1"/>
+      <rect x="21" y="234" width="7" height="5" rx="1"/>
+      <rect x="21" y="248" width="7" height="5" rx="1"/>
+    </g>
+  </g>
 
-  <!-- Subtitle -->
-  <text x="450" y="230" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#726b5e" letter-spacing="4" font-weight="400">SEMANTIC SEARCH  ·  6,707 TITLES  ·  MOVIES &amp; TV SHOWS</text>
+  <!-- Decorative corner brackets -->
+  <g stroke="#c4a35a" stroke-width="0.5" fill="none" opacity="0.08">
+    <path d="M80,25 L80,15 L90,15"/>
+    <path d="M820,25 L820,15 L810,15"/>
+    <path d="M80,295 L80,305 L90,305"/>
+    <path d="M820,295 L820,305 L810,305"/>
+  </g>
 
-  <!-- Version badge -->
-  <rect x="405" y="250" width="90" height="22" rx="4" fill="none" stroke="#c4a35a" stroke-width="0.6" opacity="0.3"/>
-  <text x="450" y="265" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#c4a35a" opacity="0.5" letter-spacing="1" font-weight="500">v0.9.0</text>
+  <!-- Top decorative rule -->
+  <line x1="120" y1="90" x2="380" y2="90" stroke="#c4a35a" stroke-width="0.3" opacity="0.08"/>
+  <circle cx="450" cy="90" r="1.5" fill="#c4a35a" opacity="0.1"/>
+  <line x1="520" y1="90" x2="780" y2="90" stroke="#c4a35a" stroke-width="0.3" opacity="0.08"/>
+
+  <!-- Main title -->
+  <text x="450" y="148" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="url(#goldText)" filter="url(#glow)" letter-spacing="3">Film Recommendation</text>
+  <text x="450" y="195" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="url(#goldText)" filter="url(#glow)" letter-spacing="3">Engine</text>
+
+  <!-- Bottom decorative rule -->
+  <line x1="120" y1="218" x2="380" y2="218" stroke="#c4a35a" stroke-width="0.3" opacity="0.08"/>
+  <circle cx="450" cy="218" r="1.5" fill="#c4a35a" opacity="0.1"/>
+  <line x1="520" y1="218" x2="780" y2="218" stroke="#c4a35a" stroke-width="0.3" opacity="0.08"/>
+
+  <!-- Vignette overlay -->
+  <rect width="900" height="320" fill="url(#vignette)"/>
 </svg>

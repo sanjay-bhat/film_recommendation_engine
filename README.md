@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Film Recommendation Engine — Cinematic Banner" width="100%">
+  <img src="assets/banner.gif" alt="Film Recommendation Engine — Cinematic Banner" width="100%">
 </p>
 
 # Film Recommendation Engine
@@ -150,12 +150,15 @@ python3 -m http.server 8765 -d docs
 ```bash
 pip install -r requirements.txt
 
-# Fetch catalog from TMDb API
-python scripts/fetch_tmdb_catalog.py --api-key YOUR_TMDB_KEY
-python scripts/fetch_tv_shows.py --api-key YOUR_TMDB_KEY
+# Fetch catalog from TMDb API (vote_count >= 20 gives ~120K movies)
+python scripts/fetch_tmdb_discover.py --api-key YOUR_TMDB_KEY --type movie --min-votes 20
+python scripts/fetch_tmdb_discover.py --api-key YOUR_TMDB_KEY --type tv --min-votes 20
 
 # Generate embeddings + recommendations
-python scripts/generate_recommendations.py
+python scripts/generate_recommendations.py \
+    --movies-csv dataset/movies_discovered.csv \
+    --credits-csv dataset/credits_discovered.csv \
+    --tv-csv dataset/tv_discovered.csv
 
 # Migrate to Supabase
 python scripts/migrate_combined.py --url https://YOUR_PROJECT.supabase.co --key YOUR_SERVICE_ROLE_KEY

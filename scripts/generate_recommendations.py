@@ -18,6 +18,7 @@ Usage:
 import argparse
 import csv
 import json
+import os
 import sys
 import time
 
@@ -25,8 +26,37 @@ import faiss
 import numpy as np
 
 
-def load_movies(csv_path):
+def load_credits(credits_path):
+    """Load cast names keyed by movie_id from a credits CSV."""
+    credits = {}
+    if not credits_path or not os.path.exists(credits_path):
+        return credits
+    with open(credits_path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            movie_id = row.get("movie_id", "")
+            try:
+                raw = json.loads(row.get("cast", "[]"))
+                names = []
+                for c in raw:
+                    if isinstance(c, dict):
+                        names.append(c.get("name", ""))
+                    elif isinstance(c, str):
+                        names.append(c)
+                if names:
+                    credits[movie_id] = names[:10]
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return credits
+
+
+def has_enough_signal(overview, keywords):
+    """A movie needs overview (>10 chars) or 3+ keywords for a useful embedding."""
+    return (overview and len(overview.strip()) > 10) or len(keywords) >= 3
+
+
+def load_movies(csv_path, credits_map=None):
     items = []
+    skipped = 0
     with open(csv_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -54,23 +84,32 @@ def load_movies(csv_path):
             except (json.JSONDecodeError, TypeError):
                 pass
 
-            cast = []
-            try:
-                raw = json.loads(row.get("cast", "[]"))
-                if isinstance(raw, list):
-                    for c in raw:
-                        if isinstance(c, dict):
-                            cast.append(c.get("name") or c.get("character", ""))
-                        elif isinstance(c, str):
-                            cast.append(c)
-            except (json.JSONDecodeError, TypeError):
-                pass
-
             title = row.get("title") or row.get("name", "")
             if not title:
                 continue
 
             overview = row.get("overview", "")
+
+            if not has_enough_signal(overview, keywords):
+                skipped += 1
+                continue
+
+            cast = []
+            movie_id = str(row.get("id", ""))
+            if credits_map and movie_id in credits_map:
+                cast = credits_map[movie_id]
+            else:
+                try:
+                    raw = json.loads(row.get("cast", "[]"))
+                    if isinstance(raw, list):
+                        for c in raw:
+                            if isinstance(c, dict):
+                                cast.append(c.get("name") or c.get("character", ""))
+                            elif isinstance(c, str):
+                                cast.append(c)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
             release_date = row.get("release_date") or row.get("first_air_date", "")
             year = release_date[:4] if release_date else ""
 
@@ -86,6 +125,8 @@ def load_movies(csv_path):
                 "release_date": release_date,
                 "type": "movie",
             })
+    if skipped:
+        print(f"  Skipped {skipped} movies with insufficient signal")
     return items
 
 
@@ -134,12 +175,16 @@ def main():
     parser = argparse.ArgumentParser(description="Generate recommendations")
     parser.add_argument("--top-k", type=int, default=7)
     parser.add_argument("--batch-size", type=int, default=128)
-    parser.add_argument("--movies-csv", default="dataset/tmdb_5000_movies.csv")
+    parser.add_argument("--movies-csv", default="dataset/movies_expanded.csv")
+    parser.add_argument("--credits-csv", default="dataset/credits_expanded.csv")
     parser.add_argument("--tv-csv", default="dataset/tv_shows.csv")
     args = parser.parse_args()
 
     print("[1/5] Loading datasets...")
-    movies = load_movies(args.movies_csv)
+    credits_map = load_credits(args.credits_csv)
+    if credits_map:
+        print(f"  Credits: {len(credits_map)} movies with cast data")
+    movies = load_movies(args.movies_csv, credits_map)
     print(f"  Movies: {len(movies)}")
 
     tv_shows = []
