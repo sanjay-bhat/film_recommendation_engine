@@ -15,14 +15,18 @@ A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a
 
 <p align="center">
   <a href="https://sanjay-bhat.github.io/film_recommendation_engine/">
-    <img src="assets/demo_website.gif" alt="Website Demo" width="100%">
+    <img src="assets/preview_website.gif" alt="Website — Laptop" width="100%">
   </a>
 </p>
 
 <p align="center">
-  <img src="assets/demo_android.gif" alt="Android App Demo" width="320">
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/demo_ios.gif" alt="iOS App Demo" width="320">
+  <img src="assets/preview_iphone.gif" alt="iPhone" width="220">
+  &nbsp;&nbsp;
+  <img src="assets/preview_ipad.gif" alt="iPad" width="480">
+</p>
+
+<p align="center">
+  <img src="assets/preview_appletv.gif" alt="Apple TV" width="100%">
 </p>
 
 <p align="center">
@@ -48,6 +52,14 @@ A semantic recommendation engine spanning **6,707 movies & TV shows**. Give it a
   &nbsp;
   <a href="appletv/">
     <img src="https://img.shields.io/badge/View_source-Apple_TV-000000?style=for-the-badge&logo=appletv&logoColor=white" alt="Apple TV source">
+  </a>
+  &nbsp;
+  <a href="watchos/">
+    <img src="https://img.shields.io/badge/View_source-watchOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="watchOS source">
+  </a>
+  &nbsp;
+  <a href="wearos/">
+    <img src="https://img.shields.io/badge/View_source-Wear_OS-4285F4?style=for-the-badge&logo=wearos&logoColor=white" alt="Wear OS source">
   </a>
 </p>
 
@@ -125,6 +137,8 @@ The catalog spans 20+ genres across 4,800 movies and 1,907 TV shows. Drama and C
 | Android Tablet | Kotlin | `tablet/` | Jetpack Compose, two-pane master-detail layout |
 | Google TV | Kotlin | `googletv/` | Compose for TV, D-pad/Siri Remote focus navigation |
 | Apple TV | Swift | `appletv/` | tvOS SwiftUI, focus-based Siri Remote navigation |
+| watchOS | Swift | `watchos/` | SwiftUI, Digital Crown browsing, Surprise Me haptics |
+| Wear OS | Kotlin | `wearos/` | Jetpack Compose, swipe navigation, Surprise Me haptics |
 | CLI | Python | `src/recommend.py` | Reference implementation |
 | CLI | Rust | `src/recommend.rs` | Zero-dependency, fast CLI binary |
 | CLI | C# | `src/Recommend.cs` | .NET 8, clean OOP structure |
