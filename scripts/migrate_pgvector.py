@@ -84,8 +84,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", required=True)
     parser.add_argument("--key", required=True)
-    parser.add_argument("--movies-csv", default="dataset/tmdb_5000_movies.csv")
-    parser.add_argument("--tv-csv", default="dataset/tv_shows.csv")
+    parser.add_argument("--movies-csv", default="dataset/movies_bulk.csv")
+    parser.add_argument("--tv-csv", default="dataset/tv_bulk.csv")
     parser.add_argument("--batch-size", type=int, default=128)
     args = parser.parse_args()
 
@@ -141,7 +141,8 @@ def main():
         if vec is None:
             skipped += 1
             continue
-        vec_str = "[" + ",".join(f"{x:.6f}" for x in vec.tolist()) + "]"
+        vec_f16 = vec.astype(np.float16)
+        vec_str = "[" + ",".join(f"{x:.4f}" for x in vec_f16.tolist()) + "]"
         resp = session.patch(
             f"{args.url}/rest/v1/movies?id=eq.{db_id}",
             json={"embedding": vec_str}, timeout=30)
@@ -156,7 +157,7 @@ def main():
 
     print("\n--- Next steps ---")
     print("1. Run this in the Supabase SQL Editor to build the HNSW index:")
-    print("   CREATE INDEX movies_embedding_hnsw ON movies USING hnsw (embedding vector_cosine_ops);")
+    print("   CREATE INDEX movies_embedding_hnsw ON movies USING hnsw (embedding halfvec_cosine_ops);")
     print("2. Test: SELECT title FROM movies ORDER BY embedding <=> (SELECT embedding FROM movies WHERE title = 'Inception') LIMIT 8;")
     print("3. Once verified, drop the old table: DROP TABLE IF EXISTS recommendations;")
 
