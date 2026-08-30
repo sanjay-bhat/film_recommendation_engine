@@ -2,12 +2,12 @@
 -- Step 1: Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Step 2: Add embedding column to movies table
-ALTER TABLE movies ADD COLUMN IF NOT EXISTS embedding vector(384);
+-- Step 2: Add embedding column to movies table (halfvec = float16, 2x storage savings)
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS embedding halfvec(384);
 
 -- Step 3: Create HNSW index for fast cosine similarity search
 -- (Run AFTER embeddings are uploaded — index builds on existing data)
--- CREATE INDEX movies_embedding_hnsw ON movies USING hnsw (embedding vector_cosine_ops);
+-- CREATE INDEX movies_embedding_hnsw ON movies USING hnsw (embedding halfvec_cosine_ops);
 
 -- Step 4: Create RPC function for query-time recommendations
 CREATE OR REPLACE FUNCTION get_recommendations(query_title text, num_recs int DEFAULT 7)

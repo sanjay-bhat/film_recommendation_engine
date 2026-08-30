@@ -150,15 +150,14 @@ python3 -m http.server 8765 -d docs
 ```bash
 pip install -r requirements.txt
 
-# Fetch catalog from TMDb API (vote_count >= 20 gives ~120K movies)
-python scripts/fetch_tmdb_discover.py --api-key YOUR_TMDB_KEY --type movie --min-votes 20
-python scripts/fetch_tmdb_discover.py --api-key YOUR_TMDB_KEY --type tv --min-votes 20
+# Bulk fetch catalog from TMDb API (~100K movies in ~25 min)
+python scripts/fetch_tmdb_bulk.py --api-key YOUR_TMDB_KEY --type movie --min-votes 10
+python scripts/fetch_tmdb_bulk.py --api-key YOUR_TMDB_KEY --type tv --min-votes 10
 
 # Generate embeddings + recommendations
 python scripts/generate_recommendations.py \
-    --movies-csv dataset/movies_discovered.csv \
-    --credits-csv dataset/credits_discovered.csv \
-    --tv-csv dataset/tv_discovered.csv
+    --movies-csv dataset/movies_bulk.csv \
+    --tv-csv dataset/tv_bulk.csv
 
 # Migrate to Supabase
 python scripts/migrate_combined.py --url https://YOUR_PROJECT.supabase.co --key YOUR_SERVICE_ROLE_KEY

@@ -265,11 +265,24 @@ Target: Oracle Cloud Always Free tier for self-hosted Postgres + ETL pipeline.
 
 > **HARD LIMIT:** Under no circumstance may the app exceed 80% of any Oracle Cloud Always Free tier limit. This applies to compute (OCPU), memory, storage (200 GB block, 10 GB object), egress (10 TB/month), and database (20 GB). All infrastructure scripts, ETL jobs, cron schedules, and Docker resource constraints must enforce this ceiling. If a workload would push any resource past 80%, it must be throttled, deferred, or offloaded locally. This is non-negotiable.
 
+> **Free Tier Update (June 2026):** Oracle halved the Ampere A1 allocation from 4 OCPU / 24 GB to **2 OCPU / 12 GB** with no public announcement. The 80% hard limit now means an effective cap of **1.6 OCPU / 9.6 GB RAM**. Storage (200 GB block), egress (10 TB), and Autonomous DB (20 GB) were not affected. All resource estimates below reflect the new limits.
+
 **Instance strategy:**
-- **VM.Standard.A1.Flex** (4 Arm cores, 24 GB RAM) — primary: runs Postgres + pgvector + ETL
+- **VM.Standard.A1.Flex** (2 Arm cores, 12 GB RAM) — primary: runs Postgres + pgvector + ETL
 - **VM.Standard.E2.1.Micro** (1/8 OCPU, 1 GB RAM) — fallback/proxy: Nginx + Cloudflare tunnel
 
 If only the Micro is available, run ETL locally and use the instance only for serving pre-computed results.
+
+### Storage budget at 1M+ titles (halfvec)
+
+| Component | Size | Notes |
+|---|---|---|
+| halfvec(384) embeddings | ~750 MB | float16, 768 bytes/vector × 1M |
+| HNSW index overhead | ~375 MB | ~50% of raw vectors |
+| Catalog data (no overviews) | ~80 MB | title, year, poster, rating, type |
+| Postgres overhead | ~200 MB | WAL, system catalogs, temp |
+| **Total** | **~1.4 GB** | 0.7% of 200 GB block storage |
+| **RAM (shared_buffers + index)** | **~2.5 GB** | 26% of 9.6 GB effective limit |
 
 ### New files needed
 
@@ -294,7 +307,7 @@ Dockerfile.etl            — ETL container with all Python dependencies
 | 1 | **Capacity hell** (A1 always "out of capacity") | `infra/provision.sh` — retry loop every 60s with AMD micro fallback |
 | 2 | **Idle reclamation** (instance stopped after 7 days idle) | Scheduled ETL cron keeps the box active with real work; health ping as backup |
 | 3 | **Region lock-in** (Home Region permanent) | `docker-compose.yml` — fully portable stack, zero Oracle-specific services |
-| 4 | **1 GB RAM** (AMD micro only) | `setup-instance.sh` — 4GB swap + tuned Postgres (128MB shared_buffers, 20 max connections) |
+| 4 | **1 GB RAM** (AMD micro only) | `setup-instance.sh` — 4GB swap + tuned Postgres (128MB shared_buffers, 20 max connections). A1 now has 12GB (down from 24GB) — use halfvec embeddings to stay within 80% memory ceiling |
 | 5 | **Two-layer firewall** (VCN + OS iptables) | `setup-instance.sh` handles both; Cloudflare Tunnel sidesteps it entirely |
 | 6 | **No SLA/support** | `healthcheck.yml` — GitHub Actions pings every 30min, Discord webhook alerts |
 | 7 | **Egress limits** (10TB/month) | `nginx.conf` — gzip + cache headers; Cloudflare free tier absorbs 80-90% egress |
@@ -302,13 +315,13 @@ Dockerfile.etl            — ETL container with all Python dependencies
 
 ### VM Comparison
 
-| | E2.1.Micro | A1 Flex |
+| | E2.1.Micro | A1 Flex (post-June 2026) |
 |---|---|---|
-| CPU | 1/8 OCPU (AMD) | 4 OCPU (Arm) |
-| RAM | 1 GB | 24 GB |
-| Can run ETL? | No (OOM on embeddings/SVD) | Yes — full pipeline in memory |
-| Can run Postgres? | Yes, but tight (128MB buffers) | Yes — 4GB shared_buffers, room for pgvector |
-| 1M+ titles? | Impossible | Feasible (1M × 384 embedding = ~1.5GB) |
+| CPU | 1/8 OCPU (AMD) | 2 OCPU (Arm) |
+| RAM | 1 GB | 12 GB |
+| Can run ETL? | No (OOM on embeddings/SVD) | Yes — pipeline fits in memory |
+| Can run Postgres? | Yes, but tight (128MB buffers) | Yes — 2GB shared_buffers, room for pgvector |
+| 1M+ titles? | Impossible | Feasible with halfvec (1M × 384 halfvec = ~750MB) |
 | Best role | Nginx proxy / tunnel endpoint | Postgres + ETL workhorse |
 
 ### Micro-only architecture (if A1 unavailable)
