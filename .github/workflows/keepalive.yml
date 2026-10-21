@@ -10,30 +10,11 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Write heartbeat to Supabase
+      - name: Direct Postgres heartbeat
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          # Upsert a row into a keepalive table (write activity counts as usage)
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -H "Prefer: resolution=merge-duplicates" \
-            -d '{"id": 1, "last_ping": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/keepalive")
-          echo "Heartbeat status: $response"
-
-          # Fall back to a read if the keepalive table doesn't exist yet
-          if [ "$response" -eq 404 ] || [ "$response" -eq 406 ]; then
-            echo "keepalive table not found — falling back to read ping"
-            response=$(curl -s -o /dev/null -w "%{http_code}" \
-              -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-              "${{ secrets.SUPABASE_URL }}/rest/v1/movies?select=id&limit=1")
-            echo "Read ping status: $response"
-          fi
-
-          if [ "$response" -lt 200 ] || [ "$response" -ge 300 ]; then
-            echo "::error::Supabase keepalive failed with status $response"
-            exit 1
-          fi
+          psql "$DATABASE_URL" -c \
+            "INSERT INTO keepalive (id, last_ping) VALUES (1, now())
+             ON CONFLICT (id) DO UPDATE SET last_ping = now();"
+          echo "Heartbeat written via direct Postgres connection"
